@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "plugins": [
+    {
+      "id": "@ethio/example-badge",
+      "name": "Example Badge",
+      "version": "0.1.0",
+      "description": "Sample remote plugin — entity status badge loaded via ESM.",
+      "entryUrl": "/registry/plugins/example-badge/index.js",
+      "capabilities": ["entity.read"]
+    }
+  ]
+}

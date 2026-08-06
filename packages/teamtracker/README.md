@@ -1,0 +1,13 @@
+# @ethio/teamtracker
+
+Ethio Home plugin for [ha-teamtracker](https://github.com/vasqued2/ha-teamtracker) sensors.
+
+Scoreboard UX inspired by [ha-teamtracker-card](https://github.com/vasqued2/ha-teamtracker-card) — rebuilt as a React widget for the Ethio plugin platform (not a fork of the Lit card).
+
+## Live mode
+
+Install the ha-teamtracker integration in Home Assistant, create a team sensor, then add **Team Card** from the widget picker and bind that sensor.
+
+## Demo mode
+
+Ethio ships `sensor.demo_arsenal` with simulated IN-game attributes so you can try the card without the integration.
