@@ -1,9 +1,11 @@
 import { useMemo, useState } from "react";
 
 import { Input } from "@/components/ui/input";
+import { t, toIntlLocale } from "@/i18n";
 import { getFriendlyName } from "@/lib/entities";
 import { cn } from "@/lib/utils";
 import { useHaStore } from "@/store/ha-store";
+import { useLocaleStore } from "@/store/locale-store";
 
 interface EntityPickerProps {
   value: string;
@@ -12,6 +14,7 @@ interface EntityPickerProps {
 }
 
 export function EntityPicker({ value, onChange, domains }: EntityPickerProps) {
+  const locale = useLocaleStore((state) => state.locale);
   const entities = useHaStore((state) => state.entities);
   const [query, setQuery] = useState("");
 
@@ -29,23 +32,25 @@ export function EntityPicker({ value, onChange, domains }: EntityPickerProps) {
         return name.includes(q) || entity.entity_id.toLowerCase().includes(q);
       })
       .sort((a, b) =>
-        getFriendlyName(a).localeCompare(getFriendlyName(b), undefined, {
-          sensitivity: "base",
-        }),
+        getFriendlyName(a).localeCompare(
+          getFriendlyName(b),
+          toIntlLocale(locale),
+          { sensitivity: "base" },
+        ),
       );
-  }, [entities, domains, query]);
+  }, [entities, domains, query, locale]);
 
   return (
     <div className="space-y-2">
       <Input
         value={query}
         onChange={(event) => setQuery(event.target.value)}
-        placeholder="Search entities…"
+        placeholder={t(locale, "entityPicker.search")}
       />
       <div className="max-h-56 overflow-y-auto rounded-xl border border-border">
         {options.length === 0 ? (
           <p className="px-3 py-4 text-sm text-muted-foreground">
-            No matching entities
+            {t(locale, "entityPicker.empty")}
           </p>
         ) : (
           <ul className="divide-y divide-border">

@@ -114,6 +114,14 @@ export function seedDemoDashboard(): DashboardConfig {
       type: "@ethio/core/cover",
       config: { entity_id: DEMO_ENTITY_IDS.cover },
     },
+    {
+      id: "w11",
+      type: "@ethio/core/media",
+      config: {
+        entity_id: DEMO_ENTITY_IDS.media,
+        artworkMode: "default",
+      },
+    },
   ];
   return withLayouts(widgets, "overview", "Overview");
 }

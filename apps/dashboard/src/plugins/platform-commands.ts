@@ -1,19 +1,23 @@
 import { defineCommand } from "@ethio/plugin-sdk";
 
+import { t } from "@/i18n";
 import { THEME_IDS, type ThemeMode } from "@/lib/themes";
 import { useDashboardStore } from "@/store/dashboard-store";
 import { useHaStore } from "@/store/ha-store";
+import { useLocaleStore } from "@/store/locale-store";
 import { usePluginsUiStore } from "@/store/plugins-ui-store";
 import { useThemeStore } from "@/store/theme-store";
 
 const THEME_CYCLE: ThemeMode[] = [...THEME_IDS];
 
 export function createPlatformCommands() {
+  const locale = useLocaleStore.getState().locale;
+
   return [
     defineCommand({
       id: "platform.edit.enter",
-      title: "Enter edit mode",
-      subtitle: "Customize the dashboard layout",
+      title: t(locale, "commands.editEnter"),
+      subtitle: t(locale, "commands.editEnterSub"),
       keywords: ["edit", "builder", "customize"],
       run: () => {
         useDashboardStore.getState().requestEdit();
@@ -21,8 +25,8 @@ export function createPlatformCommands() {
     }),
     defineCommand({
       id: "platform.edit.exit",
-      title: "Exit edit mode",
-      subtitle: "Return to live view",
+      title: t(locale, "commands.editExit"),
+      subtitle: t(locale, "commands.editExitSub"),
       keywords: ["done", "live", "exit"],
       run: () => {
         useDashboardStore.getState().setMode("live");
@@ -30,8 +34,8 @@ export function createPlatformCommands() {
     }),
     defineCommand({
       id: "platform.settings",
-      title: "Open settings",
-      subtitle: "PIN, kiosk, and dashboard options",
+      title: t(locale, "commands.settings"),
+      subtitle: t(locale, "commands.settingsSub"),
       keywords: ["settings", "pin", "kiosk"],
       run: () => {
         window.dispatchEvent(new CustomEvent("ethio:open-settings"));
@@ -39,8 +43,8 @@ export function createPlatformCommands() {
     }),
     defineCommand({
       id: "platform.plugins",
-      title: "Open plugins",
-      subtitle: "Browse and install registry plugins",
+      title: t(locale, "commands.plugins"),
+      subtitle: t(locale, "commands.pluginsSub"),
       keywords: ["plugins", "registry", "install", "hub"],
       run: () => {
         usePluginsUiStore.getState().openPlugins();
@@ -48,8 +52,8 @@ export function createPlatformCommands() {
     }),
     defineCommand({
       id: "platform.theme.toggle",
-      title: "Cycle theme",
-      subtitle: "Cycle Default, Atmosphere, SCIFICN, and tweakcn themes",
+      title: t(locale, "commands.theme"),
+      subtitle: t(locale, "commands.themeSub"),
       keywords: ["theme", "dark", "light", "appearance"],
       run: () => {
         const { theme, setTheme } = useThemeStore.getState();
@@ -60,8 +64,8 @@ export function createPlatformCommands() {
     }),
     defineCommand({
       id: "platform.disconnect",
-      title: "Disconnect",
-      subtitle: "Return to connection setup",
+      title: t(locale, "commands.disconnect"),
+      subtitle: t(locale, "commands.disconnectSub"),
       keywords: ["logout", "disconnect", "setup"],
       run: () => {
         useHaStore.getState().disconnect({ clearSaved: true });
@@ -69,8 +73,8 @@ export function createPlatformCommands() {
     }),
     defineCommand({
       id: "platform.picker",
-      title: "Add widget",
-      subtitle: "Open the widget picker",
+      title: t(locale, "commands.addWidget"),
+      subtitle: t(locale, "commands.addWidgetSub"),
       keywords: ["add", "widget", "picker"],
       run: () => {
         const store = useDashboardStore.getState();
@@ -90,12 +94,13 @@ export function createPlatformCommands() {
 export function createPageCommands() {
   const dashboard = useDashboardStore.getState().dashboard;
   if (!dashboard) return [];
+  const locale = useLocaleStore.getState().locale;
 
   return dashboard.pages.map((page) =>
     defineCommand({
       id: `platform.page.${page.id}`,
-      title: `Go to ${page.title}`,
-      subtitle: "Switch page",
+      title: t(locale, "commands.goToPage", { title: page.title }),
+      subtitle: t(locale, "commands.switchPage"),
       keywords: ["page", "go", page.title, page.id],
       run: () => {
         useDashboardStore.getState().setActivePage(page.id);

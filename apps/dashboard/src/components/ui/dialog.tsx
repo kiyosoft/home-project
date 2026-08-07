@@ -7,7 +7,9 @@ import {
 } from "react";
 
 import { Button } from "@/components/ui/button";
+import { t } from "@/i18n";
 import { cn } from "@/lib/utils";
+import { useLocaleStore } from "@/store/locale-store";
 
 const FOCUSABLE_SELECTOR =
   'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])';
@@ -31,6 +33,7 @@ export function Dialog({
   className,
   footer,
 }: DialogProps) {
+  const locale = useLocaleStore((state) => state.locale);
   const titleId = useId();
   const panelRef = useRef<HTMLDivElement>(null);
   const previousActiveRef = useRef<HTMLElement | null>(null);
@@ -119,7 +122,7 @@ export function Dialog({
       <button
         type="button"
         className="absolute inset-0 bg-black/50 backdrop-blur-sm"
-        aria-label="Close dialog"
+        aria-label={t(locale, "dialog.closeAria")}
         onClick={onClose}
       />
       <div

@@ -33,6 +33,14 @@ export async function connectLive(
     async callService(domain, service, serviceData) {
       await haCallService(connection, domain, service, serviceData);
     },
+    sendMessagePromise<T = unknown>(message: Record<string, unknown>) {
+      if (typeof message.type !== "string" || !message.type) {
+        return Promise.reject(new Error("WebSocket message requires a type"));
+      }
+      return connection.sendMessagePromise<T>(
+        message as { type: string } & Record<string, unknown>,
+      );
+    },
     disconnect() {
       connection.close();
     },

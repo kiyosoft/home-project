@@ -1,7 +1,8 @@
 import type { TimeFormat } from "@/dashboard/types";
+import { toIntlLocale, type Locale } from "@/i18n";
 
-export function formatHeaderDate(date: Date, locale = navigator.language): string {
-  return new Intl.DateTimeFormat(locale, {
+export function formatHeaderDate(date: Date, locale: Locale = "en"): string {
+  return new Intl.DateTimeFormat(toIntlLocale(locale), {
     weekday: "long",
     month: "long",
     day: "numeric",
@@ -13,9 +14,9 @@ export function formatHeaderDate(date: Date, locale = navigator.language): strin
 export function formatHeaderTime(
   date: Date,
   timeFormat: TimeFormat,
-  locale = navigator.language,
+  locale: Locale = "en",
 ): string {
-  return new Intl.DateTimeFormat(locale, {
+  return new Intl.DateTimeFormat(toIntlLocale(locale), {
     hour: "numeric",
     minute: "2-digit",
     hour12: timeFormat === "12h",

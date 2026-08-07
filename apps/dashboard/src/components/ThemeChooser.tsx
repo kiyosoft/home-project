@@ -1,21 +1,28 @@
 import { Palette } from "lucide-react";
 
+import { t, type MessageKey } from "@/i18n";
 import {
   THEME_OPTIONS,
   type ThemeGroup,
   type ThemeMode,
 } from "@/lib/themes";
 import { cn } from "@/lib/utils";
+import { useLocaleStore } from "@/store/locale-store";
 import { useThemeStore } from "@/store/theme-store";
 
-const GROUPS: { id: ThemeGroup; label: string }[] = [
-  { id: "default", label: "Default" },
-  { id: "atmosphere", label: "Atmosphere" },
-  { id: "scificn", label: "SCIFICN" },
-  { id: "tweakcn", label: "tweakcn" },
+const GROUPS: { id: ThemeGroup; labelKey: MessageKey }[] = [
+  { id: "default", labelKey: "theme.group.default" },
+  { id: "atmosphere", labelKey: "theme.group.atmosphere" },
+  { id: "scificn", labelKey: "theme.group.scificn" },
+  { id: "tweakcn", labelKey: "theme.group.tweakcn" },
 ];
 
+function themeLabelKey(id: ThemeMode): MessageKey {
+  return `theme.${id}` as MessageKey;
+}
+
 export function ThemeChooser() {
+  const locale = useLocaleStore((state) => state.locale);
   const theme = useThemeStore((state) => state.theme);
   const setTheme = useThemeStore((state) => state.setTheme);
 
@@ -34,19 +41,19 @@ export function ThemeChooser() {
         style={{ backgroundColor: current?.swatch }}
         aria-hidden
       />
-      <span className="sr-only">Theme</span>
+      <span className="sr-only">{t(locale, "theme.label")}</span>
       <select
         className="max-w-36 cursor-pointer appearance-none bg-transparent pr-1 font-medium outline-none sm:max-w-none"
         value={theme}
         onChange={(event) => setTheme(event.target.value as ThemeMode)}
-        aria-label="Choose theme"
+        aria-label={t(locale, "theme.chooseAria")}
       >
         {GROUPS.map((group) => (
-          <optgroup key={group.id} label={group.label}>
+          <optgroup key={group.id} label={t(locale, group.labelKey)}>
             {THEME_OPTIONS.filter((option) => option.group === group.id).map(
               (option) => (
                 <option key={option.id} value={option.id}>
-                  {option.label}
+                  {t(locale, themeLabelKey(option.id))}
                 </option>
               ),
             )}

@@ -3,9 +3,12 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { t } from "@/i18n";
 import { useDashboardStore } from "@/store/dashboard-store";
+import { useLocaleStore } from "@/store/locale-store";
 
 export function PinDialog() {
+  const locale = useLocaleStore((state) => state.locale);
   const pinDialog = useDashboardStore((state) => state.pinDialog);
   const closePinDialog = useDashboardStore((state) => state.closePinDialog);
   const submitPin = useDashboardStore((state) => state.submitPin);
@@ -25,11 +28,11 @@ export function PinDialog() {
     try {
       if (setting) {
         if (pin.trim().length < 4) {
-          setError("PIN must be at least 4 characters");
+          setError(t(locale, "pin.errorShort"));
           return;
         }
         if (pin !== confirm) {
-          setError("PINs do not match");
+          setError(t(locale, "pin.errorMismatch"));
           return;
         }
         await setPin(pin);
@@ -40,7 +43,7 @@ export function PinDialog() {
 
       const ok = await submitPin(pin);
       if (!ok) {
-        setError("Incorrect PIN");
+        setError(t(locale, "pin.errorIncorrect"));
         return;
       }
       setPinValue("");
@@ -58,11 +61,11 @@ export function PinDialog() {
         setError(null);
         closePinDialog();
       }}
-      title={setting ? "Set PIN" : "Enter PIN"}
+      title={setting ? t(locale, "pin.setTitle") : t(locale, "pin.enterTitle")}
       description={
         setting
-          ? "PIN is required to enter edit mode and exit kiosk."
-          : "This dashboard is PIN protected."
+          ? t(locale, "pin.setDescription")
+          : t(locale, "pin.enterDescription")
       }
     >
       <div className="space-y-3">
@@ -70,7 +73,7 @@ export function PinDialog() {
           type="password"
           inputMode="numeric"
           autoComplete="off"
-          placeholder="PIN"
+          placeholder={t(locale, "pin.placeholder")}
           value={pin}
           onChange={(event) => setPinValue(event.target.value)}
           disabled={busy}
@@ -80,7 +83,7 @@ export function PinDialog() {
             type="password"
             inputMode="numeric"
             autoComplete="off"
-            placeholder="Confirm PIN"
+            placeholder={t(locale, "pin.confirmPlaceholder")}
             value={confirm}
             onChange={(event) => setConfirm(event.target.value)}
             disabled={busy}
@@ -99,7 +102,7 @@ export function PinDialog() {
               setError(null);
             }}
           >
-            Cancel
+            {t(locale, "pin.cancel")}
           </Button>
           <Button
             disabled={busy}
@@ -107,7 +110,7 @@ export function PinDialog() {
               void handleSubmit();
             }}
           >
-            {setting ? "Save PIN" : "Unlock"}
+            {setting ? t(locale, "pin.save") : t(locale, "pin.unlock")}
           </Button>
         </div>
       </div>

@@ -11,6 +11,18 @@ export interface HassEntity {
 
 export type HassEntities = Record<string, HassEntity>;
 
+export interface BrowseMediaItem {
+  title: string;
+  media_class?: string;
+  media_content_type: string;
+  media_content_id: string;
+  children_media_class?: string | null;
+  can_play: boolean;
+  can_expand: boolean;
+  thumbnail?: string | null;
+  children?: BrowseMediaItem[] | null;
+}
+
 export interface EntityClient {
   subscribeEntities(onChange: (entities: HassEntities) => void): () => void;
   callService(
@@ -18,6 +30,9 @@ export interface EntityClient {
     service: string,
     serviceData?: Record<string, unknown>,
   ): Promise<void>;
+  sendMessagePromise<T = unknown>(
+    message: Record<string, unknown>,
+  ): Promise<T>;
   disconnect(): void;
 }
 

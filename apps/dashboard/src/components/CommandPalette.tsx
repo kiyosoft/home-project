@@ -1,13 +1,19 @@
 import { Command } from "cmdk";
 import { useEffect, useMemo, useState } from "react";
 
+import { t } from "@/i18n";
 import { listCommands } from "@/plugins/commands";
-import { createPageCommands } from "@/plugins/platform-commands";
+import {
+  createPageCommands,
+  createPlatformCommands,
+} from "@/plugins/platform-commands";
 import { useDashboardStore } from "@/store/dashboard-store";
+import { useLocaleStore } from "@/store/locale-store";
 
 export function CommandPalette() {
   const [open, setOpen] = useState(false);
   const dashboard = useDashboardStore((state) => state.dashboard);
+  const locale = useLocaleStore((state) => state.locale);
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
@@ -22,8 +28,16 @@ export function CommandPalette() {
 
   const commands = useMemo(() => {
     if (!open) return [];
-    return [...listCommands(), ...createPageCommands()];
-  }, [open, dashboard]);
+    // Rebuild platform commands so titles follow the active locale.
+    const pluginCommands = listCommands().filter(
+      (command) => !command.id.startsWith("platform."),
+    );
+    return [
+      ...createPlatformCommands(),
+      ...createPageCommands(),
+      ...pluginCommands,
+    ];
+  }, [open, dashboard, locale]);
 
   if (!open) return null;
 
@@ -31,13 +45,13 @@ export function CommandPalette() {
     <div className="fixed inset-0 z-[80]">
       <button
         type="button"
-        aria-label="Close command palette"
+        aria-label={t(locale, "commands.closeAria")}
         className="absolute inset-0 bg-black/45"
         onClick={() => setOpen(false)}
       />
       <div className="absolute left-1/2 top-[18%] w-[min(32rem,calc(100%-2rem))] -translate-x-1/2">
         <Command
-          label="Command palette"
+          label={t(locale, "commands.label")}
           className="overflow-hidden rounded-2xl border border-border bg-card text-card-foreground shadow-2xl"
           shouldFilter
           onKeyDown={(event) => {
@@ -49,14 +63,17 @@ export function CommandPalette() {
         >
           <Command.Input
             autoFocus
-            placeholder="Type a command…"
+            placeholder={t(locale, "commands.placeholder")}
             className="w-full border-b border-border bg-transparent px-4 py-3 text-sm outline-none placeholder:text-muted-foreground"
           />
           <Command.List className="max-h-80 overflow-y-auto p-2">
             <Command.Empty className="px-3 py-6 text-center text-sm text-muted-foreground">
-              No matching commands
+              {t(locale, "commands.empty")}
             </Command.Empty>
-            <Command.Group heading="Commands" className="px-1 py-1">
+            <Command.Group
+              heading={t(locale, "commands.heading")}
+              className="px-1 py-1"
+            >
               {commands.map((command) => (
                 <Command.Item
                   key={command.id}

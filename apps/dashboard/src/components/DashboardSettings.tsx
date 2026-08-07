@@ -1,10 +1,13 @@
 import { useEffect, useRef, useState } from "react";
 
+import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import type { TimeFormat } from "@/dashboard/types";
+import { t } from "@/i18n";
 import { useDashboardStore } from "@/store/dashboard-store";
+import { useLocaleStore } from "@/store/locale-store";
 import { usePluginsUiStore } from "@/store/plugins-ui-store";
 
 interface DashboardSettingsProps {
@@ -13,6 +16,7 @@ interface DashboardSettingsProps {
 }
 
 export function DashboardSettings({ open, onClose }: DashboardSettingsProps) {
+  const locale = useLocaleStore((state) => state.locale);
   const pinHash = useDashboardStore((state) => state.pinHash);
   const kiosk = useDashboardStore((state) => state.kiosk);
   const dashboard = useDashboardStore((state) => state.dashboard);
@@ -66,20 +70,28 @@ export function DashboardSettings({ open, onClose }: DashboardSettingsProps) {
     <Dialog
       open={open}
       onClose={onClose}
-      title="Dashboard settings"
-      description="Header, PIN, kiosk, and import/export."
+      title={t(locale, "settings.title")}
+      description={t(locale, "settings.description")}
     >
       <div className="space-y-6 text-sm">
         <section className="space-y-3">
-          <h3 className="font-medium">Header</h3>
+          <h3 className="font-medium">{t(locale, "settings.language")}</h3>
           <p className="text-muted-foreground">
-            Tunet-style title, date, and clock. Visible in kiosk mode.
+            {t(locale, "settings.languageHint")}
+          </p>
+          <LanguageSwitcher />
+        </section>
+
+        <section className="space-y-3">
+          <h3 className="font-medium">{t(locale, "settings.header")}</h3>
+          <p className="text-muted-foreground">
+            {t(locale, "settings.headerHint")}
           </p>
           <label className="block space-y-2">
-            <span className="font-medium">Title</span>
+            <span className="font-medium">{t(locale, "settings.titleLabel")}</span>
             <Input
               value={titleDraft}
-              placeholder="My Home"
+              placeholder={t(locale, "settings.titlePlaceholder")}
               onChange={(event) => setTitleDraft(event.target.value)}
               onBlur={() => {
                 if (!ensureUnlocked() && pinHash) return;
@@ -94,7 +106,7 @@ export function DashboardSettings({ open, onClose }: DashboardSettingsProps) {
           </label>
           <div className="space-y-2">
             <label className="flex items-center justify-between gap-3">
-              <span>Show title</span>
+              <span>{t(locale, "settings.showTitle")}</span>
               <input
                 type="checkbox"
                 className="h-4 w-4 accent-primary"
@@ -106,7 +118,7 @@ export function DashboardSettings({ open, onClose }: DashboardSettingsProps) {
               />
             </label>
             <label className="flex items-center justify-between gap-3">
-              <span>Show date</span>
+              <span>{t(locale, "settings.showDate")}</span>
               <input
                 type="checkbox"
                 className="h-4 w-4 accent-primary"
@@ -118,7 +130,7 @@ export function DashboardSettings({ open, onClose }: DashboardSettingsProps) {
               />
             </label>
             <label className="flex items-center justify-between gap-3">
-              <span>Show time</span>
+              <span>{t(locale, "settings.showTime")}</span>
               <input
                 type="checkbox"
                 className="h-4 w-4 accent-primary"
@@ -131,7 +143,7 @@ export function DashboardSettings({ open, onClose }: DashboardSettingsProps) {
             </label>
           </div>
           <label className="block space-y-2">
-            <span className="font-medium">Time format</span>
+            <span className="font-medium">{t(locale, "settings.timeFormat")}</span>
             <select
               className="flex h-11 w-full rounded-xl border border-border bg-card px-3 text-sm"
               value={timeFormat}
@@ -143,16 +155,16 @@ export function DashboardSettings({ open, onClose }: DashboardSettingsProps) {
                 });
               }}
             >
-              <option value="24h">24-hour (19:53)</option>
-              <option value="12h">12-hour (7:53 PM)</option>
+              <option value="24h">{t(locale, "settings.time24h")}</option>
+              <option value="12h">{t(locale, "settings.time12h")}</option>
             </select>
           </label>
         </section>
 
         <section className="space-y-2">
-          <h3 className="font-medium">Plugins</h3>
+          <h3 className="font-medium">{t(locale, "settings.plugins")}</h3>
           <p className="text-muted-foreground">
-            Install open-registry widgets dynamically (no app rebuild).
+            {t(locale, "settings.pluginsHint")}
           </p>
           <Button
             variant="secondary"
@@ -162,16 +174,16 @@ export function DashboardSettings({ open, onClose }: DashboardSettingsProps) {
               openPlugins();
             }}
           >
-            Browse registry
+            {t(locale, "settings.browseRegistry")}
           </Button>
         </section>
 
         <section className="space-y-2">
-          <h3 className="font-medium">PIN lock</h3>
+          <h3 className="font-medium">{t(locale, "settings.pinLock")}</h3>
           <p className="text-muted-foreground">
             {pinHash
-              ? "PIN is set. Required to enter edit mode."
-              : "No PIN set."}
+              ? t(locale, "settings.pinSet")
+              : t(locale, "settings.pinUnset")}
           </p>
           <div className="flex flex-wrap gap-2">
             <Button
@@ -182,7 +194,9 @@ export function DashboardSettings({ open, onClose }: DashboardSettingsProps) {
                 openPinDialog("set-pin");
               }}
             >
-              {pinHash ? "Change PIN" : "Set PIN"}
+              {pinHash
+                ? t(locale, "settings.changePin")
+                : t(locale, "settings.setPin")}
             </Button>
             {pinHash ? (
               <Button
@@ -193,17 +207,16 @@ export function DashboardSettings({ open, onClose }: DashboardSettingsProps) {
                   clearPin();
                 }}
               >
-                Clear PIN
+                {t(locale, "settings.clearPin")}
               </Button>
             ) : null}
           </div>
         </section>
 
         <section className="space-y-2">
-          <h3 className="font-medium">Kiosk</h3>
+          <h3 className="font-medium">{t(locale, "settings.kiosk")}</h3>
           <p className="text-muted-foreground">
-            Hide edit chrome for wall tablets. Exit with Esc or long-press empty
-            canvas. Header and page switcher stay available.
+            {t(locale, "settings.kioskHint")}
           </p>
           <div className="flex flex-wrap gap-2">
             <Button
@@ -211,30 +224,32 @@ export function DashboardSettings({ open, onClose }: DashboardSettingsProps) {
               size="sm"
               onClick={() => setKiosk(!kiosk)}
             >
-              {kiosk ? "Kiosk on" : "Enable kiosk"}
+              {kiosk
+                ? t(locale, "settings.kioskOn")
+                : t(locale, "settings.enableKiosk")}
             </Button>
             <Button
               variant={dashboard?.cardsOnly ? "default" : "outline"}
               size="sm"
               onClick={() => setCardsOnly(!dashboard?.cardsOnly)}
             >
-              Cards only
+              {t(locale, "settings.cardsOnly")}
             </Button>
           </div>
         </section>
 
         <section className="space-y-2">
-          <h3 className="font-medium">Import / export</h3>
+          <h3 className="font-medium">{t(locale, "settings.importExport")}</h3>
           <div className="flex flex-wrap gap-2">
             <Button variant="secondary" size="sm" onClick={handleExport}>
-              Export JSON
+              {t(locale, "settings.exportJson")}
             </Button>
             <Button
               variant="outline"
               size="sm"
               onClick={() => fileRef.current?.click()}
             >
-              Import JSON
+              {t(locale, "settings.importJson")}
             </Button>
             <input
               ref={fileRef}
@@ -252,7 +267,7 @@ export function DashboardSettings({ open, onClose }: DashboardSettingsProps) {
                     return;
                   }
                   setImportError(null);
-                  setBanner("Dashboard imported");
+                  setBanner(t(locale, "header.imported"));
                   onClose();
                 });
                 event.target.value = "";

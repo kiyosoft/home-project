@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
+import { t } from "@/i18n";
 import type { RegistryCatalogEntry } from "@/plugins/catalog-types";
 import { fetchCatalog } from "@/plugins/catalog";
 import { isPluginInstalled } from "@/plugins/installed-store";
@@ -9,9 +10,11 @@ import {
   installRemotePlugin,
   uninstallRemotePlugin,
 } from "@/plugins/remote-plugins";
+import { useLocaleStore } from "@/store/locale-store";
 import { usePluginsUiStore } from "@/store/plugins-ui-store";
 
 export function PluginsDialog() {
+  const locale = useLocaleStore((state) => state.locale);
   const open = usePluginsUiStore((state) => state.pluginsOpen);
   const closePlugins = usePluginsUiStore((state) => state.closePlugins);
   const revision = usePluginsUiStore((state) => state.revision);
@@ -31,13 +34,17 @@ export function PluginsDialog() {
       })
       .catch((err: unknown) => {
         if (!cancelled) {
-          setError(err instanceof Error ? err.message : "Failed to load catalog");
+          setError(
+            err instanceof Error
+              ? err.message
+              : t(locale, "plugins.loadFailed"),
+          );
         }
       });
     return () => {
       cancelled = true;
     };
-  }, [open, revision]);
+  }, [open, revision, locale]);
 
   async function handleInstall(entry: RegistryCatalogEntry) {
     setBusyId(entry.id);
@@ -46,7 +53,9 @@ export function PluginsDialog() {
       await installRemotePlugin(entry);
       bump();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Install failed");
+      setError(
+        err instanceof Error ? err.message : t(locale, "plugins.installFailed"),
+      );
     } finally {
       setBusyId(null);
     }
@@ -59,7 +68,11 @@ export function PluginsDialog() {
       uninstallRemotePlugin(pluginId);
       bump();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Uninstall failed");
+      setError(
+        err instanceof Error
+          ? err.message
+          : t(locale, "plugins.uninstallFailed"),
+      );
     } finally {
       setBusyId(null);
     }
@@ -69,8 +82,8 @@ export function PluginsDialog() {
     <Dialog
       open={open}
       onClose={closePlugins}
-      title="Plugins"
-      description="Open registry — install community widgets without rebuilding the app."
+      title={t(locale, "plugins.title")}
+      description={t(locale, "plugins.description")}
     >
       <div className="space-y-4 text-sm">
         {error ? (
@@ -80,7 +93,7 @@ export function PluginsDialog() {
         ) : null}
 
         {catalog.length === 0 && !error ? (
-          <p className="text-muted-foreground">Loading catalog…</p>
+          <p className="text-muted-foreground">{t(locale, "plugins.loading")}</p>
         ) : null}
 
         <ul className="space-y-3">
@@ -102,7 +115,11 @@ export function PluginsDialog() {
                       {entry.description}
                     </p>
                     <p className="mt-2 text-[11px] text-muted-foreground/80">
-                      Capabilities: {entry.capabilities.join(", ") || "none"}
+                      {t(locale, "plugins.capabilities", {
+                        list:
+                          entry.capabilities.join(", ") ||
+                          t(locale, "plugins.capabilitiesNone"),
+                      })}
                     </p>
                   </div>
                   {installed ? (
@@ -112,7 +129,7 @@ export function PluginsDialog() {
                       disabled={busy}
                       onClick={() => handleUninstall(entry.id)}
                     >
-                      {busy ? "…" : "Uninstall"}
+                      {busy ? "…" : t(locale, "plugins.uninstall")}
                     </Button>
                   ) : (
                     <Button
@@ -121,7 +138,7 @@ export function PluginsDialog() {
                       disabled={busy}
                       onClick={() => void handleInstall(entry)}
                     >
-                      {busy ? "…" : "Install"}
+                      {busy ? "…" : t(locale, "plugins.install")}
                     </Button>
                   )}
                 </div>

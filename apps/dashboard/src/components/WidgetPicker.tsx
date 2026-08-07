@@ -2,8 +2,10 @@ import { useMemo } from "react";
 
 import { Dialog } from "@/components/ui/dialog";
 import type { Breakpoint } from "@/dashboard/types";
+import { t } from "@/i18n";
 import { listWidgets } from "@/plugins/registry";
 import { useDashboardStore } from "@/store/dashboard-store";
+import { useLocaleStore } from "@/store/locale-store";
 import { usePluginsUiStore } from "@/store/plugins-ui-store";
 
 interface WidgetPickerProps {
@@ -11,6 +13,7 @@ interface WidgetPickerProps {
 }
 
 export function WidgetPicker({ breakpoint }: WidgetPickerProps) {
+  const locale = useLocaleStore((state) => state.locale);
   const open = useDashboardStore((state) => state.pickerOpen);
   const closePicker = useDashboardStore((state) => state.closePicker);
   const addWidget = useDashboardStore((state) => state.addWidget);
@@ -21,8 +24,8 @@ export function WidgetPicker({ breakpoint }: WidgetPickerProps) {
     <Dialog
       open={open}
       onClose={closePicker}
-      title="Add widget"
-      description="Choose a widget type to place on this page."
+      title={t(locale, "picker.title")}
+      description={t(locale, "picker.description")}
     >
       <ul className="space-y-2">
         {widgets.map((widget) => (

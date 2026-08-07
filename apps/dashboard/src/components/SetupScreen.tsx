@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from "react";
 
 import { AppHeader } from "@/components/AppHeader";
+import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -10,14 +11,17 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { t } from "@/i18n";
 import { loadConnectionSettings } from "@/lib/settings";
 import { useHaStore } from "@/store/ha-store";
+import { useLocaleStore } from "@/store/locale-store";
 
 export function SetupScreen() {
   const saved = loadConnectionSettings();
   const [baseUrl, setBaseUrl] = useState(saved?.baseUrl ?? "");
   const [token, setToken] = useState(saved?.token ?? "");
   const [localError, setLocalError] = useState<string | null>(null);
+  const locale = useLocaleStore((state) => state.locale);
 
   const status = useHaStore((state) => state.status);
   const storeError = useHaStore((state) => state.error);
@@ -34,16 +38,14 @@ export function SetupScreen() {
     const trimmedToken = token.trim();
 
     if (!trimmedUrl || !trimmedToken) {
-      setLocalError(
-        "Home Assistant URL and long-lived access token are required.",
-      );
+      setLocalError(t(locale, "setup.errorRequired"));
       return;
     }
 
     try {
       new URL(trimmedUrl);
     } catch {
-      setLocalError("Enter a valid URL, e.g. http://homeassistant.local:8123");
+      setLocalError(t(locale, "setup.errorInvalidUrl"));
       return;
     }
 
@@ -69,12 +71,18 @@ export function SetupScreen() {
     <div className="min-h-screen">
       <AppHeader />
       <main className="mx-auto flex w-full max-w-xl flex-col gap-6 px-4 pb-16 sm:px-6">
+        <div className="flex items-center justify-between gap-3">
+          <span className="text-sm font-medium text-muted-foreground">
+            {t(locale, "setup.language")}
+          </span>
+          <LanguageSwitcher />
+        </div>
+
         <Card>
           <CardHeader>
-            <CardTitle>Connect Home Assistant</CardTitle>
+            <CardTitle>{t(locale, "setup.connectTitle")}</CardTitle>
             <CardDescription>
-              Use a long-lived access token from your HA profile. Entity data
-              stays on your network.
+              {t(locale, "setup.connectDescription")}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -85,7 +93,7 @@ export function SetupScreen() {
               }}
             >
               <label className="block space-y-2 text-sm">
-                <span className="font-medium">Home Assistant URL</span>
+                <span className="font-medium">{t(locale, "setup.urlLabel")}</span>
                 <Input
                   value={baseUrl}
                   onChange={(event) => setBaseUrl(event.target.value)}
@@ -95,11 +103,13 @@ export function SetupScreen() {
                 />
               </label>
               <label className="block space-y-2 text-sm">
-                <span className="font-medium">Long-lived access token</span>
+                <span className="font-medium">
+                  {t(locale, "setup.tokenLabel")}
+                </span>
                 <Input
                   value={token}
                   onChange={(event) => setToken(event.target.value)}
-                  placeholder="Paste token"
+                  placeholder={t(locale, "setup.tokenPlaceholder")}
                   type="password"
                   autoComplete="off"
                   disabled={busy}
@@ -111,7 +121,9 @@ export function SetupScreen() {
                 </p>
               ) : null}
               <Button type="submit" className="w-full" disabled={busy}>
-                {busy ? "Connecting…" : "Connect"}
+                {busy
+                  ? t(locale, "setup.connecting")
+                  : t(locale, "setup.connect")}
               </Button>
             </form>
           </CardContent>
@@ -119,10 +131,9 @@ export function SetupScreen() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Try demo mode</CardTitle>
+            <CardTitle>{t(locale, "setup.demoTitle")}</CardTitle>
             <CardDescription>
-              Explore a sample dashboard with simulated lights, switches, and
-              sensors — no Home Assistant required.
+              {t(locale, "setup.demoDescription")}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -134,7 +145,7 @@ export function SetupScreen() {
                 void handleDemo();
               }}
             >
-              Start demo
+              {t(locale, "setup.startDemo")}
             </Button>
           </CardContent>
         </Card>

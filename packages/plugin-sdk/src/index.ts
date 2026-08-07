@@ -21,9 +21,13 @@ export type { EntityDetailApi } from "./entity-detail";
 export {
   callServiceAsPlugin,
   notifyEntityStoreChanged,
+  resolveEntityImageUrl,
+  useBaseUrl,
+  useBrowseMedia,
   useCallService,
   useEntities,
   useEntity,
+  useSendMessage,
 } from "./hooks";
 export type {
   Capability,

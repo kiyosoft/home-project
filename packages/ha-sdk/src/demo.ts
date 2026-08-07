@@ -1,4 +1,45 @@
-import type { EntityClient, HassEntities, HassEntity } from "./types";
+import type {
+  BrowseMediaItem,
+  EntityClient,
+  HassEntities,
+  HassEntity,
+} from "./types";
+
+/** TURN_ON|TURN_OFF|PAUSE|SEEK|VOLUME_SET|VOLUME_MUTE|PREVIOUS|NEXT|PLAY_MEDIA|PLAY|BROWSE_MEDIA|SHUFFLE|REPEAT */
+const DEMO_MEDIA_FEATURES = 443327;
+
+const DEMO_TRACKS = [
+  {
+    id: "library/track/1",
+    title: "Morning Light",
+    artist: "Addis Ensemble",
+    album: "Highlands",
+    contentType: "music",
+    thumbnail:
+      "https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=400&h=400&fit=crop",
+    duration: 214,
+  },
+  {
+    id: "library/track/2",
+    title: "Blue Nile",
+    artist: "Lake Tana Quartet",
+    album: "River Songs",
+    contentType: "music",
+    thumbnail:
+      "https://images.unsplash.com/photo-1511379938547-c1f69419868d?w=400&h=400&fit=crop",
+    duration: 198,
+  },
+  {
+    id: "playlist/evening/1",
+    title: "Evening Jazz Mix",
+    artist: "Music Assistant",
+    album: "Evening",
+    contentType: "playlist",
+    thumbnail:
+      "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=400&h=400&fit=crop",
+    duration: 3600,
+  },
+] as const;
 
 const DEMO_ENTITIES: HassEntities = {
   "light.living_room": {
@@ -153,7 +194,110 @@ const DEMO_ENTITIES: HassEntities = {
       wind_speed: 12,
     },
   },
+  "media_player.homepod": {
+    entity_id: "media_player.homepod",
+    state: "playing",
+    attributes: {
+      friendly_name: "Living Room HomePod",
+      app_name: "Music Assistant",
+      media_title: DEMO_TRACKS[0].title,
+      media_artist: DEMO_TRACKS[0].artist,
+      media_album_name: DEMO_TRACKS[0].album,
+      media_content_id: DEMO_TRACKS[0].id,
+      media_content_type: DEMO_TRACKS[0].contentType,
+      media_duration: DEMO_TRACKS[0].duration,
+      media_position: 42,
+      media_position_updated_at: new Date().toISOString(),
+      entity_picture: DEMO_TRACKS[0].thumbnail,
+      volume_level: 0.45,
+      is_volume_muted: false,
+      shuffle: false,
+      repeat: "off",
+      supported_features: DEMO_MEDIA_FEATURES,
+    },
+  },
 };
+
+function demoBrowseRoot(): BrowseMediaItem {
+  return {
+    title: "Music Assistant",
+    media_class: "directory",
+    media_content_type: "root",
+    media_content_id: "",
+    can_play: false,
+    can_expand: true,
+    children: [
+      {
+        title: "Playlists",
+        media_class: "directory",
+        media_content_type: "playlists",
+        media_content_id: "playlists",
+        can_play: false,
+        can_expand: true,
+        children: [
+          {
+            title: "Evening Jazz Mix",
+            media_class: "playlist",
+            media_content_type: "playlist",
+            media_content_id: "playlist/evening/1",
+            can_play: true,
+            can_expand: false,
+            thumbnail: DEMO_TRACKS[2].thumbnail,
+          },
+        ],
+      },
+      {
+        title: "Library",
+        media_class: "directory",
+        media_content_type: "library",
+        media_content_id: "library",
+        can_play: false,
+        can_expand: true,
+        children: [
+          {
+            title: "Morning Light",
+            media_class: "track",
+            media_content_type: "music",
+            media_content_id: "library/track/1",
+            can_play: true,
+            can_expand: false,
+            thumbnail: DEMO_TRACKS[0].thumbnail,
+          },
+          {
+            title: "Blue Nile",
+            media_class: "track",
+            media_content_type: "music",
+            media_content_id: "library/track/2",
+            can_play: true,
+            can_expand: false,
+            thumbnail: DEMO_TRACKS[1].thumbnail,
+          },
+        ],
+      },
+    ],
+  };
+}
+
+function findBrowseNode(
+  root: BrowseMediaItem,
+  contentType?: string,
+  contentId?: string,
+): BrowseMediaItem {
+  if (!contentType && !contentId) return root;
+  const queue = [root, ...(root.children ?? [])];
+  while (queue.length > 0) {
+    const node = queue.shift();
+    if (!node) break;
+    if (
+      (!contentType || node.media_content_type === contentType) &&
+      (!contentId || node.media_content_id === contentId)
+    ) {
+      return node;
+    }
+    if (node.children?.length) queue.push(...node.children);
+  }
+  return root;
+}
 
 function cloneEntities(entities: HassEntities): HassEntities {
   return structuredClone(entities);
@@ -300,7 +444,193 @@ export function connectDemo(): EntityClient {
         } else if (service === "stop_cover") {
           setEntity(entityId, { ...current, state: "open", attributes });
         }
+        return;
       }
+
+      if (domain === "media_player") {
+        const attributes = { ...current.attributes };
+
+        if (service === "turn_on") {
+          setEntity(entityId, {
+            ...current,
+            state: "idle",
+            attributes,
+          });
+          return;
+        }
+        if (service === "turn_off") {
+          setEntity(entityId, {
+            ...current,
+            state: "off",
+            attributes: {
+              ...attributes,
+              media_title: undefined,
+              media_artist: undefined,
+              media_album_name: undefined,
+              entity_picture: undefined,
+              media_position: 0,
+            },
+          });
+          return;
+        }
+        if (service === "media_play") {
+          setEntity(entityId, { ...current, state: "playing", attributes });
+          return;
+        }
+        if (service === "media_pause") {
+          setEntity(entityId, { ...current, state: "paused", attributes });
+          return;
+        }
+        if (service === "media_play_pause") {
+          const next =
+            current.state === "playing" ? "paused" : "playing";
+          setEntity(entityId, { ...current, state: next, attributes });
+          return;
+        }
+        if (service === "media_next_track" || service === "media_previous_track") {
+          const currentId =
+            typeof attributes.media_content_id === "string"
+              ? attributes.media_content_id
+              : DEMO_TRACKS[0].id;
+          const index = DEMO_TRACKS.findIndex((track) => track.id === currentId);
+          const delta = service === "media_next_track" ? 1 : -1;
+          const nextIndex =
+            index < 0
+              ? 0
+              : (index + delta + DEMO_TRACKS.length) % DEMO_TRACKS.length;
+          const track = DEMO_TRACKS[nextIndex] ?? DEMO_TRACKS[0];
+          setEntity(entityId, {
+            ...current,
+            state: "playing",
+            attributes: {
+              ...attributes,
+              media_title: track.title,
+              media_artist: track.artist,
+              media_album_name: track.album,
+              media_content_id: track.id,
+              media_content_type: track.contentType,
+              media_duration: track.duration,
+              media_position: 0,
+              media_position_updated_at: nowIso(),
+              entity_picture: track.thumbnail,
+            },
+          });
+          return;
+        }
+        if (service === "volume_set") {
+          const level =
+            typeof serviceData.volume_level === "number"
+              ? serviceData.volume_level
+              : Number(serviceData.volume_level);
+          if (!Number.isFinite(level)) return;
+          setEntity(entityId, {
+            ...current,
+            attributes: {
+              ...attributes,
+              volume_level: Math.min(1, Math.max(0, level)),
+            },
+          });
+          return;
+        }
+        if (service === "volume_mute") {
+          setEntity(entityId, {
+            ...current,
+            attributes: {
+              ...attributes,
+              is_volume_muted: Boolean(serviceData.is_volume_muted),
+            },
+          });
+          return;
+        }
+        if (service === "media_seek") {
+          const position =
+            typeof serviceData.seek_position === "number"
+              ? serviceData.seek_position
+              : Number(serviceData.seek_position);
+          if (!Number.isFinite(position)) return;
+          setEntity(entityId, {
+            ...current,
+            attributes: {
+              ...attributes,
+              media_position: Math.max(0, position),
+              media_position_updated_at: nowIso(),
+            },
+          });
+          return;
+        }
+        if (service === "shuffle_set") {
+          setEntity(entityId, {
+            ...current,
+            attributes: {
+              ...attributes,
+              shuffle: Boolean(serviceData.shuffle),
+            },
+          });
+          return;
+        }
+        if (service === "repeat_set") {
+          setEntity(entityId, {
+            ...current,
+            attributes: {
+              ...attributes,
+              repeat: serviceData.repeat ?? "off",
+            },
+          });
+          return;
+        }
+        if (service === "play_media") {
+          const contentId =
+            typeof serviceData.media_content_id === "string"
+              ? serviceData.media_content_id
+              : "";
+          const track =
+            DEMO_TRACKS.find((item) => item.id === contentId) ?? DEMO_TRACKS[0];
+          setEntity(entityId, {
+            ...current,
+            state: "playing",
+            attributes: {
+              ...attributes,
+              media_title: track.title,
+              media_artist: track.artist,
+              media_album_name: track.album,
+              media_content_id: track.id,
+              media_content_type:
+                typeof serviceData.media_content_type === "string"
+                  ? serviceData.media_content_type
+                  : track.contentType,
+              media_duration: track.duration,
+              media_position: 0,
+              media_position_updated_at: nowIso(),
+              entity_picture: track.thumbnail,
+            },
+          });
+        }
+      }
+    },
+    async sendMessagePromise<T = unknown>(message: Record<string, unknown>) {
+      if (closed) {
+        throw new Error("Demo client disconnected");
+      }
+      if (message.type === "media_player/browse_media") {
+        const entityId =
+          typeof message.entity_id === "string" ? message.entity_id : "";
+        if (!entities[entityId]) {
+          throw new Error(`Unknown entity: ${entityId}`);
+        }
+        const contentType =
+          typeof message.media_content_type === "string"
+            ? message.media_content_type
+            : undefined;
+        const contentId =
+          typeof message.media_content_id === "string"
+            ? message.media_content_id
+            : undefined;
+        const root = demoBrowseRoot();
+        return findBrowseNode(root, contentType, contentId) as T;
+      }
+      throw new Error(
+        `Demo client does not support message type: ${String(message.type)}`,
+      );
     },
     disconnect() {
       closed = true;
@@ -323,4 +653,5 @@ export const DEMO_ENTITY_IDS = {
   cover: "cover.living_blinds",
   person: "person.kidus",
   weather: "weather.home",
+  media: "media_player.homepod",
 } as const;

@@ -2,7 +2,9 @@ import type { ConnectionStatus } from "@ethio/ha-sdk";
 import { LoaderCircle, RefreshCw, Wifi, WifiOff } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { t } from "@/i18n";
 import { cn } from "@/lib/utils";
+import { useLocaleStore } from "@/store/locale-store";
 
 interface ConnectionStatusChipProps {
   status: ConnectionStatus;
@@ -17,16 +19,18 @@ export function ConnectionStatusChip({
   error,
   onReconnect,
 }: ConnectionStatusChipProps) {
+  const locale = useLocaleStore((state) => state.locale);
+
   const label =
     status === "connecting"
-      ? "Connecting"
+      ? t(locale, "status.connecting")
       : status === "connected"
         ? mode === "demo"
-          ? "Demo"
-          : "Connected"
+          ? t(locale, "status.demo")
+          : t(locale, "status.connected")
         : status === "error"
-          ? "Error"
-          : "Idle";
+          ? t(locale, "status.error")
+          : t(locale, "status.idle");
 
   const Icon =
     status === "connecting"
@@ -60,7 +64,7 @@ export function ConnectionStatusChip({
           variant="ghost"
           size="icon"
           onClick={onReconnect}
-          aria-label="Reconnect"
+          aria-label={t(locale, "status.reconnectAria")}
         >
           <RefreshCw className="h-4 w-4" />
         </Button>

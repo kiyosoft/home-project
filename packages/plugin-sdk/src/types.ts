@@ -66,6 +66,11 @@ export interface PlatformBindings {
     service: string,
     data?: Record<string, unknown>,
   ) => Promise<void>;
+  sendMessagePromise?: <T = unknown>(
+    message: Record<string, unknown>,
+  ) => Promise<T>;
+  /** HA base URL for resolving relative entity_picture paths */
+  getBaseUrl?: () => string;
   /** Current plugin id for capability checks during hook use */
   getActivePluginId?: () => string | null;
   hasCapability?: (pluginId: string, capability: Capability) => boolean;

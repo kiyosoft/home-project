@@ -1,3 +1,5 @@
+import { useReducedMotion } from "motion/react";
+import * as m from "motion/react-m";
 import { useMemo, useRef, useState } from "react";
 import {
   ResponsiveGridLayout,
@@ -9,10 +11,15 @@ import {
 import { WidgetTile } from "@/components/WidgetTile";
 import type { Breakpoint, DashboardPage, GridItem } from "@/dashboard/types";
 import { BREAKPOINTS, COLS } from "@/dashboard/types";
+import { useCardReveal } from "@/hooks/useCardReveal";
 import { cn } from "@/lib/utils";
 import { useDashboardStore } from "@/store/dashboard-store";
 
 import "react-grid-layout/css/styles.css";
+
+const REVEAL_STAGGER_S = 0.055;
+const REVEAL_STAGGER_MAX = 12;
+const REVEAL_EASE = [0.22, 1, 0.36, 1] as const;
 
 interface DashboardGridProps {
   page: DashboardPage;
@@ -46,6 +53,8 @@ export function DashboardGrid({ page }: DashboardGridProps) {
   const { width, containerRef, mounted } = useContainerWidth();
   const [breakpoint, setBreakpoint] = useState<Breakpoint>("lg");
   const interacting = useRef(false);
+  const revealKey = useCardReveal(page.id);
+  const reduceMotion = useReducedMotion();
 
   const layouts = useMemo(() => toLayouts(page), [page]);
 
@@ -103,9 +112,27 @@ export function DashboardGrid({ page }: DashboardGridProps) {
             }
           }}
         >
-          {page.widgets.map((widget) => (
+          {page.widgets.map((widget, index) => (
             <div key={widget.id} className="overflow-hidden">
-              <WidgetTile widget={widget} />
+              <m.div
+                key={revealKey}
+                className="h-full"
+                initial={
+                  reduceMotion
+                    ? false
+                    : { opacity: 0, y: 12, scale: 0.985 }
+                }
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                transition={{
+                  duration: reduceMotion ? 0 : 0.48,
+                  delay: reduceMotion
+                    ? 0
+                    : Math.min(index, REVEAL_STAGGER_MAX) * REVEAL_STAGGER_S,
+                  ease: REVEAL_EASE,
+                }}
+              >
+                <WidgetTile widget={widget} />
+              </m.div>
             </div>
           ))}
         </ResponsiveGridLayout>

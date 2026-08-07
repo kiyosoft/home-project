@@ -4,7 +4,9 @@ import { z } from "zod";
 import { EntityPicker } from "@/components/EntityPicker";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { t } from "@/i18n";
 import { getWidgetOrThrow } from "@/plugins/registry";
+import { useLocaleStore } from "@/store/locale-store";
 
 interface SchemaFormProps {
   type: string;
@@ -35,16 +37,21 @@ function enumOptions(
   defaultConfig: Record<string, unknown>,
 ): string[] | null {
   if (field === "home_side") return ["left", "right"];
+  if (field === "artworkMode") return ["default", "cover"];
   const sample = defaultConfig[field];
   if (typeof sample === "string") {
     const leftOk = fieldSchema.safeParse("left").success;
     const rightOk = fieldSchema.safeParse("right").success;
     if (leftOk && rightOk) return ["left", "right"];
+    const defaultOk = fieldSchema.safeParse("default").success;
+    const coverOk = fieldSchema.safeParse("cover").success;
+    if (defaultOk && coverOk) return ["default", "cover"];
   }
   return null;
 }
 
 export function SchemaForm({ type, config, onSave, onCancel }: SchemaFormProps) {
+  const locale = useLocaleStore((state) => state.locale);
   const def = getWidgetOrThrow(type);
   const [draft, setDraft] = useState<Record<string, unknown>>({
     ...def.defaultConfig,
@@ -155,9 +162,9 @@ export function SchemaForm({ type, config, onSave, onCancel }: SchemaFormProps) 
 
       <div className="flex justify-end gap-2">
         <Button variant="outline" onClick={onCancel}>
-          Cancel
+          {t(locale, "schema.cancel")}
         </Button>
-        <Button onClick={handleSave}>Apply</Button>
+        <Button onClick={handleSave}>{t(locale, "schema.apply")}</Button>
       </div>
     </div>
   );

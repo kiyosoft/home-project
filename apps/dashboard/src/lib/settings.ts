@@ -2,6 +2,7 @@ import {
   safeParseDashboardConfig,
 } from "@/dashboard/schemas";
 import type { DashboardConfig } from "@/dashboard/types";
+import { isLocale, type Locale } from "@/i18n/locales";
 import {
   isLightTheme,
   isThemeMode,
@@ -9,7 +10,7 @@ import {
 } from "@/lib/themes";
 
 export type ConnectionMode = "live" | "demo";
-export type { ThemeMode };
+export type { ThemeMode, Locale };
 
 export interface ConnectionSettings {
   mode: ConnectionMode;
@@ -24,6 +25,7 @@ export interface LockSettings {
 
 const CONNECTION_KEY = "ethio-home.connection";
 const THEME_KEY = "ethio-home.theme";
+const LOCALE_KEY = "ethio-home.locale";
 const DASHBOARD_KEY = "ethio-home.dashboard";
 const LOCK_KEY = "ethio-home.lock";
 
@@ -84,6 +86,26 @@ export function applyTheme(theme: ThemeMode): void {
   const root = document.documentElement;
   root.dataset.theme = theme;
   root.classList.toggle("dark", !isLightTheme(theme));
+}
+
+export function loadLocale(): Locale {
+  const stored = localStorage.getItem(LOCALE_KEY);
+  if (isLocale(stored)) return stored;
+  if (
+    typeof navigator !== "undefined" &&
+    navigator.language.toLowerCase().startsWith("am")
+  ) {
+    return "am";
+  }
+  return "en";
+}
+
+export function saveLocale(locale: Locale): void {
+  localStorage.setItem(LOCALE_KEY, locale);
+}
+
+export function applyLocale(locale: Locale): void {
+  document.documentElement.lang = locale;
 }
 
 export function loadDashboard(): DashboardConfig | null {

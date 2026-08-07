@@ -11,8 +11,10 @@ import { WidgetSettingsDialog } from "@/components/WidgetSettingsDialog";
 import type { Breakpoint } from "@/dashboard/types";
 import { BREAKPOINTS } from "@/dashboard/types";
 import { useLongPress } from "@/hooks/useLongPress";
+import { t } from "@/i18n";
 import { useDashboardStore } from "@/store/dashboard-store";
 import { useHaStore } from "@/store/ha-store";
+import { useLocaleStore } from "@/store/locale-store";
 
 function breakpointFromWidth(width: number): Breakpoint {
   if (width >= BREAKPOINTS.lg) return "lg";
@@ -22,6 +24,7 @@ function breakpointFromWidth(width: number): Breakpoint {
 
 export function DashboardRuntime() {
   const haMode = useHaStore((state) => state.mode);
+  const locale = useLocaleStore((state) => state.locale);
 
   const dashboard = useDashboardStore((state) => state.dashboard);
   const activePageId = useDashboardStore((state) => state.activePageId);
@@ -68,10 +71,17 @@ export function DashboardRuntime() {
   if (!dashboard || !page) {
     return (
       <div className="flex min-h-screen items-center justify-center text-sm text-muted-foreground">
-        Preparing dashboard…
+        {t(locale, "app.preparing")}
       </div>
     );
   }
+
+  const help =
+    editorMode === "edit"
+      ? t(locale, "runtime.editHelp")
+      : haMode === "demo"
+        ? t(locale, "runtime.demoHelp")
+        : t(locale, "runtime.liveHelp");
 
   return (
     <div className="min-h-screen pb-24" {...(kiosk ? canvasLongPress : {})}>
@@ -86,13 +96,7 @@ export function DashboardRuntime() {
 
         {!kiosk ? (
           <div className="mb-5 mt-1">
-            <p className="text-sm text-muted-foreground">
-              {editorMode === "edit"
-                ? "Edit mode — drag, resize, add, and configure widgets. Changes autosave."
-                : haMode === "demo"
-                  ? "Demo entities update live. Tap sensors for details; toggles act on tap; long-press any entity tile for the full attribute sheet."
-                  : "Live entities from your Home Assistant instance. Tap sensors for details; long-press any entity tile for attributes."}
-            </p>
+            <p className="text-sm text-muted-foreground">{help}</p>
           </div>
         ) : (
           <div className="mb-4" />

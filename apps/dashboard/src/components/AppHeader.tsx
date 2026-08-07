@@ -14,9 +14,11 @@ import { DashboardSettings } from "@/components/DashboardSettings";
 import { ThemeChooser } from "@/components/ThemeChooser";
 import { Button } from "@/components/ui/button";
 import { useClock } from "@/hooks/useClock";
+import { t } from "@/i18n";
 import { formatHeaderDate, formatHeaderTime } from "@/lib/header-format";
 import { useDashboardStore } from "@/store/dashboard-store";
 import { useHaStore } from "@/store/ha-store";
+import { useLocaleStore } from "@/store/locale-store";
 
 interface AppHeaderProps {
   showDisconnect?: boolean;
@@ -33,6 +35,7 @@ export function AppHeader({
   const error = useHaStore((state) => state.error);
   const reconnect = useHaStore((state) => state.reconnect);
   const disconnect = useHaStore((state) => state.disconnect);
+  const locale = useLocaleStore((state) => state.locale);
 
   const editorMode = useDashboardStore((state) => state.mode);
   const kiosk = useDashboardStore((state) => state.kiosk);
@@ -78,7 +81,7 @@ export function AppHeader({
 
   return (
     <>
-      <header className="mx-auto w-full max-w-6xl px-4 pt-5 pb-3 sm:px-6">
+      <header className="mx-auto w-full max-w-6xl px-4 pt-8 pb-3 sm:px-6 sm:pt-10">
           {showHero ? (
             <div className="flex items-start justify-between gap-4">
               <div className="min-w-0">
@@ -93,7 +96,7 @@ export function AppHeader({
                       showTitle ? "mt-2" : ""
                     }`}
                   >
-                    {formatHeaderDate(now)}
+                    {formatHeaderDate(now, locale)}
                   </p>
                 ) : null}
               </div>
@@ -102,7 +105,7 @@ export function AppHeader({
                   dateTime={now.toISOString()}
                   className="shrink-0 font-sans text-3xl font-semibold tabular-nums tracking-tight text-foreground sm:text-4xl md:text-[2.75rem] md:leading-none"
                 >
-                  {formatHeaderTime(now, timeFormat)}
+                  {formatHeaderTime(now, timeFormat, locale)}
                 </time>
               ) : null}
             </div>
@@ -129,12 +132,12 @@ export function AppHeader({
                   <>
                     <Button variant="secondary" size="sm" onClick={openPicker}>
                       <Plus className="h-4 w-4" />
-                      Add
+                      {t(locale, "header.add")}
                     </Button>
                     <Button
                       variant="outline"
                       size="icon"
-                      aria-label="Export dashboard"
+                      aria-label={t(locale, "header.exportAria")}
                       onClick={() => {
                         const json = exportJSON();
                         const blob = new Blob([json], {
@@ -153,7 +156,7 @@ export function AppHeader({
                     <Button
                       variant="outline"
                       size="icon"
-                      aria-label="Import dashboard"
+                      aria-label={t(locale, "header.importAria")}
                       onClick={() => fileRef.current?.click()}
                     >
                       <Upload className="h-4 w-4" />
@@ -164,13 +167,13 @@ export function AppHeader({
                       onClick={() => setMode("live")}
                     >
                       <Check className="h-4 w-4" />
-                      Done
+                      {t(locale, "header.done")}
                     </Button>
                   </>
                 ) : (
                   <Button variant="secondary" size="sm" onClick={requestEdit}>
                     <Pencil className="h-4 w-4" />
-                    Edit
+                    {t(locale, "header.edit")}
                   </Button>
                 )
               ) : null}
@@ -179,7 +182,7 @@ export function AppHeader({
                 <Button
                   variant="ghost"
                   size="icon"
-                  aria-label="Dashboard settings"
+                  aria-label={t(locale, "header.settingsAria")}
                   onClick={() => setSettingsOpen(true)}
                 >
                   <Settings className="h-4 w-4" />
@@ -193,7 +196,7 @@ export function AppHeader({
                   onClick={() => disconnect({ clearSaved: true })}
                 >
                   <LogOut className="h-4 w-4" />
-                  Disconnect
+                  {t(locale, "header.disconnect")}
                 </Button>
               ) : null}
             </div>
@@ -212,7 +215,9 @@ export function AppHeader({
               if (!file) return;
               void file.text().then((text) => {
                 const result = importJSON(text);
-                setBanner(result.ok ? "Dashboard imported" : result.error);
+                setBanner(
+                  result.ok ? t(locale, "header.imported") : result.error,
+                );
               });
               event.target.value = "";
             }}

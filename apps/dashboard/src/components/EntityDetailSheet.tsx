@@ -2,8 +2,10 @@ import type { HassEntity } from "@ethio/ha-sdk";
 import { useEntityDetail, useEntityDetailState } from "@ethio/plugin-sdk";
 
 import { Dialog } from "@/components/ui/dialog";
+import { t, toIntlLocale, type Locale } from "@/i18n";
 import { getFriendlyName, getUnit } from "@/lib/entities";
 import { useHaStore } from "@/store/ha-store";
+import { useLocaleStore } from "@/store/locale-store";
 
 const HIDDEN_ATTRS = new Set([
   "friendly_name",
@@ -27,22 +29,32 @@ function formatAttrValue(value: unknown): string {
   }
 }
 
-function formatTimestamp(value?: string): string | undefined {
+function formatTimestamp(
+  value: string | undefined,
+  locale: string,
+): string | undefined {
   if (!value) return undefined;
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return value;
-  return date.toLocaleString(undefined, {
+  return date.toLocaleString(locale, {
     dateStyle: "medium",
     timeStyle: "short",
   });
 }
 
-function EntityDetailBody({ entity }: { entity: HassEntity }) {
+function EntityDetailBody({
+  entity,
+  locale,
+}: {
+  entity: HassEntity;
+  locale: Locale;
+}) {
   const unit = getUnit(entity);
   const unavailable =
     entity.state === "unavailable" || entity.state === "unknown";
-  const lastChanged = formatTimestamp(entity.last_changed);
-  const lastUpdated = formatTimestamp(entity.last_updated);
+  const intlLocale = toIntlLocale(locale);
+  const lastChanged = formatTimestamp(entity.last_changed, intlLocale);
+  const lastUpdated = formatTimestamp(entity.last_updated, intlLocale);
   const attributeEntries = Object.entries(entity.attributes).filter(
     ([key]) => !HIDDEN_ATTRS.has(key),
   );
@@ -70,31 +82,40 @@ function EntityDetailBody({ entity }: { entity: HassEntity }) {
       <div className="grid gap-2 text-sm sm:grid-cols-2">
         {lastChanged ? (
           <div className="rounded-xl bg-muted/50 px-3 py-2">
-            <p className="text-xs text-muted-foreground">Last changed</p>
+            <p className="text-xs text-muted-foreground">
+              {t(locale, "entity.lastChanged")}
+            </p>
             <p className="mt-0.5 font-medium">{lastChanged}</p>
           </div>
         ) : null}
         {lastUpdated ? (
           <div className="rounded-xl bg-muted/50 px-3 py-2">
-            <p className="text-xs text-muted-foreground">Last updated</p>
+            <p className="text-xs text-muted-foreground">
+              {t(locale, "entity.lastUpdated")}
+            </p>
             <p className="mt-0.5 font-medium">{lastUpdated}</p>
           </div>
         ) : null}
       </div>
 
       <div className="rounded-xl bg-muted/40 px-3 py-2">
-        <p className="text-xs text-muted-foreground">Entity ID</p>
+        <p className="text-xs text-muted-foreground">
+          {t(locale, "entity.entityId")}
+        </p>
         <p className="mt-0.5 break-all font-mono text-xs">{entity.entity_id}</p>
       </div>
 
       {attributeEntries.length > 0 ? (
         <section className="space-y-3">
           <p className="text-xs font-medium uppercase tracking-[0.12em] text-muted-foreground">
-            Attributes
+            {t(locale, "entity.attributes")}
           </p>
           <div className="space-y-3">
             {attributeEntries.map(([key, value]) => (
-              <div key={key} className="flex flex-col gap-1 border-b border-border/60 pb-3 last:border-0 last:pb-0">
+              <div
+                key={key}
+                className="flex flex-col gap-1 border-b border-border/60 pb-3 last:border-0 last:pb-0"
+              >
                 <span className="text-xs capitalize text-muted-foreground">
                   {key.replace(/_/g, " ")}
                 </span>
@@ -106,7 +127,9 @@ function EntityDetailBody({ entity }: { entity: HassEntity }) {
           </div>
         </section>
       ) : (
-        <p className="text-sm text-muted-foreground">No attributes</p>
+        <p className="text-sm text-muted-foreground">
+          {t(locale, "entity.noAttributes")}
+        </p>
       )}
     </div>
   );
@@ -114,6 +137,7 @@ function EntityDetailBody({ entity }: { entity: HassEntity }) {
 
 /** Host entity info sheet (Tunet SensorModal-style attribute dump). */
 export function EntityDetailSheet() {
+  const locale = useLocaleStore((state) => state.locale);
   const { entityId } = useEntityDetailState();
   const { close } = useEntityDetail();
   const entity = useHaStore((state) =>
@@ -124,14 +148,16 @@ export function EntityDetailSheet() {
     <Dialog
       open={Boolean(entityId)}
       onClose={close}
-      title={entity ? getFriendlyName(entity) : "Entity"}
+      title={entity ? getFriendlyName(entity) : t(locale, "entity.fallbackTitle")}
       description={entityId ?? undefined}
       className="max-w-2xl"
     >
       {entity ? (
-        <EntityDetailBody entity={entity} />
+        <EntityDetailBody entity={entity} locale={locale} />
       ) : (
-        <p className="text-sm text-muted-foreground">Entity unavailable</p>
+        <p className="text-sm text-muted-foreground">
+          {t(locale, "entity.unavailable")}
+        </p>
       )}
     </Dialog>
   );

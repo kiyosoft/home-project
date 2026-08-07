@@ -4,10 +4,13 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog } from "@/components/ui/dialog";
+import { t } from "@/i18n";
 import { cn } from "@/lib/utils";
 import { useDashboardStore } from "@/store/dashboard-store";
+import { useLocaleStore } from "@/store/locale-store";
 
 export function PageDock() {
+  const locale = useLocaleStore((state) => state.locale);
   const dashboard = useDashboardStore((state) => state.dashboard);
   const activePageId = useDashboardStore((state) => state.activePageId);
   const mode = useDashboardStore((state) => state.mode);
@@ -62,7 +65,7 @@ export function PageDock() {
                 variant="ghost"
                 size="icon"
                 className="h-9 w-9 shrink-0"
-                aria-label="Add page"
+                aria-label={t(locale, "page.addAria")}
                 onClick={() => addPage()}
               >
                 <Plus className="h-4 w-4" />
@@ -72,7 +75,7 @@ export function PageDock() {
                   variant="ghost"
                   size="icon"
                   className="h-9 w-9 shrink-0 text-destructive"
-                  aria-label="Delete page"
+                  aria-label={t(locale, "page.deleteAria")}
                   onClick={() => removePage(activePageId)}
                 >
                   <Trash2 className="h-4 w-4" />
@@ -86,7 +89,7 @@ export function PageDock() {
       <Dialog
         open={Boolean(renaming)}
         onClose={() => setRenameId(null)}
-        title="Rename page"
+        title={t(locale, "page.renameTitle")}
       >
         <div className="space-y-3">
           <Input
@@ -96,7 +99,7 @@ export function PageDock() {
           />
           <div className="flex justify-end gap-2">
             <Button variant="outline" onClick={() => setRenameId(null)}>
-              Cancel
+              {t(locale, "page.cancel")}
             </Button>
             <Button
               onClick={() => {
@@ -104,7 +107,7 @@ export function PageDock() {
                 setRenameId(null);
               }}
             >
-              Save
+              {t(locale, "page.save")}
             </Button>
           </div>
         </div>
