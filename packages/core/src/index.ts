@@ -5,6 +5,7 @@ import { coverWidget } from "./widgets/CoverWidget";
 import { entityStateWidget } from "./widgets/EntityStateWidget";
 import { mediaWidget } from "./widgets/MediaWidget";
 import { personWidget } from "./widgets/PersonWidget";
+import { todoWidget } from "./widgets/TodoWidget";
 import { toggleWidget } from "./widgets/ToggleWidget";
 import { weatherWidget } from "./widgets/WeatherWidget";
 
@@ -13,6 +14,7 @@ export { coverConfigSchema } from "./widgets/CoverWidget";
 export { entityStateConfigSchema } from "./widgets/EntityStateWidget";
 export { mediaConfigSchema } from "./widgets/MediaWidget";
 export { personConfigSchema } from "./widgets/PersonWidget";
+export { todoConfigSchema } from "./widgets/TodoWidget";
 export { toggleConfigSchema } from "./widgets/ToggleWidget";
 export { weatherConfigSchema } from "./widgets/WeatherWidget";
 
@@ -27,5 +29,6 @@ export const corePlugin = definePlugin({
     mediaWidget,
     personWidget,
     weatherWidget,
+    todoWidget,
   ],
 });

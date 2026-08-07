@@ -28,7 +28,15 @@ export {
   useEntities,
   useEntity,
   useSendMessage,
+  useSubscribeMessage,
+  useTodoItems,
 } from "./hooks";
+export type { TodoItemsState } from "./hooks";
+export {
+  TODO_FEATURE,
+  todoSupportsFeature,
+} from "@ethio/ha-sdk";
+export type { TodoItem, TodoItemStatus } from "@ethio/ha-sdk";
 export type {
   Capability,
   DefinedCommand,

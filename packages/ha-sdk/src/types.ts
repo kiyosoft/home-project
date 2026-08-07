@@ -33,6 +33,10 @@ export interface EntityClient {
   sendMessagePromise<T = unknown>(
     message: Record<string, unknown>,
   ): Promise<T>;
+  subscribeMessage<T = unknown>(
+    message: Record<string, unknown>,
+    onMessage: (result: T) => void,
+  ): Promise<() => void>;
   disconnect(): void;
 }
 

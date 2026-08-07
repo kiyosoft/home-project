@@ -33,6 +33,10 @@ interface HaState {
   sendMessagePromise: <T = unknown>(
     message: Record<string, unknown>,
   ) => Promise<T>;
+  subscribeMessage: <T = unknown>(
+    message: Record<string, unknown>,
+    onMessage: (result: T) => void,
+  ) => Promise<() => void>;
   bootstrap: () => Promise<void>;
 }
 
@@ -148,6 +152,16 @@ export const useHaStore = create<HaState>((set, get) => ({
       throw new Error("Not connected");
     }
     return client.sendMessagePromise<T>(message);
+  },
+
+  async subscribeMessage<T = unknown>(
+    message: Record<string, unknown>,
+    onMessage: (result: T) => void,
+  ) {
+    if (!client) {
+      throw new Error("Not connected");
+    }
+    return client.subscribeMessage<T>(message, onMessage);
   },
 
   async bootstrap() {

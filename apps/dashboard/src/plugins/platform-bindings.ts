@@ -20,6 +20,8 @@ export function wirePlatformBindings(): void {
       useHaStore.getState().callService(domain, service, data),
     sendMessagePromise: (message) =>
       useHaStore.getState().sendMessagePromise(message),
+    subscribeMessage: (message, onMessage) =>
+      useHaStore.getState().subscribeMessage(message, onMessage),
     getBaseUrl: () => useHaStore.getState().baseUrl,
     hasCapability: pluginHasCapability,
   });

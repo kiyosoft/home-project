@@ -1,11 +1,13 @@
-import { useCallback, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
 
 import {
   browseMedia as haBrowseMedia,
+  subscribeTodoItems,
   type BrowseMediaItem,
   type BrowseMediaOptions,
   type HassEntities,
   type HassEntity,
+  type TodoItem,
 } from "@ethio/ha-sdk";
 
 import { getPlatformBindings } from "./bindings";
@@ -129,6 +131,90 @@ export function useBrowseMedia(): (
     (options: BrowseMediaOptions) => haBrowseMedia(sendMessage, options),
     [sendMessage],
   );
+}
+
+export function useSubscribeMessage(): <T = unknown>(
+  message: Record<string, unknown>,
+  onMessage: (result: T) => void,
+) => Promise<() => void> {
+  const pluginId = usePluginId();
+  return useCallback(
+    async <T = unknown>(
+      message: Record<string, unknown>,
+      onMessage: (result: T) => void,
+    ) => {
+      if (!pluginId) {
+        throw new Error("useSubscribeMessage must be used inside PluginScope");
+      }
+      assertCapability(pluginId, "entity.read");
+      const bindings = getPlatformBindings();
+      if (!bindings.subscribeMessage) {
+        throw new Error("Platform does not support subscribeMessage");
+      }
+      return bindings.subscribeMessage<T>(message, onMessage);
+    },
+    [pluginId],
+  );
+}
+
+export interface TodoItemsState {
+  items: TodoItem[];
+  loading: boolean;
+  error: string | null;
+}
+
+/** Live to-do items for an entity via todo/item/subscribe. */
+export function useTodoItems(entityId: string): TodoItemsState {
+  const pluginId = usePluginId();
+  const subscribeMessage = useSubscribeMessage();
+  const [items, setItems] = useState<TodoItem[]>([]);
+  const [loading, setLoading] = useState(Boolean(entityId));
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!entityId) {
+      setItems([]);
+      setLoading(false);
+      setError(null);
+      return;
+    }
+
+    let cancelled = false;
+    let unsubscribe: (() => void) | undefined;
+    setLoading(true);
+    setError(null);
+
+    void (async () => {
+      try {
+        assertCapability(pluginId, "entity.read");
+        unsubscribe = await subscribeTodoItems(
+          subscribeMessage,
+          entityId,
+          (next) => {
+            if (cancelled) return;
+            setItems(next);
+            setLoading(false);
+            setError(null);
+          },
+        );
+        if (cancelled) {
+          unsubscribe();
+        }
+      } catch (err) {
+        if (cancelled) return;
+        setItems([]);
+        setLoading(false);
+        setError(err instanceof Error ? err.message : "Failed to load to-do");
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+      unsubscribe?.();
+    };
+  }, [entityId, pluginId, subscribeMessage]);
+
+  return { items, loading, error };
 }
 
 export function useBaseUrl(): string {

@@ -41,6 +41,21 @@ export async function connectLive(
         message as { type: string } & Record<string, unknown>,
       );
     },
+    async subscribeMessage<T = unknown>(
+      message: Record<string, unknown>,
+      onMessage: (result: T) => void,
+    ) {
+      if (typeof message.type !== "string" || !message.type) {
+        throw new Error("WebSocket message requires a type");
+      }
+      const unsubscribe = await connection.subscribeMessage<T>(
+        onMessage,
+        message as { type: string } & Record<string, unknown>,
+      );
+      return () => {
+        void unsubscribe();
+      };
+    },
     disconnect() {
       connection.close();
     },

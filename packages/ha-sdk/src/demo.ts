@@ -1,3 +1,4 @@
+import { TODO_FEATURE, type TodoItem } from "./todo";
 import type {
   BrowseMediaItem,
   EntityClient,
@@ -7,6 +8,29 @@ import type {
 
 /** TURN_ON|TURN_OFF|PAUSE|SEEK|VOLUME_SET|VOLUME_MUTE|PREVIOUS|NEXT|PLAY_MEDIA|PLAY|BROWSE_MEDIA|SHUFFLE|REPEAT */
 const DEMO_MEDIA_FEATURES = 443327;
+
+/** Everything except SET_DUE_DATETIME_ON_ITEM, so the demo list uses plain dates. */
+const DEMO_TODO_FEATURES =
+  TODO_FEATURE.CREATE_TODO_ITEM |
+  TODO_FEATURE.DELETE_TODO_ITEM |
+  TODO_FEATURE.UPDATE_TODO_ITEM |
+  TODO_FEATURE.MOVE_TODO_ITEM |
+  TODO_FEATURE.SET_DUE_DATE_ON_ITEM |
+  TODO_FEATURE.SET_DESCRIPTION_ON_ITEM;
+
+const DEMO_TODO_ENTITY_ID = "todo.shopping_list";
+
+const DEMO_TODO_ITEMS: TodoItem[] = [
+  {
+    uid: "todo-1",
+    summary: "Buy teff flour",
+    status: "needs_action",
+    description: "Two kilos from the Merkato stall",
+  },
+  { uid: "todo-2", summary: "Refill water filter", status: "needs_action" },
+  { uid: "todo-3", summary: "Book car service", status: "needs_action" },
+  { uid: "todo-4", summary: "Pay electricity bill", status: "completed" },
+];
 
 const DEMO_TRACKS = [
   {
@@ -216,6 +240,16 @@ const DEMO_ENTITIES: HassEntities = {
       supported_features: DEMO_MEDIA_FEATURES,
     },
   },
+  "todo.shopping_list": {
+    entity_id: "todo.shopping_list",
+    state: String(
+      DEMO_TODO_ITEMS.filter((item) => item.status === "needs_action").length,
+    ),
+    attributes: {
+      friendly_name: "Shopping List",
+      supported_features: DEMO_TODO_FEATURES,
+    },
+  },
 };
 
 function demoBrowseRoot(): BrowseMediaItem {
@@ -319,6 +353,9 @@ function touch(entity: HassEntity): HassEntity {
 export function connectDemo(): EntityClient {
   let entities = cloneEntities(DEMO_ENTITIES);
   const listeners = new Set<(entities: HassEntities) => void>();
+  let todoItems: TodoItem[] = structuredClone(DEMO_TODO_ITEMS);
+  const todoListeners = new Set<(items: TodoItem[]) => void>();
+  let todoUidCounter = DEMO_TODO_ITEMS.length;
   let sensorTimer: ReturnType<typeof setInterval> | undefined;
   let doorTimer: ReturnType<typeof setInterval> | undefined;
   let closed = false;
@@ -336,6 +373,114 @@ export function connectDemo(): EntityClient {
       [entityId]: touch(next),
     };
     emit();
+  };
+
+  /** Push items to subscribers and keep the entity state (incomplete count) in sync. */
+  const commitTodoItems = (next: TodoItem[]) => {
+    todoItems = next;
+    const snapshot = structuredClone(todoItems);
+    for (const listener of todoListeners) {
+      listener(structuredClone(snapshot));
+    }
+    const current = entities[DEMO_TODO_ENTITY_ID];
+    if (!current) return;
+    const remaining = todoItems.filter(
+      (item) => item.status === "needs_action",
+    ).length;
+    setEntity(DEMO_TODO_ENTITY_ID, {
+      ...current,
+      state: String(remaining),
+    });
+  };
+
+  const findTodoItem = (value: string): TodoItem | undefined =>
+    todoItems.find((item) => item.uid === value || item.summary === value);
+
+  const handleTodoService = (
+    service: string,
+    serviceData: Record<string, unknown>,
+  ) => {
+    if (service === "add_item") {
+      const summary =
+        typeof serviceData.item === "string" ? serviceData.item.trim() : "";
+      if (!summary) return;
+      todoUidCounter += 1;
+      const item: TodoItem = {
+        uid: `todo-${todoUidCounter}`,
+        summary,
+        status: "needs_action",
+      };
+      if (typeof serviceData.due_date === "string" && serviceData.due_date) {
+        item.due = serviceData.due_date;
+      }
+      if (
+        typeof serviceData.description === "string" &&
+        serviceData.description
+      ) {
+        item.description = serviceData.description;
+      }
+      commitTodoItems([...todoItems, item]);
+      return;
+    }
+
+    if (service === "update_item") {
+      const target =
+        typeof serviceData.item === "string"
+          ? findTodoItem(serviceData.item)
+          : undefined;
+      if (!target) return;
+      commitTodoItems(
+        todoItems.map((item) => {
+          if (item.uid !== target.uid) return item;
+          const next: TodoItem = { ...item };
+          if (typeof serviceData.rename === "string" && serviceData.rename) {
+            next.summary = serviceData.rename.trim();
+          }
+          if (
+            serviceData.status === "completed" ||
+            serviceData.status === "needs_action"
+          ) {
+            next.status = serviceData.status;
+          }
+          if ("due_date" in serviceData) {
+            const due = serviceData.due_date;
+            if (typeof due === "string" && due) next.due = due;
+            else delete next.due;
+          }
+          if ("description" in serviceData) {
+            const description = serviceData.description;
+            if (typeof description === "string" && description) {
+              next.description = description;
+            } else {
+              delete next.description;
+            }
+          }
+          return next;
+        }),
+      );
+      return;
+    }
+
+    if (service === "remove_item") {
+      const raw = serviceData.item;
+      const values = Array.isArray(raw)
+        ? raw.filter((value): value is string => typeof value === "string")
+        : typeof raw === "string"
+          ? [raw]
+          : [];
+      const uids = new Set(
+        values
+          .map((value) => findTodoItem(value)?.uid)
+          .filter((uid): uid is string => Boolean(uid)),
+      );
+      if (uids.size === 0) return;
+      commitTodoItems(todoItems.filter((item) => !uids.has(item.uid)));
+      return;
+    }
+
+    if (service === "remove_completed_items") {
+      commitTodoItems(todoItems.filter((item) => item.status !== "completed"));
+    }
   };
 
   sensorTimer = setInterval(() => {
@@ -383,6 +528,13 @@ export function connectDemo(): EntityClient {
 
       const current = entities[entityId];
       if (!current) return;
+
+      if (domain === "todo") {
+        if (entityId === DEMO_TODO_ENTITY_ID) {
+          handleTodoService(service, serviceData);
+        }
+        return;
+      }
 
       const isToggleDomain =
         domain === "light" ||
@@ -628,17 +780,76 @@ export function connectDemo(): EntityClient {
         const root = demoBrowseRoot();
         return findBrowseNode(root, contentType, contentId) as T;
       }
+      if (message.type === "todo/item/list") {
+        assertDemoTodoEntity(message.entity_id);
+        return { items: structuredClone(todoItems) } as T;
+      }
+      if (message.type === "todo/item/move") {
+        assertDemoTodoEntity(message.entity_id);
+        const uid = typeof message.uid === "string" ? message.uid : "";
+        const previousUid =
+          typeof message.previous_uid === "string"
+            ? message.previous_uid
+            : undefined;
+        moveDemoTodoItem(uid, previousUid);
+        return undefined as T;
+      }
       throw new Error(
         `Demo client does not support message type: ${String(message.type)}`,
       );
     },
+    async subscribeMessage<T = unknown>(
+      message: Record<string, unknown>,
+      onMessage: (result: T) => void,
+    ) {
+      if (closed) {
+        throw new Error("Demo client disconnected");
+      }
+      if (message.type !== "todo/item/subscribe") {
+        throw new Error(
+          `Demo client does not support subscription type: ${String(message.type)}`,
+        );
+      }
+      assertDemoTodoEntity(message.entity_id);
+
+      const listener = (items: TodoItem[]) => {
+        onMessage({ items } as T);
+      };
+      todoListeners.add(listener);
+      listener(structuredClone(todoItems));
+
+      return () => {
+        todoListeners.delete(listener);
+      };
+    },
     disconnect() {
       closed = true;
       listeners.clear();
+      todoListeners.clear();
       if (sensorTimer) clearInterval(sensorTimer);
       if (doorTimer) clearInterval(doorTimer);
     },
   };
+
+  function assertDemoTodoEntity(entityId: unknown): void {
+    if (entityId !== DEMO_TODO_ENTITY_ID) {
+      throw new Error(`Unknown to-do entity: ${String(entityId)}`);
+    }
+  }
+
+  function moveDemoTodoItem(uid: string, previousUid?: string): void {
+    const index = todoItems.findIndex((item) => item.uid === uid);
+    if (index < 0) return;
+    const next = [...todoItems];
+    const [moved] = next.splice(index, 1);
+    if (!moved) return;
+    const target =
+      previousUid == null
+        ? 0
+        : next.findIndex((item) => item.uid === previousUid) + 1;
+    next.splice(Math.max(0, target), 0, moved);
+    commitTodoItems(next);
+  }
 }
 
 export const DEMO_ENTITY_IDS = {
@@ -654,4 +865,5 @@ export const DEMO_ENTITY_IDS = {
   person: "person.kidus",
   weather: "weather.home",
   media: "media_player.homepod",
+  todo: "todo.shopping_list",
 } as const;

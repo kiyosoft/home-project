@@ -69,6 +69,10 @@ export interface PlatformBindings {
   sendMessagePromise?: <T = unknown>(
     message: Record<string, unknown>,
   ) => Promise<T>;
+  subscribeMessage?: <T = unknown>(
+    message: Record<string, unknown>,
+    onMessage: (result: T) => void,
+  ) => Promise<() => void>;
   /** HA base URL for resolving relative entity_picture paths */
   getBaseUrl?: () => string;
   /** Current plugin id for capability checks during hook use */

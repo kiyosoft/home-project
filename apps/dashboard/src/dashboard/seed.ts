@@ -122,6 +122,15 @@ export function seedDemoDashboard(): DashboardConfig {
         artworkMode: "default",
       },
     },
+    {
+      id: "w12",
+      type: "@ethio/core/todo",
+      config: {
+        entity_id: DEMO_ENTITY_IDS.todo,
+        showCompleted: false,
+        maxItems: 5,
+      },
+    },
   ];
   return withLayouts(widgets, "overview", "Overview");
 }
