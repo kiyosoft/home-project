@@ -113,19 +113,16 @@ const DEMO_ENTITIES: HassEntities = {
       friendly_name: "Arsenal",
       sport: "soccer",
       league: "English Premier League",
-      league_logo:
-        "https://a.espncdn.com/i/teamlogos/leagues/500/eng.1.png",
+      league_logo: "https://a.espncdn.com/i/teamlogos/leagues/500/eng.1.png",
       team_abbr: "ARS",
       team_name: "Arsenal",
-      team_logo:
-        "https://a.espncdn.com/i/teamlogos/soccer/500/359.png",
+      team_logo: "https://a.espncdn.com/i/teamlogos/soccer/500/359.png",
       team_score: 2,
       team_rank: 2,
       team_colors: ["#EF0107", "#FFFFFF"],
       opponent_abbr: "CHE",
       opponent_name: "Chelsea",
-      opponent_logo:
-        "https://a.espncdn.com/i/teamlogos/soccer/500/363.png",
+      opponent_logo: "https://a.espncdn.com/i/teamlogos/soccer/500/363.png",
       opponent_score: 1,
       opponent_rank: 5,
       opponent_colors: ["#034694", "#FFFFFF"],
@@ -148,32 +145,43 @@ const DEMO_ENTITIES: HassEntities = {
           title: "ርዕሰ ዓውደ ዓመት",
           type: "ዘመን መለወጫ",
           order: 1,
-          story: "የእግዚአብሔርን ረድኤት አጋዥ በማድረግ በበጎ ስጦታውም ይህንንን የስንክሳር መጽሐፍ እንጽፋለን። ስንክሳር ትርጓሜው የተሰበሰበ ማለት ነው።\n\nይኸውም የከበሩ አባቶቻችን የቤተ ክርስቲያን መምህራን የአትሪብና የመሊግ ኤጲስቆጶስ ክቡር አባት አባ ሚካኤልና የሀገረ ቡርልስ የከበረ አባት አባ ዮሐንስ እንዲሁም ሃይማኖታቸው የቀና ሌሎች የከበሩ አባቶች ከቅዱሳን ሰማዕታት ከጻድቃን ከነቢያት ከሐዋርያት ከሊቃነ ጳጳሳት ከኤጲስቆጶሳት ከመነኰሳትም ሁሉ ከገዳማውያንም ከገድሎቻቸው ከመላእክት አለቆችም ከድርሳናቸው የሰበሰቡትና ያቀነባበሩት አምላክን የወለደች እመቤታችን የከበረች ድን…",
+          story:
+            "የእግዚአብሔርን ረድኤት አጋዥ በማድረግ በበጎ ስጦታውም ይህንንን የስንክሳር መጽሐፍ እንጽፋለን። ስንክሳር ትርጓሜው የተሰበሰበ ማለት ነው።\n\nይኸውም የከበሩ አባቶቻችን የቤተ ክርስቲያን መምህራን የአትሪብና የመሊግ ኤጲስቆጶስ ክቡር አባት አባ ሚካኤልና የሀገረ ቡርልስ የከበረ አባት አባ ዮሐንስ እንዲሁም ሃይማኖታቸው የቀና ሌሎች የከበሩ አባቶች ከቅዱሳን ሰማዕታት ከጻድቃን ከነቢያት ከሐዋርያት ከሊቃነ ጳጳሳት ከኤጲስቆጶሳት ከመነኰሳትም ሁሉ ከገዳማውያንም ከገድሎቻቸው ከመላእክት አለቆችም ከድርሳናቸው የሰበሰቡትና ያቀነባበሩት አምላክን የወለደች እመቤታችን የከበረች ድን…",
           arke: [],
         },
         {
           title: "ጻድቁ ኢዮብ የተፈወሰበት",
           type: "ጻድቅ",
           order: 6,
-          story: "በዚችም ዕለት ኢዮብ በፈሳሽ ውኃ ታጥቦ ከደዌው ሁሉ ተፈወሰ።\n\nይህም ለሰዎች ልማዳቸው ሁኖ ዓመቱ ዙሮ ሲመጣ ፈሳሹ ውኃም በመላ ጊዜ በአዲስ ውኃ ይጠመቃሉ በእርሱም ይባረካሉ።\n\nየጻድቁ ኢዮብ በረከትም ከእኛ ጋራ ትኑር ለዘላለሙ አሜን።",
-          arke: ["ሰላም ለኢዮብ ዘኢነበበ ከንቶ። አመ አኀዞ አበቅ ወአመ አህጐለ ጥሪቶ። ሐዋርያ መንፈስ ይቤ እንዘ ያነክር ሕይወቶ። ናስተበዕፆሙ ናሁ በብዙኀ አእኲቶ። ለእለ ተዓገሡ ሰብእ ለኢዮብ ትዕግሥቶ።"],
+          story:
+            "በዚችም ዕለት ኢዮብ በፈሳሽ ውኃ ታጥቦ ከደዌው ሁሉ ተፈወሰ።\n\nይህም ለሰዎች ልማዳቸው ሁኖ ዓመቱ ዙሮ ሲመጣ ፈሳሹ ውኃም በመላ ጊዜ በአዲስ ውኃ ይጠመቃሉ በእርሱም ይባረካሉ።\n\nየጻድቁ ኢዮብ በረከትም ከእኛ ጋራ ትኑር ለዘላለሙ አሜን።",
+          arke: [
+            "ሰላም ለኢዮብ ዘኢነበበ ከንቶ። አመ አኀዞ አበቅ ወአመ አህጐለ ጥሪቶ። ሐዋርያ መንፈስ ይቤ እንዘ ያነክር ሕይወቶ። ናስተበዕፆሙ ናሁ በብዙኀ አእኲቶ። ለእለ ተዓገሡ ሰብእ ለኢዮብ ትዕግሥቶ።",
+          ],
         },
         {
           title: "እረፍቱ ለበርቶሎሜዎስ ሐዋርያ",
           type: "ሐዋርያ",
           order: 3,
-          story: "ዳግመኛም በዚች ቀን ከዐሥራ ሁለቱ ሐዋርያት አንዱ ሐዋርያ በርተሎሜዎስ ምስክር ሁኖ አረፈ።\n\nለዚህም ሐዋርያ ሒዶ ያስተምር ዘንድ እልዋህ በሚባል አገር ዕጣው ወጣ። እርሱም ከጴጥሮስ ጋር በአንድነት ሔደ የክብር ባለቤት በሆነ በጌታችን ኢየሱስ ክርስቶስ ስም አስተማሩ ልባቸውንም የሚያስደነግጥ ድንቆች ተአምራትን በፊታቸው ከአደረጉ በኋላ እግዚአብሔርን ወደ ማወቅ መለሷቸው።\n\nከዚህም በኃላ ወደ ከተማው ውስጥ ገብቶ ያስተማር ዘንድ ምክንያት አደረገ። ቅዱስ ጴጥሮስም እንደ ባሪያ ሸጠው። ባለ ጸጋ ለሆነ መኰንንም በወይን አትክልት ውስጥ የሚያገለግል ሆነ ድንቅ ተአምርን በማ…",
-          arke: ["ሰላም ለበርተሎሜዎስ ዘጠብለልዎ በሠቅ። አመ ወገርዎ ሎቱ ውሰተ ባሕር ዕሙቅ። በቅድመ ጉቡአን ሕዝብ ትእምርተ ዝንቱ ጻድቅ። አስተርአየ ውስተ እዴሁ ዘምስለ ፍሬ ጽፉቅ። እምሐረገ ወይን ብሉይ ዘተመትረ ዐጽቅ።"],
+          story:
+            "ዳግመኛም በዚች ቀን ከዐሥራ ሁለቱ ሐዋርያት አንዱ ሐዋርያ በርተሎሜዎስ ምስክር ሁኖ አረፈ።\n\nለዚህም ሐዋርያ ሒዶ ያስተምር ዘንድ እልዋህ በሚባል አገር ዕጣው ወጣ። እርሱም ከጴጥሮስ ጋር በአንድነት ሔደ የክብር ባለቤት በሆነ በጌታችን ኢየሱስ ክርስቶስ ስም አስተማሩ ልባቸውንም የሚያስደነግጥ ድንቆች ተአምራትን በፊታቸው ከአደረጉ በኋላ እግዚአብሔርን ወደ ማወቅ መለሷቸው።\n\nከዚህም በኃላ ወደ ከተማው ውስጥ ገብቶ ያስተማር ዘንድ ምክንያት አደረገ። ቅዱስ ጴጥሮስም እንደ ባሪያ ሸጠው። ባለ ጸጋ ለሆነ መኰንንም በወይን አትክልት ውስጥ የሚያገለግል ሆነ ድንቅ ተአምርን በማ…",
+          arke: [
+            "ሰላም ለበርተሎሜዎስ ዘጠብለልዎ በሠቅ። አመ ወገርዎ ሎቱ ውሰተ ባሕር ዕሙቅ። በቅድመ ጉቡአን ሕዝብ ትእምርተ ዝንቱ ጻድቅ። አስተርአየ ውስተ እዴሁ ዘምስለ ፍሬ ጽፉቅ። እምሐረገ ወይን ብሉይ ዘተመትረ ዐጽቅ።",
+          ],
         },
         {
           title: "እረፍቱ ለሊቀ ጳጳሳት ሜልዮስ",
           type: "መነኮስ",
           order: 4,
-          story: "በዚችም ቀን ዳግመኛ የታላቂቱ አገር የእስክንድርያ ሊቀ ጳጳሳት አባ ሜልዮስ አረፈ እርሱም ለአባታችን ሐዋርያና ወንጌላዊ ለሆነ ማርቆስ ሦስተኛ ነው።\n\nይህም አባት የሮሜ ንጉሥ አስባስያኖስ በነገሠ በዐሥራ አምስት ዓመት ተሾመ ይኸውም የክብር ባለቤት ጌታችን በዐረገ በአርባ ዓመት ነው ክብር ይግባ ውና የክርስቶስን መንጋዎች በበጎ አጠባበቅ ጠበቃቸው በሹመቱም ዐሥራ ሁለት ዓመት ኖረ። እግዚአብሔርንም አገልግሎ በሰላም በፍቅር አንድነት አረፈ።\n\nለእግዚአብሔርም ምስጋና ይሁን እኛንም በጸሎቱ ይማረን ለዘላለሙ አሜን።",
-          arke: ["ሰላም ለሜልዮስ ሊቀ ጳጳሳት በኀበ እስክንድርያ ሥዩም። እምዕርገተ ክርስቶስ በዐርብዓ አክራም። እኤምኅ ኪያከ በቃለ ሰላም። ለብሔረ መርቄ ከመ ያቈርሮ ዝናም። ሣህለ ትንባሌከ ጸግወኒ ለብእሲ ሕሙም።"],
-        }
+          story:
+            "በዚችም ቀን ዳግመኛ የታላቂቱ አገር የእስክንድርያ ሊቀ ጳጳሳት አባ ሜልዮስ አረፈ እርሱም ለአባታችን ሐዋርያና ወንጌላዊ ለሆነ ማርቆስ ሦስተኛ ነው።\n\nይህም አባት የሮሜ ንጉሥ አስባስያኖስ በነገሠ በዐሥራ አምስት ዓመት ተሾመ ይኸውም የክብር ባለቤት ጌታችን በዐረገ በአርባ ዓመት ነው ክብር ይግባ ውና የክርስቶስን መንጋዎች በበጎ አጠባበቅ ጠበቃቸው በሹመቱም ዐሥራ ሁለት ዓመት ኖረ። እግዚአብሔርንም አገልግሎ በሰላም በፍቅር አንድነት አረፈ።\n\nለእግዚአብሔርም ምስጋና ይሁን እኛንም በጸሎቱ ይማረን ለዘላለሙ አሜን።",
+          arke: [
+            "ሰላም ለሜልዮስ ሊቀ ጳጳሳት በኀበ እስክንድርያ ሥዩም። እምዕርገተ ክርስቶስ በዐርብዓ አክራም። እኤምኅ ኪያከ በቃለ ሰላም። ለብሔረ መርቄ ከመ ያቈርሮ ዝናም። ሣህለ ትንባሌከ ጸግወኒ ለብእሲ ሕሙም።",
+          ],
+        },
       ],
-      story: "የእግዚአብሔርን ረድኤት አጋዥ በማድረግ በበጎ ስጦታውም ይህንንን የስንክሳር መጽሐፍ እንጽፋለን። ስንክሳር ትርጓሜው የተሰበሰበ ማለት ነው።\n\nይኸውም የከበሩ አባቶቻችን የቤተ ክርስቲያን መምህራን የአትሪብና የመሊግ ኤጲስቆጶስ ክቡር አባት አባ ሚካኤልና የሀገረ ቡርልስ የከበረ አባት አባ ዮሐንስ እንዲሁም ሃይማኖታቸው የቀና ሌሎች የከበሩ አባቶች ከቅዱሳን ሰማዕታት ከጻድቃን ከነቢያት ከሐዋርያት ከሊቃነ ጳጳሳት ከኤጲስቆጶሳት ከመነኰሳትም ሁሉ ከገዳማውያንም ከገድሎቻቸው ከመላእክት አለቆችም ከድርሳናቸው የሰበሰቡትና ያቀነባበሩት አምላክን የወለደች እመቤታችን የከበረች ድንግል ማርያም ከአደረገቻቸው ድንቆች ተአምራቶችም የክብር ባለቤት የሆነ የመድኃኒታችን ኢየሱስ ክር…",
+      story:
+        "የእግዚአብሔርን ረድኤት አጋዥ በማድረግ በበጎ ስጦታውም ይህንንን የስንክሳር መጽሐፍ እንጽፋለን። ስንክሳር ትርጓሜው የተሰበሰበ ማለት ነው።\n\nይኸውም የከበሩ አባቶቻችን የቤተ ክርስቲያን መምህራን የአትሪብና የመሊግ ኤጲስቆጶስ ክቡር አባት አባ ሚካኤልና የሀገረ ቡርልስ የከበረ አባት አባ ዮሐንስ እንዲሁም ሃይማኖታቸው የቀና ሌሎች የከበሩ አባቶች ከቅዱሳን ሰማዕታት ከጻድቃን ከነቢያት ከሐዋርያት ከሊቃነ ጳጳሳት ከኤጲስቆጶሳት ከመነኰሳትም ሁሉ ከገዳማውያንም ከገድሎቻቸው ከመላእክት አለቆችም ከድርሳናቸው የሰበሰቡትና ያቀነባበሩት አምላክን የወለደች እመቤታችን የከበረች ድንግል ማርያም ከአደረገቻቸው ድንቆች ተአምራቶችም የክብር ባለቤት የሆነ የመድኃኒታችን ኢየሱስ ክር…",
       arke: [],
     },
   },
@@ -358,6 +366,7 @@ export function connectDemo(): EntityClient {
   let todoUidCounter = DEMO_TODO_ITEMS.length;
   let sensorTimer: ReturnType<typeof setInterval> | undefined;
   let doorTimer: ReturnType<typeof setInterval> | undefined;
+  let teamScoreTimer: ReturnType<typeof setInterval> | undefined;
   let closed = false;
 
   const emit = () => {
@@ -508,6 +517,45 @@ export function connectDemo(): EntityClient {
     }
   }, 8000);
 
+  // Periodically bump Arsenal's score so Team Card celebrations can be demoed.
+  teamScoreTimer = setInterval(() => {
+    if (closed) return;
+    const current = entities["sensor.demo_arsenal"];
+    if (!current || current.state !== "IN") return;
+
+    const attrs = current.attributes;
+    const teamScore =
+      typeof attrs.team_score === "number" ? attrs.team_score : 0;
+    const opponentScore =
+      typeof attrs.opponent_score === "number" ? attrs.opponent_score : 0;
+    const clockRaw = typeof attrs.clock === "string" ? attrs.clock : "67'";
+    const minute = Number.parseInt(clockRaw, 10);
+    const nextMinute = Number.isFinite(minute)
+      ? Math.min(90, minute + 3 + Math.floor(Math.random() * 4))
+      : 70;
+
+    // Mostly Arsenal goals (celebration), occasionally Chelsea.
+    const arsenalScores = Math.random() > 0.35;
+    let nextTeam = teamScore;
+    let nextOpponent = opponentScore;
+    if (arsenalScores) {
+      nextTeam = teamScore >= 5 ? 1 : teamScore + 1;
+    } else {
+      nextOpponent = opponentScore >= 4 ? 0 : opponentScore + 1;
+    }
+
+    setEntity("sensor.demo_arsenal", {
+      ...current,
+      state: "IN",
+      attributes: {
+        ...attrs,
+        team_score: nextTeam,
+        opponent_score: nextOpponent,
+        clock: `${nextMinute}'`,
+      },
+    });
+  }, 10000);
+
   return {
     subscribeEntities(onChange) {
       listeners.add(onChange);
@@ -537,11 +585,14 @@ export function connectDemo(): EntityClient {
       }
 
       const isToggleDomain =
-        domain === "light" ||
-        domain === "switch" ||
-        domain === "input_boolean";
+        domain === "light" || domain === "switch" || domain === "input_boolean";
 
-      if (isToggleDomain && (service === "toggle" || service === "turn_on" || service === "turn_off")) {
+      if (
+        isToggleDomain &&
+        (service === "toggle" ||
+          service === "turn_on" ||
+          service === "turn_off")
+      ) {
         let nextState = current.state;
         if (service === "toggle") {
           nextState = current.state === "on" ? "off" : "on";
@@ -634,17 +685,21 @@ export function connectDemo(): EntityClient {
           return;
         }
         if (service === "media_play_pause") {
-          const next =
-            current.state === "playing" ? "paused" : "playing";
+          const next = current.state === "playing" ? "paused" : "playing";
           setEntity(entityId, { ...current, state: next, attributes });
           return;
         }
-        if (service === "media_next_track" || service === "media_previous_track") {
+        if (
+          service === "media_next_track" ||
+          service === "media_previous_track"
+        ) {
           const currentId =
             typeof attributes.media_content_id === "string"
               ? attributes.media_content_id
               : DEMO_TRACKS[0].id;
-          const index = DEMO_TRACKS.findIndex((track) => track.id === currentId);
+          const index = DEMO_TRACKS.findIndex(
+            (track) => track.id === currentId,
+          );
           const delta = service === "media_next_track" ? 1 : -1;
           const nextIndex =
             index < 0
@@ -828,6 +883,7 @@ export function connectDemo(): EntityClient {
       todoListeners.clear();
       if (sensorTimer) clearInterval(sensorTimer);
       if (doorTimer) clearInterval(doorTimer);
+      if (teamScoreTimer) clearInterval(teamScoreTimer);
     },
   };
 

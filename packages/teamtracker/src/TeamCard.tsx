@@ -7,6 +7,8 @@ import {
   type WidgetComponentProps,
 } from "@ethio/plugin-sdk";
 
+import { TeamScoreCelebrationHost } from "./ScoreCelebration";
+
 export const teamCardConfigSchema = z.object({
   entity_id: z.string().min(1, "Entity is required"),
   card_title: z.string().optional(),
@@ -15,6 +17,9 @@ export const teamCardConfigSchema = z.object({
   show_league_logo: z.boolean().default(false),
   show_rank: z.boolean().default(true),
   outline: z.boolean().default(false),
+  score_celebration: z.boolean().default(false),
+  opponent_celebration: z.boolean().default(false),
+  celebration_sound: z.boolean().default(false),
 });
 
 type Attrs = Record<string, unknown>;
@@ -155,6 +160,9 @@ function TeamCard({ config, interactive }: WidgetComponentProps) {
   const showLeagueLogo = Boolean(config.show_league_logo);
   const showRank = config.show_rank !== false;
   const outline = Boolean(config.outline);
+  const scoreCelebration = Boolean(config.score_celebration);
+  const opponentCelebration = Boolean(config.opponent_celebration);
+  const celebrationSound = Boolean(config.celebration_sound);
   const cardTitle =
     typeof config.card_title === "string" ? config.card_title : undefined;
 
@@ -241,110 +249,126 @@ function TeamCard({ config, interactive }: WidgetComponentProps) {
   const showCenterLeagueLogo = showLeagueLogo && Boolean(leagueLogo);
 
   return (
-    <div
-      role={interactive ? "button" : undefined}
-      tabIndex={interactive ? 0 : undefined}
-      onClick={interactive ? () => entityDetail.open(entityId) : undefined}
-      onKeyDown={
-        interactive
-          ? (event) => {
-              if (event.key === "Enter" || event.key === " ") {
-                event.preventDefault();
-                entityDetail.open(entityId);
+    <>
+      <TeamScoreCelebrationHost
+        celebrateTeam={scoreCelebration}
+        celebrateOpponent={opponentCelebration}
+        cheerEnabled={celebrationSound}
+        teamScore={team.score}
+        opponentScore={opponent.score}
+        gameState={state}
+        teamColors={teamColors}
+        opponentColors={opponentColors}
+        teamName={team.name}
+        teamAbbr={team.abbr}
+        opponentName={opponent.name}
+        opponentAbbr={opponent.abbr}
+      />
+      <div
+        role={interactive ? "button" : undefined}
+        tabIndex={interactive ? 0 : undefined}
+        onClick={interactive ? () => entityDetail.open(entityId) : undefined}
+        onKeyDown={
+          interactive
+            ? (event) => {
+                if (event.key === "Enter" || event.key === " ") {
+                  event.preventDefault();
+                  entityDetail.open(entityId);
+                }
               }
-            }
-          : undefined
-      }
-      className={`relative flex h-full min-h-40 flex-col overflow-hidden rounded-2xl border border-border bg-card p-4 text-card-foreground shadow-sm outline-none transition-colors ${
-        interactive
-          ? "cursor-pointer hover:border-primary/40 focus-visible:ring-2 focus-visible:ring-ring"
-          : ""
-      }`}
-      style={gradient ? { backgroundImage: gradient } : undefined}
-    >
-      <div className="relative z-[1] mb-3 flex items-center justify-between gap-2">
-        <p className="text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
-          {title}
-        </p>
-        <span
-          className={`rounded-md px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${
-            state === "IN"
-              ? "bg-destructive/15 text-destructive"
-              : state === "POST"
-                ? "bg-primary/15 text-primary"
-                : "bg-muted text-muted-foreground"
-          }`}
-        >
-          {state}
-        </span>
-      </div>
-
-      {state === "BYE" ? (
-        <div className="relative z-[1] flex flex-1 flex-col items-center justify-center gap-3">
-          <TeamSide
-            {...team}
-            showRank={showRank}
-            outline={outline}
-          />
-          <p className="text-sm text-muted-foreground">Bye week</p>
-        </div>
-      ) : state === "NOT_FOUND" ? (
-        <div className="relative z-[1] flex flex-1 flex-col items-center justify-center gap-2 text-center">
-          <p className="font-display text-lg font-semibold">No game</p>
-          <p className="text-sm text-muted-foreground">
-            {apiMessage ?? "Sensor has no upcoming game data."}
+            : undefined
+        }
+        className={`relative flex h-full min-h-40 flex-col overflow-hidden rounded-2xl border border-border bg-card p-4 text-card-foreground shadow-sm outline-none transition-colors ${
+          interactive
+            ? "cursor-pointer hover:border-primary/40 focus-visible:ring-2 focus-visible:ring-ring"
+            : ""
+        }`}
+        style={gradient ? { backgroundImage: gradient } : undefined}
+      >
+        <div className="relative z-[1] mb-3 flex items-center justify-between gap-2">
+          <p className="text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
+            {title}
           </p>
+          <span
+            className={`rounded-md px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${
+              state === "IN"
+                ? "bg-destructive/15 text-destructive"
+                : state === "POST"
+                  ? "bg-primary/15 text-primary"
+                  : "bg-muted text-muted-foreground"
+            }`}
+          >
+            {state}
+          </span>
         </div>
-      ) : (
-        <>
-          <div className="relative flex flex-1 items-center gap-2">
-            {showCenterLeagueLogo ? (
-              <img
-                src={leagueLogo}
-                alt=""
-                aria-hidden
-                className="pointer-events-none absolute left-1/2 top-1/2 h-[72%] max-h-28 w-auto max-w-[45%] -translate-x-1/2 -translate-y-1/2 object-contain opacity-[0.12] select-none dark:opacity-[0.16]"
+
+        {state === "BYE" ? (
+          <div className="relative z-[1] flex flex-1 flex-col items-center justify-center gap-3">
+            <TeamSide
+              {...team}
+              showRank={showRank}
+              outline={outline}
+            />
+            <p className="text-sm text-muted-foreground">Bye week</p>
+          </div>
+        ) : state === "NOT_FOUND" ? (
+          <div className="relative z-[1] flex flex-1 flex-col items-center justify-center gap-2 text-center">
+            <p className="font-display text-lg font-semibold">No game</p>
+            <p className="text-sm text-muted-foreground">
+              {apiMessage ?? "Sensor has no upcoming game data."}
+            </p>
+          </div>
+        ) : (
+          <>
+            <div className="relative flex flex-1 items-center gap-2">
+              {showCenterLeagueLogo ? (
+                <img
+                  src={leagueLogo}
+                  alt=""
+                  aria-hidden
+                  className="pointer-events-none absolute left-1/2 top-1/2 h-[72%] max-h-28 w-auto max-w-[45%] -translate-x-1/2 -translate-y-1/2 object-contain opacity-[0.12] select-none dark:opacity-[0.16]"
+                />
+              ) : null}
+              <TeamSide
+                {...left}
+                score={showScore ? left.score : undefined}
+                showRank={showRank}
+                outline={outline}
+                emphasize={
+                  state === "POST" &&
+                  ((homeSide === "left" && teamWinning) ||
+                    (homeSide === "right" && oppWinning))
+                }
               />
-            ) : null}
-            <TeamSide
-              {...left}
-              score={showScore ? left.score : undefined}
-              showRank={showRank}
-              outline={outline}
-              emphasize={
-                state === "POST" &&
-                ((homeSide === "left" && teamWinning) ||
-                  (homeSide === "right" && oppWinning))
-              }
-            />
-            <div className="relative z-[1] shrink-0 px-1 text-center text-muted-foreground">
-              <p className="font-display text-lg font-semibold">
-                {state === "PRE" ? "vs" : "–"}
-              </p>
+              <div className="relative z-[1] shrink-0 px-1 text-center text-muted-foreground">
+                <p className="font-display text-lg font-semibold">
+                  {state === "PRE" ? "vs" : "–"}
+                </p>
+              </div>
+              <TeamSide
+                {...right}
+                score={showScore ? right.score : undefined}
+                showRank={showRank}
+                outline={outline}
+                emphasize={
+                  state === "POST" &&
+                  ((homeSide === "right" && teamWinning) ||
+                    (homeSide === "left" && oppWinning))
+                }
+              />
             </div>
-            <TeamSide
-              {...right}
-              score={showScore ? right.score : undefined}
-              showRank={showRank}
-              outline={outline}
-              emphasize={
-                state === "POST" &&
-                ((homeSide === "right" && teamWinning) ||
-                  (homeSide === "left" && oppWinning))
-              }
-            />
-          </div>
-          <div className="relative z-[1] mt-3 border-t border-border/70 pt-2 text-center">
-            <p className="text-sm font-medium">{statusLine}</p>
-            {venue && state === "PRE" ? (
-              <p className="mt-0.5 truncate text-xs text-muted-foreground">
-                {venue}
-              </p>
-            ) : null}
-          </div>
-        </>
-      )}
-    </div>
+            <div className="relative z-[1] mt-3 border-t border-border/70 pt-2 text-center">
+              <p className="text-sm font-medium">{statusLine}</p>
+              {venue && state === "PRE" ? (
+                <p className="mt-0.5 truncate text-xs text-muted-foreground">
+                  {venue}
+                </p>
+              ) : null}
+            </div>
+          </>
+        )}
+      </div>
+    </>
   );
 }
 
@@ -361,6 +385,9 @@ export const teamCardWidget = defineWidget({
     show_league_logo: false,
     show_rank: true,
     outline: false,
+    score_celebration: false,
+    opponent_celebration: false,
+    celebration_sound: false,
   },
   defaultSize: { w: 6, h: 4, minW: 4, minH: 3, maxW: 12, maxH: 8 },
   minSize: { w: 4, h: 3 },

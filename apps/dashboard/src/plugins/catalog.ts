@@ -1,6 +1,6 @@
 import type { RegistryCatalog, RegistryCatalogEntry } from "./catalog-types";
 
-const DEFAULT_CATALOG_URL = "/registry/catalog.json";
+const DEFAULT_CATALOG_URL = `${import.meta.env.BASE_URL}registry/catalog.json`;
 
 export async function fetchCatalog(
   catalogUrl = DEFAULT_CATALOG_URL,

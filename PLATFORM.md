@@ -159,7 +159,7 @@ Never sits in the HA data path. Local use does not require an account.
 
 ## Packaging
 
-- Home Assistant add-on
+- Home Assistant add-on (MVP in `ethio-home/`: static SPA via ingress; install from GitHub monorepo; LLAT setup unchanged; supervisor auto-auth later)
 - Docker Compose / standalone container
 - Local Vite dev for contributors
 
@@ -487,7 +487,7 @@ first-party plugins.
 
 - Full theme pack + custom tokens
 - Profile sync / deploy-to-device
-- HA add-on + Docker packaging
+- HA add-on + Docker packaging (add-on MVP: ingress SPA; prebuilt images / supervisor auth next)
 - Area-aware onboarding
 - AI copilot (initial)
 - Open registry (optional Hub)

@@ -8,6 +8,12 @@ Scoreboard UX inspired by [ha-teamtracker-card](https://github.com/vasqued2/ha-t
 
 Install the ha-teamtracker integration in Home Assistant, create a team sensor, then add **Team Card** from the widget picker and bind that sensor.
 
+Celebration settings on Team Card:
+
+- **score_celebration** — full-screen wash / confetti when *your* team scores (`"{Team} Goal"`)
+- **opponent_celebration** — same animation when the opponent scores (no cheer)
+- **celebration_sound** — stadium cheer when *your* team scores (Mixkit “Huge crowd cheering victory”, Mixkit License)
+
 ## Demo mode
 
-Ethio ships `sensor.demo_arsenal` with simulated IN-game attributes so you can try the card without the integration.
+Ethio ships `sensor.demo_arsenal` with simulated IN-game attributes so you can try the card without the integration. In demo mode the score updates about every 10s (mostly Arsenal goals) so `score_celebration` can be exercised live.

@@ -53,7 +53,7 @@ Import the plugin in `apps/dashboard/src/plugins/bootstrap.ts` and pass it to `l
 ### Open registry (dynamic)
 
 1. **Settings → Browse registry** (or palette → “Open plugins”)
-2. Install **Example Badge** — loads `/registry/plugins/example-badge/index.js` at runtime
+2. Install **Example Badge** — loads `registry/plugins/example-badge/index.js` at runtime
 3. Refresh keeps the install; uninstall removes it from the picker
 
 Catalog: `apps/dashboard/public/registry/catalog.json`. Remote plugins share the host React / SDK via `globalThis.__ETHIO_HOST__`.
@@ -64,6 +64,24 @@ Install [ha-teamtracker](https://github.com/vasqued2/ha-teamtracker) in Home Ass
 
 Card UX inspired by [ha-teamtracker-card](https://github.com/vasqued2/ha-teamtracker-card).
 
+## Home Assistant add-on
+
+Serves the production dashboard over HA **ingress** (sidebar panel). You still connect with a HA URL + long-lived access token.
+
+1. **Settings → Add-ons → Add-on store → ⋮ → Repositories**
+2. Add:
+
+   ```text
+   https://github.com/kiyosoft/home-project
+   ```
+
+3. Install **Ethio Home**, start it, open from the sidebar
+4. Enter your HA URL and long-lived access token on the setup screen
+
+Maintainers: run `pnpm prepare:addon` after UI changes, then commit `ethio-home/www/` and bump `ethio-home/config.yaml` `version`.
+
+Details: [ethio-home/DOCS.md](./ethio-home/DOCS.md).
+
 ## Workspace
 
 ```text
@@ -72,16 +90,18 @@ packages/plugin-sdk      Plugin contracts + HA hooks
 packages/core            Official core widgets
 packages/teamtracker     Team Tracker plugin
 packages/ha-sdk          HA client + demo entities
+ethio-home               Home Assistant add-on (nginx + ingress)
 docs/plugins.md          Plugin authoring guide
 ```
 
 ## Scripts
 
-| Command        | Description                            |
-| -------------- | -------------------------------------- |
-| `pnpm dev`     | Start the dashboard dev server         |
-| `pnpm build`   | Build packages and the dashboard       |
-| `pnpm preview` | Preview the production dashboard build |
+| Command              | Description                                   |
+| -------------------- | --------------------------------------------- |
+| `pnpm dev`           | Start the dashboard dev server                |
+| `pnpm build`         | Build packages and the dashboard              |
+| `pnpm prepare:addon` | Build and sync UI into `ethio-home/www`       |
+| `pnpm preview`       | Preview the production dashboard build        |
 
 ## Themes
 
