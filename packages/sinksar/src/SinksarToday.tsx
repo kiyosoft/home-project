@@ -9,6 +9,7 @@ import {
 } from "@ethio/plugin-sdk";
 
 export const sinksarTodayConfigSchema = z.object({
+  title: z.string().default(""),
   entity_id: z.string().min(1, "Entity is required"),
   show_entries: z.boolean().default(true),
 });
@@ -196,6 +197,7 @@ function SinksarDetailBody({
 function SinksarToday({ config, interactive }: WidgetComponentProps) {
   const entityId =
     typeof config.entity_id === "string" ? config.entity_id : "";
+  const customTitle = typeof config.title === "string" ? config.title.trim() : "";
   const entity = useEntity(entityId);
   const showEntries = config.show_entries !== false;
   const detailModal = useDetailModal();
@@ -203,7 +205,9 @@ function SinksarToday({ config, interactive }: WidgetComponentProps) {
   if (!entityId) {
     return (
       <div className="flex h-full min-h-40 flex-col justify-center rounded-2xl border border-border bg-card p-5">
-        <p className="font-display text-base font-semibold">Sinksar Today</p>
+        <p className="font-display text-base font-semibold">
+          {customTitle || "Sinksar Today"}
+        </p>
         <p className="mt-1 text-sm text-muted-foreground">
           Bind a Sinksar sensor in settings.
         </p>
@@ -214,7 +218,9 @@ function SinksarToday({ config, interactive }: WidgetComponentProps) {
   if (!entity) {
     return (
       <div className="flex h-full min-h-40 flex-col justify-center rounded-2xl border border-dashed border-border bg-card p-5">
-        <p className="font-display text-base font-semibold">{entityId}</p>
+        <p className="font-display text-base font-semibold">
+          {customTitle || entityId}
+        </p>
         <p className="mt-1 text-sm text-muted-foreground">Entity unavailable</p>
       </div>
     );
@@ -289,7 +295,7 @@ function SinksarToday({ config, interactive }: WidgetComponentProps) {
     >
       <div className="mb-3 flex items-center justify-between gap-2">
         <p className="text-xs font-medium tracking-[0.08em] text-muted-foreground">
-          ስንክሳር
+          {customTitle || "ስንክሳር"}
         </p>
         {dayOfYear != null ? (
           <span className="rounded-md bg-muted px-2 py-0.5 text-[10px] font-semibold tabular-nums text-muted-foreground">
@@ -356,6 +362,7 @@ export const sinksarTodayWidget = defineWidget({
   component: SinksarToday,
   configSchema: sinksarTodayConfigSchema,
   defaultConfig: {
+    title: "",
     entity_id: "",
     show_entries: true,
   },

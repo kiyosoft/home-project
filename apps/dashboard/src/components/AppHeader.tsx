@@ -213,12 +213,19 @@ export function AppHeader({
             onChange={(event) => {
               const file = event.target.files?.[0];
               if (!file) return;
-              void file.text().then((text) => {
-                const result = importJSON(text);
-                setBanner(
-                  result.ok ? t(locale, "header.imported") : result.error,
-                );
-              });
+              void (async () => {
+                try {
+                  const text = await file.text();
+                  const result = importJSON(text);
+                  setBanner(
+                    result.ok ? t(locale, "header.imported") : result.error,
+                  );
+                } catch (error) {
+                  setBanner(
+                    error instanceof Error ? error.message : "Import failed",
+                  );
+                }
+              })();
               event.target.value = "";
             }}
           />

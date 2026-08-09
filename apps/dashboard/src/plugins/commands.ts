@@ -21,14 +21,6 @@ export function listCommands(): DefinedCommand[] {
   return [...commands.values()];
 }
 
-export async function executeCommand(id: string): Promise<void> {
-  const command = commands.get(id);
-  if (!command) {
-    throw new Error(`Unknown command: ${id}`);
-  }
-  await command.run();
-}
-
 export function clearCommands(): void {
   commands.clear();
 }

@@ -259,17 +259,25 @@ export function DashboardSettings({ open, onClose }: DashboardSettingsProps) {
               onChange={(event) => {
                 const file = event.target.files?.[0];
                 if (!file) return;
-                void file.text().then((text) => {
-                  const result = importJSON(text);
-                  if (!result.ok) {
-                    setImportError(result.error);
-                    setBanner(result.error);
-                    return;
+                void (async () => {
+                  try {
+                    const text = await file.text();
+                    const result = importJSON(text);
+                    if (!result.ok) {
+                      setImportError(result.error);
+                      setBanner(result.error);
+                      return;
+                    }
+                    setImportError(null);
+                    setBanner(t(locale, "header.imported"));
+                    onClose();
+                  } catch (error) {
+                    const message =
+                      error instanceof Error ? error.message : "Import failed";
+                    setImportError(message);
+                    setBanner(message);
                   }
-                  setImportError(null);
-                  setBanner(t(locale, "header.imported"));
-                  onClose();
-                });
+                })();
                 event.target.value = "";
               }}
             />

@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import type { HassEntity } from "@ethio/ha-sdk";
 
 import { Input } from "@/components/ui/input";
 import { t, toIntlLocale } from "@/i18n";
@@ -19,25 +20,33 @@ export function EntityPicker({ value, onChange, domains }: EntityPickerProps) {
   const [query, setQuery] = useState("");
 
   const options = useMemo(() => {
-    return Object.values(entities)
-      .filter((entity) => {
-        if (!domains?.length) return true;
+    const domainSet = domains?.length ? new Set(domains) : null;
+    const q = query.trim().toLowerCase();
+    const next: HassEntity[] = [];
+    for (const entity of Object.values(entities)) {
+      if (domainSet) {
         const domain = entity.entity_id.split(".")[0] ?? "";
-        return domains.includes(domain);
-      })
-      .filter((entity) => {
-        const q = query.trim().toLowerCase();
-        if (!q) return true;
+        if (!domainSet.has(domain)) continue;
+      }
+      if (q) {
         const name = getFriendlyName(entity).toLowerCase();
-        return name.includes(q) || entity.entity_id.toLowerCase().includes(q);
-      })
-      .sort((a, b) =>
-        getFriendlyName(a).localeCompare(
-          getFriendlyName(b),
-          toIntlLocale(locale),
-          { sensitivity: "base" },
-        ),
-      );
+        if (
+          !name.includes(q) &&
+          !entity.entity_id.toLowerCase().includes(q)
+        ) {
+          continue;
+        }
+      }
+      next.push(entity);
+    }
+    next.sort((a, b) =>
+      getFriendlyName(a).localeCompare(
+        getFriendlyName(b),
+        toIntlLocale(locale),
+        { sensitivity: "base" },
+      ),
+    );
+    return next;
   }, [entities, domains, query, locale]);
 
   return (

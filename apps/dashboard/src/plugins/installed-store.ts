@@ -1,10 +1,21 @@
 import type { RegistryCatalogEntry } from "./catalog-types";
 
-const INSTALLED_KEY = "ethio-home.installed-plugins";
+const INSTALLED_KEY = "ethio-home.installed-plugins:v1";
+const INSTALLED_KEY_LEGACY = "ethio-home.installed-plugins";
+
+function readStorage(): string | null {
+  const current = localStorage.getItem(INSTALLED_KEY);
+  if (current != null) return current;
+  const legacy = localStorage.getItem(INSTALLED_KEY_LEGACY);
+  if (legacy == null) return null;
+  localStorage.setItem(INSTALLED_KEY, legacy);
+  localStorage.removeItem(INSTALLED_KEY_LEGACY);
+  return legacy;
+}
 
 export function loadInstalledPlugins(): RegistryCatalogEntry[] {
   try {
-    const raw = localStorage.getItem(INSTALLED_KEY);
+    const raw = readStorage();
     if (!raw) return [];
     const parsed = JSON.parse(raw) as unknown;
     if (!Array.isArray(parsed)) return [];
@@ -16,6 +27,7 @@ export function loadInstalledPlugins(): RegistryCatalogEntry[] {
 
 export function saveInstalledPlugins(entries: RegistryCatalogEntry[]): void {
   localStorage.setItem(INSTALLED_KEY, JSON.stringify(entries));
+  localStorage.removeItem(INSTALLED_KEY_LEGACY);
 }
 
 export function addInstalledPlugin(entry: RegistryCatalogEntry): void {

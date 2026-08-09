@@ -59,10 +59,18 @@ export function SchemaForm({ type, config, onSave, onCancel }: SchemaFormProps) 
   });
   const [error, setError] = useState<string | null>(null);
 
-  const fields = useMemo(
-    () => shapeEntries(def.configSchema),
-    [def.configSchema],
-  );
+  const fields = useMemo(() => {
+    const entries = shapeEntries(def.configSchema);
+    // Title first so every card exposes an editable heading consistently
+    entries.sort(([a], [b]) => {
+      if (a === "title") return -1;
+      if (b === "title") return 1;
+      if (a === "entity_id") return -1;
+      if (b === "entity_id") return 1;
+      return 0;
+    });
+    return entries;
+  }, [def.configSchema]);
 
   function handleSave() {
     const parsed = def.configSchema.safeParse(draft);
@@ -76,6 +84,21 @@ export function SchemaForm({ type, config, onSave, onCancel }: SchemaFormProps) 
   return (
     <div className="space-y-4">
       {fields.map(([field, fieldSchema]) => {
+        if (field === "title") {
+          return (
+            <label key={field} className="block space-y-2 text-sm">
+              <span className="font-medium">{t(locale, "schema.title")}</span>
+              <Input
+                value={typeof draft.title === "string" ? draft.title : ""}
+                placeholder={t(locale, "schema.titlePlaceholder")}
+                onChange={(event) =>
+                  setDraft((prev) => ({ ...prev, title: event.target.value }))
+                }
+              />
+            </label>
+          );
+        }
+
         if (field === "entity_id") {
           return (
             <label key={field} className="block space-y-2 text-sm">

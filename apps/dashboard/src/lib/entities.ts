@@ -37,7 +37,3 @@ export function pickLiveEntityIds(entities: HassEntities) {
       .sort()[1],
   };
 }
-
-export function domainFromEntityId(entityId: string): string {
-  return entityId.split(".")[0] ?? "";
-}

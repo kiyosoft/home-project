@@ -9,6 +9,7 @@ import {
 } from "@ethio/plugin-sdk";
 
 export const personConfigSchema = z.object({
+  title: z.string().default(""),
   entity_id: z.string().min(1, "Entity is required"),
 });
 
@@ -24,13 +25,16 @@ function getFriendlyName(entity: {
 function PersonWidget({ config, interactive }: WidgetComponentProps) {
   const entityId =
     typeof config.entity_id === "string" ? config.entity_id : "";
+  const customTitle = typeof config.title === "string" ? config.title.trim() : "";
   const entity = useEntity(entityId);
   const entityDetail = useEntityDetail();
 
   if (!entityId) {
     return (
       <div className="flex h-full min-h-36 flex-col rounded-2xl border border-border bg-card p-5 text-card-foreground shadow-sm">
-        <h3 className="font-display text-base font-semibold">Person</h3>
+        <h3 className="font-display text-base font-semibold">
+          {customTitle || "Person"}
+        </h3>
         <p className="mt-2 text-sm text-muted-foreground">
           Pick a person entity in settings.
         </p>
@@ -41,12 +45,15 @@ function PersonWidget({ config, interactive }: WidgetComponentProps) {
   if (!entity) {
     return (
       <div className="flex h-full min-h-36 flex-col rounded-2xl border border-dashed border-border bg-card p-5">
-        <h3 className="font-display text-base font-semibold">{entityId}</h3>
+        <h3 className="font-display text-base font-semibold">
+          {customTitle || entityId}
+        </h3>
         <p className="mt-2 text-sm text-muted-foreground">Entity unavailable</p>
       </div>
     );
   }
 
+  const displayTitle = customTitle || getFriendlyName(entity);
   const picture =
     typeof entity.attributes.entity_picture === "string"
       ? entity.attributes.entity_picture
@@ -79,7 +86,7 @@ function PersonWidget({ config, interactive }: WidgetComponentProps) {
           {picture ? (
             <img
               src={picture}
-              alt={getFriendlyName(entity)}
+              alt={displayTitle}
               className="h-full w-full object-cover"
             />
           ) : (
@@ -94,7 +101,7 @@ function PersonWidget({ config, interactive }: WidgetComponentProps) {
         />
       </div>
       <h3 className="mt-3 font-display text-base font-semibold tracking-tight">
-        {getFriendlyName(entity)}
+        {displayTitle}
       </h3>
       <p className="mt-1 text-sm capitalize text-muted-foreground">
         {entity.state}
@@ -109,7 +116,7 @@ export const personWidget = defineWidget({
   description: "Presence and person status",
   component: PersonWidget,
   configSchema: personConfigSchema,
-  defaultConfig: { entity_id: "" },
+  defaultConfig: { title: "", entity_id: "" },
   defaultSize: { w: 3, h: 3, minW: 2, minH: 3, maxW: 6, maxH: 5 },
   minSize: { w: 2, h: 3 },
   maxSize: { w: 6, h: 5 },

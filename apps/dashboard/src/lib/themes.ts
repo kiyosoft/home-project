@@ -111,7 +111,3 @@ export function isThemeMode(value: string | null): value is ThemeMode {
 export function isLightTheme(theme: ThemeMode): boolean {
   return LIGHT_THEMES.has(theme);
 }
-
-export function isScificnTheme(theme: ThemeMode): boolean {
-  return theme === "scifi" || theme === "star-wars" || theme === "alien";
-}

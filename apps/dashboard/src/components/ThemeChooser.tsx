@@ -48,17 +48,22 @@ export function ThemeChooser() {
         onChange={(event) => setTheme(event.target.value as ThemeMode)}
         aria-label={t(locale, "theme.chooseAria")}
       >
-        {GROUPS.map((group) => (
-          <optgroup key={group.id} label={t(locale, group.labelKey)}>
-            {THEME_OPTIONS.filter((option) => option.group === group.id).map(
-              (option) => (
-                <option key={option.id} value={option.id}>
-                  {t(locale, themeLabelKey(option.id))}
-                </option>
-              ),
-            )}
-          </optgroup>
-        ))}
+        {GROUPS.map((group) => {
+          const options = [];
+          for (const option of THEME_OPTIONS) {
+            if (option.group !== group.id) continue;
+            options.push(
+              <option key={option.id} value={option.id}>
+                {t(locale, themeLabelKey(option.id))}
+              </option>,
+            );
+          }
+          return (
+            <optgroup key={group.id} label={t(locale, group.labelKey)}>
+              {options}
+            </optgroup>
+          );
+        })}
       </select>
     </label>
   );

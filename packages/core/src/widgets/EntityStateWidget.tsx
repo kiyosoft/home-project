@@ -9,6 +9,7 @@ import {
 } from "@ethio/plugin-sdk";
 
 export const entityStateConfigSchema = z.object({
+  title: z.string().default(""),
   entity_id: z.string().min(1, "Entity is required"),
 });
 
@@ -29,13 +30,16 @@ function getUnit(entity: { attributes: Record<string, unknown> }): string | unde
 function EntityStateWidget({ config, interactive }: WidgetComponentProps) {
   const entityId =
     typeof config.entity_id === "string" ? config.entity_id : "";
+  const customTitle = typeof config.title === "string" ? config.title.trim() : "";
   const entity = useEntity(entityId);
   const entityDetail = useEntityDetail();
 
   if (!entityId) {
     return (
       <div className="flex h-full min-h-36 flex-col rounded-2xl border border-border bg-card p-5 text-card-foreground shadow-sm">
-        <h3 className="font-display text-base font-semibold">No sensor found</h3>
+        <h3 className="font-display text-base font-semibold">
+          {customTitle || "No sensor found"}
+        </h3>
         <p className="mt-2 text-sm text-muted-foreground">
           Pick a sensor entity in widget settings.
         </p>
@@ -46,13 +50,16 @@ function EntityStateWidget({ config, interactive }: WidgetComponentProps) {
   if (!entity) {
     return (
       <div className="flex h-full min-h-36 flex-col rounded-2xl border border-dashed border-border bg-card p-5 text-card-foreground">
-        <h3 className="font-display text-base font-semibold">{entityId}</h3>
+        <h3 className="font-display text-base font-semibold">
+          {customTitle || entityId}
+        </h3>
         <p className="mt-2 text-sm text-muted-foreground">Entity unavailable</p>
       </div>
     );
   }
 
   const unit = getUnit(entity);
+  const displayTitle = customTitle || getFriendlyName(entity);
   const isBinary = entity.entity_id.startsWith("binary_sensor.");
   const displayState = isBinary
     ? entity.state === "on"
@@ -87,7 +94,7 @@ function EntityStateWidget({ config, interactive }: WidgetComponentProps) {
             Sensor
           </p>
           <h3 className="mt-1 font-display text-base font-semibold tracking-tight">
-            {getFriendlyName(entity)}
+            {displayTitle}
           </h3>
         </div>
         <div className="rounded-full bg-primary/10 p-2 text-primary">
@@ -119,7 +126,7 @@ export const entityStateWidget = defineWidget({
   description: "Show a sensor or binary sensor value",
   component: EntityStateWidget,
   configSchema: entityStateConfigSchema,
-  defaultConfig: { entity_id: "" },
+  defaultConfig: { title: "", entity_id: "" },
   defaultSize: { w: 4, h: 3, minW: 2, minH: 2, maxW: 12, maxH: 6 },
   minSize: { w: 2, h: 2 },
   maxSize: { w: 12, h: 6 },

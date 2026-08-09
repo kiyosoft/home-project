@@ -23,11 +23,14 @@ export interface LockSettings {
   kiosk: boolean;
 }
 
-const CONNECTION_KEY = "ethio-home.connection";
+const CONNECTION_KEY = "ethio-home.connection:v1";
+const CONNECTION_KEY_LEGACY = "ethio-home.connection";
 const THEME_KEY = "ethio-home.theme";
 const LOCALE_KEY = "ethio-home.locale";
-const DASHBOARD_KEY = "ethio-home.dashboard";
-const LOCK_KEY = "ethio-home.lock";
+const DASHBOARD_KEY = "ethio-home.dashboard:v1";
+const DASHBOARD_KEY_LEGACY = "ethio-home.dashboard";
+const LOCK_KEY = "ethio-home.lock:v1";
+const LOCK_KEY_LEGACY = "ethio-home.lock";
 
 const defaultConnection: ConnectionSettings = {
   mode: "live",
@@ -35,9 +38,19 @@ const defaultConnection: ConnectionSettings = {
   token: "",
 };
 
+function readStorage(key: string, legacyKey: string): string | null {
+  const current = localStorage.getItem(key);
+  if (current != null) return current;
+  const legacy = localStorage.getItem(legacyKey);
+  if (legacy == null) return null;
+  localStorage.setItem(key, legacy);
+  localStorage.removeItem(legacyKey);
+  return legacy;
+}
+
 export function loadConnectionSettings(): ConnectionSettings | null {
   try {
-    const raw = localStorage.getItem(CONNECTION_KEY);
+    const raw = readStorage(CONNECTION_KEY, CONNECTION_KEY_LEGACY);
     if (!raw) return null;
     const parsed = JSON.parse(raw) as Partial<ConnectionSettings>;
     if (parsed.mode !== "live" && parsed.mode !== "demo") return null;
@@ -60,10 +73,12 @@ export function saveConnectionSettings(settings: ConnectionSettings): void {
       token: settings.token,
     }),
   );
+  localStorage.removeItem(CONNECTION_KEY_LEGACY);
 }
 
 export function clearConnectionSettings(): void {
   localStorage.removeItem(CONNECTION_KEY);
+  localStorage.removeItem(CONNECTION_KEY_LEGACY);
 }
 
 export function loadTheme(): ThemeMode {
@@ -110,7 +125,7 @@ export function applyLocale(locale: Locale): void {
 
 export function loadDashboard(): DashboardConfig | null {
   try {
-    const raw = localStorage.getItem(DASHBOARD_KEY);
+    const raw = readStorage(DASHBOARD_KEY, DASHBOARD_KEY_LEGACY);
     if (!raw) return null;
     const parsed = safeParseDashboardConfig(JSON.parse(raw));
     return parsed.success ? parsed.data : null;
@@ -121,11 +136,12 @@ export function loadDashboard(): DashboardConfig | null {
 
 export function saveDashboard(dashboard: DashboardConfig): void {
   localStorage.setItem(DASHBOARD_KEY, JSON.stringify(dashboard));
+  localStorage.removeItem(DASHBOARD_KEY_LEGACY);
 }
 
 export function loadLockSettings(): LockSettings {
   try {
-    const raw = localStorage.getItem(LOCK_KEY);
+    const raw = readStorage(LOCK_KEY, LOCK_KEY_LEGACY);
     if (!raw) return { pinHash: null, kiosk: false };
     const parsed = JSON.parse(raw) as Partial<LockSettings>;
     return {
@@ -139,6 +155,7 @@ export function loadLockSettings(): LockSettings {
 
 export function saveLockSettings(settings: LockSettings): void {
   localStorage.setItem(LOCK_KEY, JSON.stringify(settings));
+  localStorage.removeItem(LOCK_KEY_LEGACY);
 }
 
 export { defaultConnection };

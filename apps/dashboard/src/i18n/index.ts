@@ -3,7 +3,7 @@ import { en, type MessageKey } from "./messages/en";
 import type { Locale } from "./locales";
 
 export type { Locale, MessageKey };
-export { LOCALES, isLocale, toIntlLocale } from "./locales";
+export { isLocale, toIntlLocale } from "./locales";
 
 const catalogs: Record<Locale, Record<MessageKey, string>> = {
   en,

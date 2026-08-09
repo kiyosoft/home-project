@@ -14,14 +14,6 @@ export function emptyLayouts(): PageLayouts {
   return { lg: [], md: [], sm: [] };
 }
 
-/** Pack widgets left-to-right, wrapping by column count. */
-export function packLayouts(
-  widgetIds: string[],
-  size: SizeHint,
-): PageLayouts {
-  return packLayoutsSized(widgetIds.map((id) => ({ id, size })));
-}
-
 /** Pack widgets with per-item size hints. */
 export function packLayoutsSized(
   items: { id: string; size: SizeHint }[],

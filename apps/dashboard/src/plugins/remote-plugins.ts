@@ -8,21 +8,25 @@ import {
 import { isPluginLoaded, registerPlugin, unregisterPlugin } from "./manager";
 
 export async function loadInstalledRemotePlugins(): Promise<void> {
-  const installed = loadInstalledPlugins();
-  for (const entry of installed) {
-    if (isPluginLoaded(entry.id)) continue;
-    try {
-      const plugin = await loadRemotePlugin(entry.entryUrl);
-      if (plugin.id !== entry.id) {
-        console.warn(
-          `[ethio] Installed plugin id mismatch: catalog ${entry.id} vs module ${plugin.id}`,
-        );
+  const installed = loadInstalledPlugins().filter(
+    (entry) => !isPluginLoaded(entry.id),
+  );
+
+  await Promise.all(
+    installed.map(async (entry) => {
+      try {
+        const plugin = await loadRemotePlugin(entry.entryUrl);
+        if (plugin.id !== entry.id) {
+          console.warn(
+            `[ethio] Installed plugin id mismatch: catalog ${entry.id} vs module ${plugin.id}`,
+          );
+        }
+        registerPlugin(plugin);
+      } catch (error) {
+        console.error(`[ethio] Failed to load remote plugin ${entry.id}`, error);
       }
-      registerPlugin(plugin);
-    } catch (error) {
-      console.error(`[ethio] Failed to load remote plugin ${entry.id}`, error);
-    }
-  }
+    }),
+  );
 }
 
 export async function installRemotePlugin(

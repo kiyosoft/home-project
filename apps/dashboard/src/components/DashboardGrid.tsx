@@ -1,6 +1,6 @@
-import { useReducedMotion } from "motion/react";
+import { useAnimationControls, useReducedMotion } from "motion/react";
 import * as m from "motion/react-m";
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import {
   ResponsiveGridLayout,
   useContainerWidth,
@@ -17,7 +17,7 @@ import { useDashboardStore } from "@/store/dashboard-store";
 
 import "react-grid-layout/css/styles.css";
 
-const REVEAL_STAGGER_S = 0.055;
+const REVEAL_STAGGER_S = 0.04;
 const REVEAL_STAGGER_MAX = 12;
 const REVEAL_EASE = [0.22, 1, 0.36, 1] as const;
 
@@ -47,6 +47,53 @@ function asGridItems(layout: Layout): GridItem[] {
   }));
 }
 
+/** Replay entrance without remounting children (avoids re-running heavy widgets). */
+function CardReveal({
+  revealKey,
+  order,
+  reduceMotion,
+  children,
+}: {
+  revealKey: number;
+  order: number;
+  reduceMotion: boolean | null;
+  children: ReactNode;
+}) {
+  const controls = useAnimationControls();
+  const delay = Math.min(order, REVEAL_STAGGER_MAX) * REVEAL_STAGGER_S;
+
+  useEffect(() => {
+    if (reduceMotion) {
+      void controls.set({ opacity: 1, y: 0, scale: 1 });
+      return;
+    }
+    // Replay on page change / wake without remounting widget trees
+    void controls.set({ opacity: 0, y: 12, scale: 0.985 });
+    void controls.start({
+      opacity: 1,
+      y: 0,
+      scale: 1,
+      transition: {
+        duration: 0.4,
+        delay,
+        ease: REVEAL_EASE,
+      },
+    });
+  }, [revealKey, delay, reduceMotion, controls]);
+
+  return (
+    <m.div
+      className="h-full"
+      initial={
+        reduceMotion ? false : { opacity: 0, y: 12, scale: 0.985 }
+      }
+      animate={controls}
+    >
+      {children}
+    </m.div>
+  );
+}
+
 export function DashboardGrid({ page }: DashboardGridProps) {
   const mode = useDashboardStore((state) => state.mode);
   const setLayouts = useDashboardStore((state) => state.setLayouts);
@@ -57,6 +104,13 @@ export function DashboardGrid({ page }: DashboardGridProps) {
   const reduceMotion = useReducedMotion();
 
   const layouts = useMemo(() => toLayouts(page), [page]);
+
+  // Stagger by visual reading order, not widgets[] registration order.
+  const revealOrder = useMemo(() => {
+    const layout = page.layouts[breakpoint] ?? page.layouts.lg;
+    const sorted = [...layout].sort((a, b) => a.y - b.y || a.x - b.x);
+    return new Map(sorted.map((item, index) => [item.i, index]));
+  }, [page.layouts, breakpoint]);
 
   return (
     <div
@@ -112,29 +166,20 @@ export function DashboardGrid({ page }: DashboardGridProps) {
             }
           }}
         >
-          {page.widgets.map((widget, index) => (
-            <div key={widget.id} className="overflow-hidden">
-              <m.div
-                key={revealKey}
-                className="h-full"
-                initial={
-                  reduceMotion
-                    ? false
-                    : { opacity: 0, y: 12, scale: 0.985 }
-                }
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                transition={{
-                  duration: reduceMotion ? 0 : 0.48,
-                  delay: reduceMotion
-                    ? 0
-                    : Math.min(index, REVEAL_STAGGER_MAX) * REVEAL_STAGGER_S,
-                  ease: REVEAL_EASE,
-                }}
-              >
-                <WidgetTile widget={widget} />
-              </m.div>
-            </div>
-          ))}
+          {page.widgets.map((widget, index) => {
+            const order = revealOrder.get(widget.id) ?? index;
+            return (
+              <div key={widget.id} className="overflow-hidden">
+                <CardReveal
+                  revealKey={revealKey}
+                  order={order}
+                  reduceMotion={reduceMotion}
+                >
+                  <WidgetTile widget={widget} />
+                </CardReveal>
+              </div>
+            );
+          })}
         </ResponsiveGridLayout>
       ) : null}
     </div>

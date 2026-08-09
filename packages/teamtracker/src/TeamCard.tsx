@@ -10,6 +10,7 @@ import {
 import { TeamScoreCelebrationHost } from "./ScoreCelebration";
 
 export const teamCardConfigSchema = z.object({
+  title: z.string().default(""),
   entity_id: z.string().min(1, "Entity is required"),
   card_title: z.string().optional(),
   home_side: z.enum(["left", "right"]).default("left"),
@@ -153,6 +154,9 @@ function TeamSide({
 function TeamCard({ config, interactive }: WidgetComponentProps) {
   const entityId =
     typeof config.entity_id === "string" ? config.entity_id : "";
+  const customTitle = typeof config.title === "string" ? config.title.trim() : "";
+  const cardTitle =
+    typeof config.card_title === "string" ? config.card_title.trim() : "";
   const entity = useEntity(entityId);
   const entityDetail = useEntityDetail();
   const homeSide = config.home_side === "right" ? "right" : "left";
@@ -163,13 +167,13 @@ function TeamCard({ config, interactive }: WidgetComponentProps) {
   const scoreCelebration = Boolean(config.score_celebration);
   const opponentCelebration = Boolean(config.opponent_celebration);
   const celebrationSound = Boolean(config.celebration_sound);
-  const cardTitle =
-    typeof config.card_title === "string" ? config.card_title : undefined;
 
   if (!entityId) {
     return (
       <div className="flex h-full min-h-40 flex-col justify-center rounded-2xl border border-border bg-card p-5">
-        <p className="font-display text-base font-semibold">Team Card</p>
+        <p className="font-display text-base font-semibold">
+          {customTitle || cardTitle || "Team Card"}
+        </p>
         <p className="mt-1 text-sm text-muted-foreground">
           Bind a ha-teamtracker sensor in settings.
         </p>
@@ -180,7 +184,9 @@ function TeamCard({ config, interactive }: WidgetComponentProps) {
   if (!entity) {
     return (
       <div className="flex h-full min-h-40 flex-col justify-center rounded-2xl border border-dashed border-border bg-card p-5">
-        <p className="font-display text-base font-semibold">{entityId}</p>
+        <p className="font-display text-base font-semibold">
+          {customTitle || cardTitle || entityId}
+        </p>
         <p className="mt-1 text-sm text-muted-foreground">Entity unavailable</p>
       </div>
     );
@@ -242,7 +248,8 @@ function TeamCard({ config, interactive }: WidgetComponentProps) {
   }
 
   const title =
-    cardTitle ??
+    customTitle ||
+    cardTitle ||
     (showLeague && league ? league : sport ? sport.toUpperCase() : "Team Tracker");
   const showScore = state === "IN" || state === "POST";
   const gradient = teamGradient(left.color, right.color);
@@ -379,6 +386,7 @@ export const teamCardWidget = defineWidget({
   component: TeamCard,
   configSchema: teamCardConfigSchema,
   defaultConfig: {
+    title: "",
     entity_id: "",
     home_side: "left",
     show_league: false,

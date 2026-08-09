@@ -50,6 +50,20 @@ function withLayouts(
 export function seedDemoDashboard(): DashboardConfig {
   const widgets: DashboardWidget[] = [
     {
+      id: "w-text",
+      type: "@ethio/core/text-card",
+      config: {
+        title: "Welcome",
+        html: `<p>Hello, <strong>{{person.kidus.friendly_name}}</strong> — you are <em>{{person.kidus}}</em>.</p><p>{{#if binary_sensor.fasting}}ዛሬ ጾም ነው{{else}}Enjoy your meal{{/if}}</p>`,
+        vertical_align: "center",
+        padding: "md",
+        background_type: "color",
+        background_color: "hsl(var(--muted))",
+        background_image: "",
+        background_fit: "cover",
+      },
+    },
+    {
       id: "w1",
       type: "@ethio/core/entity-state",
       config: { entity_id: DEMO_ENTITY_IDS.sensor },

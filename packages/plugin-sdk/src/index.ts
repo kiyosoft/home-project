@@ -33,10 +33,23 @@ export {
 } from "./hooks";
 export type { TodoItemsState } from "./hooks";
 export {
+  collectTemplateIssues,
+  normalizeMarkers,
+  renderTemplate,
+  resolveTemplatePath,
+} from "./template";
+export type { TemplateIssue, TemplateIssueKind } from "./template";
+export { sanitizeRichText } from "./sanitize";
+export {
   TODO_FEATURE,
   todoSupportsFeature,
 } from "@ethio/ha-sdk";
-export type { TodoItem, TodoItemStatus } from "@ethio/ha-sdk";
+export type {
+  HassEntities,
+  HassEntity,
+  TodoItem,
+  TodoItemStatus,
+} from "@ethio/ha-sdk";
 export type {
   Capability,
   DefinedCommand,

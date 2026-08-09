@@ -1,7 +1,5 @@
 import { z } from "zod";
 
-import type { Breakpoint, DashboardConfig } from "./types";
-
 export const gridItemSchema = z.object({
   i: z.string().min(1),
   x: z.number().int().nonnegative(),
@@ -52,14 +50,6 @@ export const dashboardConfigSchema = z.object({
   header: dashboardHeaderSchema.optional(),
 });
 
-export function parseDashboardConfig(input: unknown): DashboardConfig {
-  return dashboardConfigSchema.parse(input);
-}
-
 export function safeParseDashboardConfig(input: unknown) {
   return dashboardConfigSchema.safeParse(input);
-}
-
-export function isBreakpoint(value: string): value is Breakpoint {
-  return value === "lg" || value === "md" || value === "sm";
 }

@@ -1,15 +1,7 @@
-import {
-  useEffect,
-  useId,
-  useRef,
-  type HTMLAttributes,
-  type ReactNode,
-} from "react";
+import { useEffect, useId, useRef, type ReactNode } from "react";
 
 import { Button } from "@/components/ui/button";
-import { t } from "@/i18n";
 import { cn } from "@/lib/utils";
-import { useLocaleStore } from "@/store/locale-store";
 
 const FOCUSABLE_SELECTOR =
   'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])';
@@ -33,9 +25,8 @@ export function Dialog({
   className,
   footer,
 }: DialogProps) {
-  const locale = useLocaleStore((state) => state.locale);
   const titleId = useId();
-  const panelRef = useRef<HTMLDivElement>(null);
+  const dialogRef = useRef<HTMLDialogElement>(null);
   const previousActiveRef = useRef<HTMLElement | null>(null);
   const wasOpenRef = useRef(false);
   const onCloseRef = useRef(onClose);
@@ -45,8 +36,12 @@ export function Dialog({
   }, [onClose]);
 
   useEffect(() => {
+    const dialog = dialogRef.current;
+    if (!dialog) return undefined;
+
     if (!open) {
       wasOpenRef.current = false;
+      if (dialog.open) dialog.close();
       return undefined;
     }
 
@@ -57,82 +52,49 @@ export function Dialog({
         document.activeElement instanceof HTMLElement
           ? document.activeElement
           : null;
+      if (!dialog.open) dialog.showModal();
+
+      const focusables = Array.from(
+        dialog.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR),
+      );
+      const nonCloseTarget = focusables.find(
+        (el) => !el.classList.contains("dialog-close"),
+      );
+      const target = nonCloseTarget ?? focusables[0] ?? dialog;
+      target.focus();
+    } else if (!dialog.open) {
+      dialog.showModal();
     }
 
     const prevOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
 
-    const panel = panelRef.current;
-    if (openedNow && panel) {
-      const focusables = Array.from(
-        panel.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR),
-      );
-      const nonCloseTarget = focusables.find(
-        (el) => !el.classList.contains("dialog-close"),
-      );
-      const target = nonCloseTarget ?? focusables[0] ?? panel;
-      target.focus();
-    }
-
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (!panelRef.current) return;
-      if (event.key === "Escape") {
-        event.preventDefault();
-        onCloseRef.current();
-        return;
-      }
-      if (event.key !== "Tab") return;
-
-      const focusables = panelRef.current.querySelectorAll<HTMLElement>(
-        FOCUSABLE_SELECTOR,
-      );
-      if (!focusables.length) {
-        event.preventDefault();
-        panelRef.current.focus();
-        return;
-      }
-
-      const first = focusables[0]!;
-      const last = focusables[focusables.length - 1]!;
-      const active = document.activeElement;
-
-      if (event.shiftKey && active === first) {
-        event.preventDefault();
-        last.focus();
-      } else if (!event.shiftKey && active === last) {
-        event.preventDefault();
-        first.focus();
-      }
-    };
-
-    document.addEventListener("keydown", handleKeyDown);
-
     return () => {
-      document.removeEventListener("keydown", handleKeyDown);
       document.body.style.overflow = prevOverflow;
       const previous = previousActiveRef.current;
       if (previous) previous.focus();
     };
   }, [open]);
 
-  if (!open) return null;
-
   return (
-    <div className="fixed inset-0 z-[100] flex items-end justify-center p-4 sm:items-center">
-      <button
-        type="button"
-        className="absolute inset-0 bg-black/50 backdrop-blur-sm"
-        aria-label={t(locale, "dialog.closeAria")}
-        onClick={onClose}
-      />
+    <dialog
+      ref={dialogRef}
+      aria-labelledby={titleId}
+      className={cn(
+        "fixed inset-0 z-[100] m-0 flex max-h-none w-full max-w-none items-end justify-center border-0 bg-transparent p-4 open:flex sm:items-center",
+        "[&::backdrop]:bg-black/50 [&::backdrop]:backdrop-blur-sm",
+      )}
+      onCancel={(event) => {
+        event.preventDefault();
+        onCloseRef.current();
+      }}
+      onClose={() => {
+        if (open) onCloseRef.current();
+      }}
+    >
       <div
-        ref={panelRef}
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby={titleId}
-        tabIndex={-1}
         className={cn(
-          "relative z-10 flex max-h-[85vh] w-full max-w-lg flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-xl outline-none",
+          "relative flex max-h-[85vh] w-full max-w-lg flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-xl outline-none",
           className,
         )}
         onClick={(event) => event.stopPropagation()}
@@ -163,13 +125,6 @@ export function Dialog({
           <div className="border-t border-border px-5 py-3">{footer}</div>
         ) : null}
       </div>
-    </div>
+    </dialog>
   );
-}
-
-export function DialogSection({
-  className,
-  ...props
-}: HTMLAttributes<HTMLDivElement>) {
-  return <div className={cn("space-y-3", className)} {...props} />;
 }

@@ -10,6 +10,7 @@ import {
 } from "@ethio/plugin-sdk";
 
 export const toggleConfigSchema = z.object({
+  title: z.string().default(""),
   entity_id: z.string().min(1, "Entity is required"),
 });
 
@@ -29,6 +30,7 @@ function domainFromEntityId(entityId: string): string {
 function ToggleWidget({ config, interactive = true }: WidgetComponentProps) {
   const entityId =
     typeof config.entity_id === "string" ? config.entity_id : "";
+  const customTitle = typeof config.title === "string" ? config.title.trim() : "";
   const entity = useEntity(entityId);
   const callService = useCallService();
   const [pending, setPending] = useState(false);
@@ -37,7 +39,7 @@ function ToggleWidget({ config, interactive = true }: WidgetComponentProps) {
     return (
       <div className="flex h-full min-h-36 flex-col rounded-2xl border border-border bg-card p-5 text-card-foreground shadow-sm">
         <h3 className="font-display text-base font-semibold">
-          No toggle entity found
+          {customTitle || "No toggle entity found"}
         </h3>
         <p className="mt-2 text-sm text-muted-foreground">
           Pick a light, switch, or input boolean in settings.
@@ -49,13 +51,16 @@ function ToggleWidget({ config, interactive = true }: WidgetComponentProps) {
   if (!entity) {
     return (
       <div className="flex h-full min-h-36 flex-col rounded-2xl border border-dashed border-border bg-card p-5">
-        <h3 className="font-display text-base font-semibold">{entityId}</h3>
+        <h3 className="font-display text-base font-semibold">
+          {customTitle || entityId}
+        </h3>
         <p className="mt-2 text-sm text-muted-foreground">Entity unavailable</p>
       </div>
     );
   }
 
   const domain = domainFromEntityId(entity.entity_id);
+  const displayTitle = customTitle || getFriendlyName(entity);
   const isOn = entity.state === "on";
   const Icon = domain === "light" ? Lightbulb : Power;
   const toggleEntityId = entity.entity_id;
@@ -78,7 +83,7 @@ function ToggleWidget({ config, interactive = true }: WidgetComponentProps) {
             {domain}
           </p>
           <h3 className="mt-1 font-display text-base font-semibold tracking-tight">
-            {getFriendlyName(entity)}
+            {displayTitle}
           </h3>
         </div>
         <div
@@ -130,7 +135,7 @@ export const toggleWidget = defineWidget({
   description: "Toggle a light, switch, or input boolean",
   component: ToggleWidget,
   configSchema: toggleConfigSchema,
-  defaultConfig: { entity_id: "" },
+  defaultConfig: { title: "", entity_id: "" },
   defaultSize: { w: 4, h: 3, minW: 2, minH: 2, maxW: 8, maxH: 6 },
   minSize: { w: 2, h: 2 },
   maxSize: { w: 8, h: 6 },

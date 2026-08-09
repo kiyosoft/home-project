@@ -10,6 +10,7 @@ import {
 } from "@ethio/plugin-sdk";
 
 export const coverConfigSchema = z.object({
+  title: z.string().default(""),
   entity_id: z.string().min(1, "Entity is required"),
 });
 
@@ -25,6 +26,7 @@ function getFriendlyName(entity: {
 function CoverWidget({ config, interactive = true }: WidgetComponentProps) {
   const entityId =
     typeof config.entity_id === "string" ? config.entity_id : "";
+  const customTitle = typeof config.title === "string" ? config.title.trim() : "";
   const entity = useEntity(entityId);
   const callService = useCallService();
   const [pending, setPending] = useState(false);
@@ -32,7 +34,9 @@ function CoverWidget({ config, interactive = true }: WidgetComponentProps) {
   if (!entityId) {
     return (
       <div className="flex h-full min-h-36 flex-col rounded-2xl border border-border bg-card p-5 text-card-foreground shadow-sm">
-        <h3 className="font-display text-base font-semibold">Cover</h3>
+        <h3 className="font-display text-base font-semibold">
+          {customTitle || "Cover"}
+        </h3>
         <p className="mt-2 text-sm text-muted-foreground">
           Pick a cover entity in settings.
         </p>
@@ -43,12 +47,15 @@ function CoverWidget({ config, interactive = true }: WidgetComponentProps) {
   if (!entity) {
     return (
       <div className="flex h-full min-h-36 flex-col rounded-2xl border border-dashed border-border bg-card p-5">
-        <h3 className="font-display text-base font-semibold">{entityId}</h3>
+        <h3 className="font-display text-base font-semibold">
+          {customTitle || entityId}
+        </h3>
         <p className="mt-2 text-sm text-muted-foreground">Entity unavailable</p>
       </div>
     );
   }
 
+  const displayTitle = customTitle || getFriendlyName(entity);
   const position =
     typeof entity.attributes.current_position === "number"
       ? entity.attributes.current_position
@@ -72,7 +79,7 @@ function CoverWidget({ config, interactive = true }: WidgetComponentProps) {
             Cover
           </p>
           <h3 className="mt-1 font-display text-base font-semibold tracking-tight">
-            {getFriendlyName(entity)}
+            {displayTitle}
           </h3>
         </div>
         <div className="rounded-full bg-primary/10 p-2 text-primary">
@@ -126,7 +133,7 @@ export const coverWidget = defineWidget({
   description: "Open, close, or stop blinds and covers",
   component: CoverWidget,
   configSchema: coverConfigSchema,
-  defaultConfig: { entity_id: "" },
+  defaultConfig: { title: "", entity_id: "" },
   defaultSize: { w: 4, h: 4, minW: 3, minH: 3, maxW: 8, maxH: 6 },
   minSize: { w: 3, h: 3 },
   maxSize: { w: 8, h: 6 },

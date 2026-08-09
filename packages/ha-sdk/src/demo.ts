@@ -99,6 +99,15 @@ const DEMO_ENTITIES: HassEntities = {
       device_class: "door",
     },
   },
+  "binary_sensor.fasting": {
+    entity_id: "binary_sensor.fasting",
+    state: "on",
+    attributes: {
+      friendly_name: "Fasting Day",
+      device_class: "occupancy",
+      icon: "mdi:food-off",
+    },
+  },
   "input_boolean.guest_mode": {
     entity_id: "input_boolean.guest_mode",
     state: "off",
@@ -913,6 +922,7 @@ export const DEMO_ENTITY_IDS = {
   switch: "switch.porch",
   sensor: "sensor.outdoor_temperature",
   binarySensor: "binary_sensor.front_door",
+  fasting: "binary_sensor.fasting",
   inputBoolean: "input_boolean.guest_mode",
   teamtracker: "sensor.demo_arsenal",
   sinksar: "sensor.demo_sinksar",

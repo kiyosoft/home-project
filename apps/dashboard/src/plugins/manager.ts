@@ -31,10 +31,6 @@ export function pluginHasCapability(
   return getPluginCapabilities(pluginId).has(capability);
 }
 
-export function listLoadedPluginIds(): string[] {
-  return [...loadedPluginIds];
-}
-
 export function isPluginLoaded(pluginId: string): boolean {
   return loadedPluginIds.has(pluginId);
 }
