@@ -3,6 +3,15 @@ export type { BrowseMediaOptions } from "./browse-media";
 export { connectLive } from "./live";
 export { connectDemo, DEMO_ENTITY_IDS } from "./demo";
 export {
+  decodeEntitiesInJinjaBlocks,
+  renderDemoTemplate,
+  subscribeRenderTemplate,
+} from "./template";
+export type {
+  RenderTemplateOptions,
+  RenderTemplateUpdate,
+} from "./template";
+export {
   listTodoItems,
   moveTodoItem,
   normalizeTodoItems,

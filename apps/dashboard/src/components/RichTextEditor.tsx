@@ -267,7 +267,7 @@ export function RichTextEditor({
             onClick={() => {
               const id = entityQuery.trim();
               if (!id) return;
-              insertText(`{{${id}}}`);
+              insertText(`{{ states('${id}') }}`);
               setEntityQuery("");
             }}
           >
@@ -291,8 +291,11 @@ export function RichTextEditor({
             variant="secondary"
             onMouseDown={(event) => event.preventDefault()}
             onClick={() => {
-              const expr = conditionExpr.trim() || "entity_id";
-              wrapSelection(`{{#if ${expr}}}`, "{{/if}}");
+              const id = conditionExpr.trim() || "entity_id";
+              wrapSelection(
+                `{% if is_state('${id}', 'on') %}`,
+                "{% endif %}",
+              );
             }}
           >
             {t(locale, "textCard.wrap")}

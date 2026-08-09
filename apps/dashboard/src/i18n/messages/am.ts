@@ -158,9 +158,10 @@ export const am: Record<MessageKey, string> = {
   "schema.apply": "ተግብር",
   "schema.title": "ርዕስ",
   "schema.titlePlaceholder": "አማራጭ ብጁ ርዕስ",
-  "textCard.placeholder": "ጽሑፍ ይጫፉ… ለቀጥታ እሴቶች {{sensor.temp}} ይጠቀሙ",
+  "textCard.placeholder":
+    "ጽሑፍ ይጫፉ… ለቀጥታ እሴቶች {{ states('sensor.temp') }} ይጠቀሙ",
   "textCard.templateHint":
-    "አብነቶች: {{entity_id}} ለሁኔታ፣ {{entity_id.attr}} ለአትሪቢዩት፣ {{#if …}}…{{else}}…{{/if}} ለሁኔታዎች",
+    "Home Assistant Jinja: {{ states('entity_id') }}፣ {{ state_attr('entity_id', 'attr') }}፣ {% if is_state('entity_id', 'on') %}…{% endif %}",
   "textCard.titlePlaceholder": "አማራጭ የካርድ ርዕስ",
   "textCard.preview": "ቅድመ እይታ",
   "textCard.background": "ዳራ",

@@ -27,18 +27,12 @@ export {
   useCallService,
   useEntities,
   useEntity,
+  useRenderTemplate,
   useSendMessage,
   useSubscribeMessage,
   useTodoItems,
 } from "./hooks";
-export type { TodoItemsState } from "./hooks";
-export {
-  collectTemplateIssues,
-  normalizeMarkers,
-  renderTemplate,
-  resolveTemplatePath,
-} from "./template";
-export type { TemplateIssue, TemplateIssueKind } from "./template";
+export type { RenderTemplateState, TodoItemsState } from "./hooks";
 export { sanitizeRichText } from "./sanitize";
 export {
   TODO_FEATURE,

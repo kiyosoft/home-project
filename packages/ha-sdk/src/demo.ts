@@ -1,3 +1,4 @@
+import { renderDemoTemplate } from "./template";
 import { TODO_FEATURE, type TodoItem } from "./todo";
 import type {
   BrowseMediaItem,
@@ -372,6 +373,7 @@ export function connectDemo(): EntityClient {
   const listeners = new Set<(entities: HassEntities) => void>();
   let todoItems: TodoItem[] = structuredClone(DEMO_TODO_ITEMS);
   const todoListeners = new Set<(items: TodoItem[]) => void>();
+  const templateListeners = new Set<() => void>();
   let todoUidCounter = DEMO_TODO_ITEMS.length;
   let sensorTimer: ReturnType<typeof setInterval> | undefined;
   let doorTimer: ReturnType<typeof setInterval> | undefined;
@@ -382,6 +384,9 @@ export function connectDemo(): EntityClient {
     const snapshot = cloneEntities(entities);
     for (const listener of listeners) {
       listener(snapshot);
+    }
+    for (const listener of templateListeners) {
+      listener();
     }
   };
 
@@ -869,6 +874,21 @@ export function connectDemo(): EntityClient {
       if (closed) {
         throw new Error("Demo client disconnected");
       }
+      if (message.type === "render_template") {
+        const template =
+          typeof message.template === "string" ? message.template : "";
+        const push = () => {
+          onMessage({
+            result: renderDemoTemplate(template, entities),
+            listeners: {},
+          } as T);
+        };
+        templateListeners.add(push);
+        push();
+        return () => {
+          templateListeners.delete(push);
+        };
+      }
       if (message.type !== "todo/item/subscribe") {
         throw new Error(
           `Demo client does not support subscription type: ${String(message.type)}`,
@@ -890,6 +910,7 @@ export function connectDemo(): EntityClient {
       closed = true;
       listeners.clear();
       todoListeners.clear();
+      templateListeners.clear();
       if (sensorTimer) clearInterval(sensorTimer);
       if (doorTimer) clearInterval(doorTimer);
       if (teamScoreTimer) clearInterval(teamScoreTimer);

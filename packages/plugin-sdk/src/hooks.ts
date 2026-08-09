@@ -1,7 +1,14 @@
-import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from "react";
 
 import {
   browseMedia as haBrowseMedia,
+  subscribeRenderTemplate,
   subscribeTodoItems,
   type BrowseMediaItem,
   type BrowseMediaOptions,
@@ -161,6 +168,123 @@ export interface TodoItemsState {
   items: TodoItem[];
   loading: boolean;
   error: string | null;
+}
+
+export interface RenderTemplateState {
+  html: string;
+  loading: boolean;
+  error: string | null;
+}
+
+const TEMPLATE_DEBOUNCE_MS = 300;
+/** Resubscribe once if HA never delivers the initial render_template event. */
+const TEMPLATE_RETRY_MS = 1500;
+
+/** Live Jinja render via HA `render_template` subscription. */
+export function useRenderTemplate(template: string): RenderTemplateState {
+  const pluginId = usePluginId();
+  const [html, setHtml] = useState("");
+  const [loading, setLoading] = useState(() => Boolean(template.trim()));
+  const [error, setError] = useState<string | null>(null);
+  const [debouncedTemplate, setDebouncedTemplate] = useState(template);
+  const [retryToken, setRetryToken] = useState(0);
+  const latestRequestId = useRef(0);
+  const retryCountRef = useRef(0);
+  const htmlRef = useRef(html);
+  htmlRef.current = html;
+
+  useEffect(() => {
+    if (template === debouncedTemplate) return;
+    const timer = window.setTimeout(() => {
+      setDebouncedTemplate(template);
+    }, TEMPLATE_DEBOUNCE_MS);
+    return () => {
+      window.clearTimeout(timer);
+    };
+  }, [template, debouncedTemplate]);
+
+  useEffect(() => {
+    retryCountRef.current = 0;
+  }, [debouncedTemplate]);
+
+  useEffect(() => {
+    const trimmed = debouncedTemplate.trim();
+    if (!trimmed) {
+      setHtml("");
+      setLoading(false);
+      setError(null);
+      return;
+    }
+
+    const requestId = ++latestRequestId.current;
+    let unsubscribe: (() => void) | undefined;
+    let cleanedUp = false;
+    let settled = false;
+    // Keep prior HTML visible while reconnecting; only the first paint is blank.
+    setLoading(true);
+    setError(null);
+
+    void (async () => {
+      try {
+        assertCapability(pluginId, "entity.read");
+        const bindings = getPlatformBindings();
+        if (!bindings.subscribeMessage) {
+          throw new Error("Platform does not support subscribeMessage");
+        }
+        const unsub = await subscribeRenderTemplate(
+          bindings.subscribeMessage,
+          { template: debouncedTemplate, report_errors: true },
+          (update) => {
+            // Accept while this request is still latest. latestRequestId only
+            // advances when a new effect run starts — so a late first-event
+            // after Strict Mode cleanup still applies if nothing newer began.
+            if (latestRequestId.current !== requestId) return;
+            if (update.error) {
+              settled = true;
+              setError(update.error);
+              setLoading(false);
+              return;
+            }
+            if (update.result !== undefined) {
+              settled = true;
+              setHtml(update.result);
+              setError(null);
+              setLoading(false);
+            }
+          },
+        );
+        if (cleanedUp || latestRequestId.current !== requestId) {
+          unsub();
+          return;
+        }
+        unsubscribe = unsub;
+      } catch (err) {
+        if (cleanedUp || latestRequestId.current !== requestId) return;
+        settled = true;
+        setLoading(false);
+        setError(
+          err instanceof Error ? err.message : "Failed to render template",
+        );
+      }
+    })();
+
+    const retryTimer = window.setTimeout(() => {
+      if (latestRequestId.current !== requestId) return;
+      // Only retry a silent hang (subscribed but no result/error event).
+      if (settled || htmlRef.current) return;
+      if (retryCountRef.current >= 2) return;
+      retryCountRef.current += 1;
+      setRetryToken((token) => token + 1);
+    }, TEMPLATE_RETRY_MS);
+
+    return () => {
+      cleanedUp = true;
+      window.clearTimeout(retryTimer);
+      unsubscribe?.();
+    };
+  }, [debouncedTemplate, pluginId, retryToken]);
+
+  return { html, loading, error };
 }
 
 /** Live to-do items for an entity via todo/item/subscribe. */

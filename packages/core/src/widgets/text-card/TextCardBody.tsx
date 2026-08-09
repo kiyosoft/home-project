@@ -1,10 +1,6 @@
 import { memo, useMemo, type CSSProperties } from "react";
 
-import {
-  renderTemplate,
-  sanitizeRichText,
-  type HassEntities,
-} from "@ethio/plugin-sdk";
+import { sanitizeRichText, useRenderTemplate } from "@ethio/plugin-sdk";
 
 import {
   type TextCardConfig,
@@ -71,18 +67,17 @@ function readConfig(config: Record<string, unknown>): TextCardConfig {
 
 export const TextCardBody = memo(function TextCardBody({
   config,
-  entities,
+  showTemplateError = false,
 }: {
   config: Record<string, unknown>;
-  entities: HassEntities;
+  /** When true (settings preview), surface Jinja render errors. */
+  showTemplateError?: boolean;
 }) {
   const cfg = useMemo(() => readConfig(config), [config]);
   const title = cfg.title.trim();
+  const { html, error } = useRenderTemplate(cfg.html);
 
-  const rendered = useMemo(
-    () => sanitizeRichText(renderTemplate(cfg.html, entities)),
-    [cfg.html, entities],
-  );
+  const rendered = useMemo(() => sanitizeRichText(html), [html]);
 
   const style = useMemo(() => {
     const next: CSSProperties = {};
@@ -115,6 +110,11 @@ export const TextCardBody = memo(function TextCardBody({
         <h3 className="mb-2 shrink-0 font-display text-base font-semibold tracking-tight">
           {title}
         </h3>
+      ) : null}
+      {showTemplateError && error ? (
+        <p className="mb-2 shrink-0 rounded-lg border border-destructive/30 bg-destructive/10 px-2 py-1 text-xs text-destructive">
+          {error}
+        </p>
       ) : null}
       <div
         className="rich-text min-h-0 flex-1 overflow-auto"

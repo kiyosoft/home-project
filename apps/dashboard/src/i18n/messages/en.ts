@@ -180,9 +180,10 @@ export const en = {
   "schema.apply": "Apply",
   "schema.title": "Title",
   "schema.titlePlaceholder": "Optional custom title",
-  "textCard.placeholder": "Write text… use {{sensor.temp}} for live values",
+  "textCard.placeholder":
+    "Write text… use {{ states('sensor.temp') }} for live values",
   "textCard.templateHint":
-    "Templates: {{entity_id}} for state, {{entity_id.attr}} for attributes, {{#if …}}…{{else}}…{{/if}} for conditions",
+    "Home Assistant Jinja: {{ states('entity_id') }}, {{ state_attr('entity_id', 'attr') }}, {% if is_state('entity_id', 'on') %}…{% endif %}",
   "textCard.titlePlaceholder": "Optional card title",
   "textCard.preview": "Preview",
   "textCard.background": "Background",

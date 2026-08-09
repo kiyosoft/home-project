@@ -1,18 +1,14 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import {
   TextCardBody,
   textCardConfigSchema,
 } from "@ethio/core";
-import {
-  collectTemplateIssues,
-  sanitizeRichText,
-} from "@ethio/plugin-sdk";
+import { PluginScope, sanitizeRichText } from "@ethio/plugin-sdk";
 
 import { RichTextEditor } from "@/components/RichTextEditor";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { t } from "@/i18n";
-import { useHaStore } from "@/store/ha-store";
 import { useLocaleStore } from "@/store/locale-store";
 
 interface TextCardSettingsFormProps {
@@ -77,14 +73,8 @@ export function TextCardSettingsForm({
   onCancel,
 }: TextCardSettingsFormProps) {
   const locale = useLocaleStore((state) => state.locale);
-  const entities = useHaStore((state) => state.entities);
   const [draft, setDraft] = useState<Draft>(() => toDraft(config));
   const [error, setError] = useState<string | null>(null);
-
-  const issues = useMemo(
-    () => collectTemplateIssues(draft.html, entities),
-    [draft.html, entities],
-  );
 
   function patch(partial: Partial<Draft>) {
     setDraft((prev) => ({ ...prev, ...partial }));
@@ -119,16 +109,6 @@ export function TextCardSettingsForm({
         onChange={(html) => patch({ html })}
         placeholder={t(locale, "textCard.placeholder")}
       />
-
-      {issues.length > 0 ? (
-        <ul className="space-y-1 rounded-xl border border-warning/30 bg-warning/10 px-3 py-2 text-xs text-warning">
-          {issues.map((issue) => (
-            <li key={`${issue.kind}:${issue.path ?? issue.message}`}>
-              {issue.message}
-            </li>
-          ))}
-        </ul>
-      ) : null}
 
       <div className="grid gap-3 sm:grid-cols-2">
         <label className="block space-y-2 text-sm">
@@ -246,10 +226,12 @@ export function TextCardSettingsForm({
         <p className="border-b border-border px-3 py-1.5 text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
           {t(locale, "textCard.preview")}
         </p>
-        <TextCardBody
-          config={draft as unknown as Record<string, unknown>}
-          entities={entities}
-        />
+        <PluginScope pluginId="@ethio/core">
+          <TextCardBody
+            config={draft as unknown as Record<string, unknown>}
+            showTemplateError
+          />
+        </PluginScope>
       </div>
 
       {error ? (

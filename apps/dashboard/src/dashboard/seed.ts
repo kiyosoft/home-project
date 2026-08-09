@@ -54,7 +54,7 @@ export function seedDemoDashboard(): DashboardConfig {
       type: "@ethio/core/text-card",
       config: {
         title: "Welcome",
-        html: `<p>Hello, <strong>{{person.kidus.friendly_name}}</strong> — you are <em>{{person.kidus}}</em>.</p><p>{{#if binary_sensor.fasting}}ዛሬ ጾም ነው{{else}}Enjoy your meal{{/if}}</p>`,
+        html: `<p>Hello, <strong>{{ state_attr('person.kidus', 'friendly_name') }}</strong> — you are <em>{{ states('person.kidus') }}</em>.</p><p>{% if is_state('binary_sensor.fasting', 'on') %}ዛሬ ጾም ነው{% else %}Enjoy your meal{% endif %}</p>`,
         vertical_align: "center",
         padding: "md",
         background_type: "color",
