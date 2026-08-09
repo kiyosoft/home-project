@@ -32,7 +32,12 @@ export default defineConfig({
     },
   },
   server: {
+    // Bind IPv4 so cloudflared's http://127.0.0.1:5180 origin works
+    // (macOS often listens on ::1 only when host is unset).
+    host: "127.0.0.1",
     port: 5180,
     strictPort: false,
+    // Allow Cloudflare Quick Tunnel / named tunnel hostnames
+    allowedHosts: true,
   },
 });

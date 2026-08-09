@@ -1,0 +1,6 @@
+config.yml
+*.json
+!package.json
+credentials/
+*.pem
+.urls.json
