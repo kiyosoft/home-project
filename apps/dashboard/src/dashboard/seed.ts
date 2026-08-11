@@ -70,7 +70,7 @@ export function seedDemoDashboard(): DashboardConfig {
     },
     {
       id: "w2",
-      type: "@ethio/core/toggle",
+      type: "@ethio/core/light",
       config: { entity_id: DEMO_ENTITY_IDS.light },
     },
     {
@@ -144,6 +144,26 @@ export function seedDemoDashboard(): DashboardConfig {
         showCompleted: false,
         maxItems: 5,
       },
+    },
+    {
+      id: "w13",
+      type: "@ethio/core/camera",
+      config: { entity_id: DEMO_ENTITY_IDS.camera },
+    },
+    {
+      id: "w14",
+      type: "@ethio/core/lock",
+      config: { entity_id: DEMO_ENTITY_IDS.lock },
+    },
+    {
+      id: "w15",
+      type: "@ethio/core/alarm",
+      config: { entity_id: DEMO_ENTITY_IDS.alarm },
+    },
+    {
+      id: "w16",
+      type: "@ethio/core/calendar",
+      config: { entity_id: DEMO_ENTITY_IDS.calendar, maxItems: 5 },
     },
   ];
   return withLayouts(widgets, "overview", "Overview");

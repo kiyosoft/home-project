@@ -75,6 +75,8 @@ export interface PlatformBindings {
   ) => Promise<() => void>;
   /** HA base URL for resolving relative entity_picture paths */
   getBaseUrl?: () => string;
+  /** Long-lived access token for authenticating camera/media HTTP URLs */
+  getAuthToken?: () => string;
   /** Current plugin id for capability checks during hook use */
   getActivePluginId?: () => string | null;
   hasCapability?: (pluginId: string, capability: Capability) => boolean;

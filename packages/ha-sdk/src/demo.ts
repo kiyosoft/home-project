@@ -73,7 +73,60 @@ const DEMO_ENTITIES: HassEntities = {
     attributes: {
       friendly_name: "Living Room Light",
       brightness: 180,
-      supported_color_modes: ["brightness"],
+      color_mode: "color_temp",
+      color_temp_kelvin: 3200,
+      min_color_temp_kelvin: 2200,
+      max_color_temp_kelvin: 6500,
+      rgb_color: [255, 200, 140],
+      supported_color_modes: ["brightness", "color_temp", "rgb"],
+      effect_list: ["none", "colorloop"],
+      effect: "none",
+    },
+  },
+  "camera.front_door": {
+    entity_id: "camera.front_door",
+    state: "idle",
+    attributes: {
+      friendly_name: "Front Door Camera",
+      brand: "DemoCam",
+      model: "DC-100",
+      supported_features: 3,
+      entity_picture:
+        "https://picsum.photos/seed/ethio-front-door/640/360",
+      access_token: "demo-camera-token",
+    },
+  },
+  "lock.front_door": {
+    entity_id: "lock.front_door",
+    state: "locked",
+    attributes: {
+      friendly_name: "Front Door Lock",
+      supported_features: 1,
+      changed_by: "Demo User",
+    },
+  },
+  "alarm_control_panel.home": {
+    entity_id: "alarm_control_panel.home",
+    state: "disarmed",
+    attributes: {
+      friendly_name: "Home Alarm",
+      code_format: "number",
+      code_arm_required: false,
+      supported_features: 63,
+      changed_by: null,
+    },
+  },
+  "calendar.family": {
+    entity_id: "calendar.family",
+    state: "on",
+    attributes: {
+      friendly_name: "Family Calendar",
+      message: "School pickup",
+      all_day: false,
+      start_time: "2026-08-11T15:00:00+00:00",
+      end_time: "2026-08-11T16:00:00+00:00",
+      location: "School gate",
+      description: "Pick up the kids",
     },
   },
   "switch.porch": {
@@ -618,11 +671,39 @@ export function connectDemo(): EntityClient {
 
         const attributes = { ...current.attributes };
         if (domain === "light") {
-          if (nextState === "on" && attributes.brightness == null) {
-            attributes.brightness = 180;
+          if (nextState === "on") {
+            if (typeof serviceData.brightness === "number") {
+              attributes.brightness = serviceData.brightness;
+            } else if (typeof serviceData.brightness_pct === "number") {
+              attributes.brightness = Math.round(
+                (Number(serviceData.brightness_pct) / 100) * 255,
+              );
+            } else if (attributes.brightness == null) {
+              attributes.brightness = 180;
+            }
+            if (Array.isArray(serviceData.rgb_color)) {
+              attributes.rgb_color = serviceData.rgb_color;
+              attributes.color_mode = "rgb";
+            }
+            if (
+              typeof serviceData.color_temp_kelvin === "number" ||
+              typeof serviceData.color_temp === "number"
+            ) {
+              attributes.color_temp_kelvin =
+                typeof serviceData.color_temp_kelvin === "number"
+                  ? serviceData.color_temp_kelvin
+                  : serviceData.color_temp;
+              attributes.color_mode = "color_temp";
+            }
+            if (typeof serviceData.effect === "string") {
+              attributes.effect = serviceData.effect;
+            }
           }
           if (nextState === "off") {
             delete attributes.brightness;
+            delete attributes.rgb_color;
+            delete attributes.color_temp_kelvin;
+            delete attributes.effect;
           }
         }
 
@@ -631,6 +712,43 @@ export function connectDemo(): EntityClient {
           state: nextState,
           attributes,
         });
+        return;
+      }
+
+      if (domain === "lock") {
+        if (service === "lock") {
+          setEntity(entityId, { ...current, state: "locked" });
+        } else if (service === "unlock") {
+          setEntity(entityId, { ...current, state: "unlocked" });
+        } else if (service === "open") {
+          setEntity(entityId, { ...current, state: "unlocked" });
+        }
+        return;
+      }
+
+      if (domain === "alarm_control_panel") {
+        const nextByService: Record<string, string> = {
+          alarm_disarm: "disarmed",
+          alarm_arm_home: "armed_home",
+          alarm_arm_away: "armed_away",
+          alarm_arm_night: "armed_night",
+          alarm_arm_vacation: "armed_vacation",
+          alarm_arm_custom_bypass: "armed_custom_bypass",
+          alarm_trigger: "triggered",
+        };
+        const nextState = nextByService[service];
+        if (nextState) {
+          setEntity(entityId, { ...current, state: nextState });
+        }
+        return;
+      }
+
+      if (domain === "camera") {
+        if (service === "turn_on") {
+          setEntity(entityId, { ...current, state: "idle" });
+        } else if (service === "turn_off") {
+          setEntity(entityId, { ...current, state: "off" });
+        }
         return;
       }
 
@@ -832,6 +950,41 @@ export function connectDemo(): EntityClient {
       if (closed) {
         throw new Error("Demo client disconnected");
       }
+      if (message.type === "call_service") {
+        const domain = typeof message.domain === "string" ? message.domain : "";
+        const service =
+          typeof message.service === "string" ? message.service : "";
+        if (domain === "calendar" && service === "get_events") {
+          const target = message.target as { entity_id?: string } | undefined;
+          const entityId = target?.entity_id ?? "";
+          if (!entities[entityId]) {
+            throw new Error(`Unknown entity: ${entityId}`);
+          }
+          const now = Date.now();
+          const events = [
+            {
+              summary: "School pickup",
+              start: new Date(now).toISOString(),
+              end: new Date(now + 60 * 60 * 1000).toISOString(),
+              location: "School gate",
+              description: "Pick up the kids",
+              uid: "demo-event-1",
+            },
+            {
+              summary: "Team dinner",
+              start: new Date(now + 24 * 60 * 60 * 1000).toISOString(),
+              end: new Date(now + 26 * 60 * 60 * 1000).toISOString(),
+              location: "Home",
+              uid: "demo-event-2",
+            },
+          ];
+          return {
+            response: {
+              [entityId]: { events },
+            },
+          } as T;
+        }
+      }
       if (message.type === "media_player/browse_media") {
         const entityId =
           typeof message.entity_id === "string" ? message.entity_id : "";
@@ -953,4 +1106,8 @@ export const DEMO_ENTITY_IDS = {
   weather: "weather.home",
   media: "media_player.homepod",
   todo: "todo.shopping_list",
+  camera: "camera.front_door",
+  lock: "lock.front_door",
+  alarm: "alarm_control_panel.home",
+  calendar: "calendar.family",
 } as const;
