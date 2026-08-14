@@ -98,19 +98,37 @@ export function normalizeCalendarEvents(result: unknown): CalendarEvent[] {
   }
   if (result && typeof result === "object") {
     const raw = result as Record<string, unknown>;
-    if (Array.isArray(raw.response)) {
+    // call_service return_response: { context, response: { [entity_id]: { events } } }
+    if ("response" in raw && raw.response != null) {
       return normalizeCalendarEvents(raw.response);
     }
+    if (Array.isArray(raw.events)) {
+      return normalizeCalendarEvents(raw.events);
+    }
+    // Entity map: { "calendar.family": { events: [...] } }
+    const collected: CalendarEvent[] = [];
     for (const value of Object.values(raw)) {
       if (value && typeof value === "object") {
         const nested = value as Record<string, unknown>;
         if (Array.isArray(nested.events)) {
-          return normalizeCalendarEvents(nested.events);
+          collected.push(...normalizeCalendarEvents(nested.events));
         }
       }
     }
+    if (collected.length > 0) return collected;
   }
   return [];
+}
+
+/** Start of local day as ISO, for inclusive “today + upcoming” windows. */
+export function calendarRangeStart(now = new Date()): string {
+  const start = new Date(now);
+  start.setHours(0, 0, 0, 0);
+  return start.toISOString();
+}
+
+export function calendarRangeEnd(now = new Date(), days = 14): string {
+  return new Date(now.getTime() + days * 24 * 60 * 60 * 1000).toISOString();
 }
 
 export async function getCalendarEvents(
@@ -124,8 +142,43 @@ export async function getCalendarEvents(
     domain: "calendar",
     service: "get_events",
     target: { entity_id: entityId },
-    service_data: { start_date_time: start, end_date_time: end },
+    service_data: {
+      entity_id: entityId,
+      start_date_time: start,
+      end_date_time: end,
+    },
     return_response: true,
   });
   return normalizeCalendarEvents(result);
+}
+
+interface CalendarSubscribeResult {
+  events?: unknown;
+}
+
+/**
+ * Live subscription used by the HA frontend (`calendar/event/subscribe`).
+ * Pushes an initial event list, then updates when the calendar changes.
+ */
+export function subscribeCalendarEvents(
+  subscribeMessage: <T>(
+    message: Record<string, unknown>,
+    onMessage: (result: T) => void,
+  ) => Promise<() => void>,
+  entityId: string,
+  start: string,
+  end: string,
+  onEvents: (events: CalendarEvent[]) => void,
+): Promise<() => void> {
+  return subscribeMessage<CalendarSubscribeResult>(
+    {
+      type: "calendar/event/subscribe",
+      entity_id: entityId,
+      start,
+      end,
+    },
+    (result) => {
+      onEvents(normalizeCalendarEvents(result));
+    },
+  );
 }

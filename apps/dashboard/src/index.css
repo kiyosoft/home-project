@@ -800,10 +800,23 @@
     height: 0;
   }
 
+  html {
+    color-scheme: light;
+  }
+
+  html.dark {
+    color-scheme: dark;
+  }
+
   html,
   body,
   #root {
     min-height: 100%;
+  }
+
+  /* Native <dialog> defaults to CanvasText (black). Inherit theme ink instead. */
+  dialog {
+    color: var(--card-foreground);
   }
 
   body {

@@ -82,7 +82,7 @@ export function Dialog({
       className={cn(
         // Never set display:flex unconditionally — it overrides UA display:none
         // when closed and leaves invisible/visible shells trapping clicks.
-        "fixed z-[100] m-0 max-h-[85vh] w-[calc(100%-2rem)] max-w-lg flex-col overflow-hidden rounded-2xl border border-border bg-card p-0 shadow-xl open:flex",
+        "fixed z-[100] m-0 max-h-[85vh] w-[calc(100%-2rem)] max-w-lg flex-col overflow-hidden rounded-2xl border border-border bg-card p-0 text-card-foreground shadow-xl open:flex",
         "left-4 right-4 bottom-4 top-auto translate-x-0 translate-y-0",
         "sm:left-1/2 sm:right-auto sm:bottom-auto sm:top-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2",
         "[&::backdrop]:bg-black/50 [&::backdrop]:backdrop-blur-sm",
@@ -102,7 +102,7 @@ export function Dialog({
         <div>
           <h2
             id={titleId}
-            className="font-display text-lg font-semibold tracking-tight"
+            className="font-display text-lg font-semibold tracking-tight text-foreground"
           >
             {title}
           </h2>

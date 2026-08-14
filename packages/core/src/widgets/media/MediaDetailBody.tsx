@@ -8,7 +8,7 @@ import {
   Volume2,
   VolumeX,
 } from "lucide-react";
-import { useState } from "react";
+import { useCallback, useState } from "react";
 
 import {
   resolveEntityImageUrl,
@@ -17,6 +17,7 @@ import {
   useEntity,
 } from "@ethio/plugin-sdk";
 
+import { clamp, Slider, useServiceValue } from "../../ui";
 import { MediaDetailBrowsePanel } from "./MediaDetailBrowsePanel";
 import {
   formatTime,
@@ -100,6 +101,34 @@ export function MediaDetailBody({
       setPending(false);
     }
   }
+
+  // Sliders call the service directly: the shared `pending` gate would swallow
+  // updates mid-drag.
+  const applySeek = useCallback(
+    async (seconds: number) => {
+      await callService("media_player", "media_seek", {
+        entity_id: entityId,
+        seek_position: Math.round(seconds),
+      });
+    },
+    [callService, entityId],
+  );
+
+  const applyVolume = useCallback(
+    async (percent: number) => {
+      await callService("media_player", "volume_set", {
+        entity_id: entityId,
+        volume_level: clamp(percent, 0, 100) / 100,
+      });
+    },
+    [callService, entityId],
+  );
+
+  const seek = useServiceValue(
+    Math.min(position ?? 0, duration ?? 0),
+    applySeek,
+  );
+  const volumeControl = useServiceValue(Math.round(volume * 100), applyVolume);
 
   async function playChoice(choice: MediaChoice) {
     await run("play_media", {
@@ -212,26 +241,21 @@ export function MediaDetailBody({
       </div>
 
       {canSeek && duration != null && duration > 0 ? (
-        <label className="block space-y-2 text-sm">
+        <div className="space-y-2 text-sm">
           <div className="flex justify-between text-xs text-muted-foreground">
-            <span>{formatTime(position ?? 0)}</span>
+            <span>{formatTime(seek.value)}</span>
             <span>{formatTime(duration)}</span>
           </div>
-          <input
-            type="range"
+          <Slider
+            value={Math.min(seek.value, duration)}
             min={0}
             max={duration}
-            step={1}
-            value={Math.min(position ?? 0, duration)}
-            disabled={pending}
-            onChange={(event) => {
-              void run("media_seek", {
-                seek_position: Number(event.target.value),
-              });
-            }}
-            className="w-full accent-primary"
+            size="sm"
+            label="Seek"
+            onValueChange={seek.onValueChange}
+            onValueCommit={seek.onValueCommit}
           />
-        </label>
+        </div>
       ) : null}
 
       {canVolume ? (
@@ -251,23 +275,16 @@ export function MediaDetailBody({
               <Volume2 className="h-4 w-4" />
             )}
           </button>
-          <input
-            type="range"
+          <Slider
+            value={volumeControl.value}
             min={0}
             max={100}
-            step={1}
-            value={Math.round(volume * 100)}
-            disabled={pending}
-            onChange={(event) => {
-              void run("volume_set", {
-                volume_level: Number(event.target.value) / 100,
-              });
-            }}
-            className="w-full accent-primary"
-            aria-label="Volume"
+            label="Volume"
+            onValueChange={volumeControl.onValueChange}
+            onValueCommit={volumeControl.onValueCommit}
           />
           <span className="w-10 text-right text-xs text-muted-foreground">
-            {Math.round(volume * 100)}%
+            {volumeControl.value}%
           </span>
         </div>
       ) : null}

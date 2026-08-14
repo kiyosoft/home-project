@@ -1,5 +1,4 @@
-import { Lightbulb } from "lucide-react";
-import { useState, type MouseEvent } from "react";
+import { useCallback, useRef, type KeyboardEvent } from "react";
 import { z } from "zod";
 
 import {
@@ -11,14 +10,36 @@ import {
   type WidgetComponentProps,
 } from "@ethio/plugin-sdk";
 
+import {
+  ColorStrip,
+  Slider,
+  Switch,
+  useElementSize,
+  useServiceValue,
+  useThemeSurface,
+} from "../ui";
 import { LightDetailBody } from "./light/LightDetailBody";
+import {
+  currentHue,
+  hueToRgb,
+  lightWash,
+} from "./light/light-visuals";
 
 export const lightConfigSchema = z.object({
   title: z.string().default(""),
   entity_id: z.string().min(1, "Entity is required"),
 });
 
-function stopPropagation(event: MouseEvent) {
+/** Enough room for the hue strip without crowding the dimmer. */
+const HUE_STRIP_MIN_HEIGHT = 210;
+const HUE_STRIP_MIN_WIDTH = 200;
+const COMPACT_HEIGHT = 172;
+
+function stopPropagation(event: { stopPropagation: () => void }) {
+  event.stopPropagation();
+}
+
+function stopKeys(event: KeyboardEvent) {
   event.stopPropagation();
 }
 
@@ -30,7 +51,40 @@ function LightWidget({ config, interactive = true }: WidgetComponentProps) {
   const light = useLight(entityId);
   const detailModal = useDetailModal();
   const pluginId = usePluginId();
-  const [pending, setPending] = useState(false);
+  const surface = useThemeSurface();
+  const [cardRef, cardSize] = useElementSize<HTMLDivElement>();
+  // A drag that ends outside the slider gets its click dispatched on the card,
+  // where stopPropagation on the control can no longer help.
+  const pressedControl = useRef(false);
+
+  const applyBrightness = useCallback(
+    async (percent: number) => {
+      if (!light) return;
+      if (percent <= 0) {
+        await light.turnOff();
+        return;
+      }
+      await light.setBrightnessPercent(percent);
+    },
+    [light],
+  );
+
+  const applyHue = useCallback(
+    async (hue: number) => {
+      if (!light) return;
+      await light.setRgbColor(hueToRgb(hue, light.rgbColor));
+    },
+    [light],
+  );
+
+  const brightness = useServiceValue(
+    light?.brightnessPercent ?? 0,
+    applyBrightness,
+  );
+  const hue = useServiceValue(
+    light ? currentHue(light.rgbColor) : 0,
+    applyHue,
+  );
 
   if (!entityId) {
     return (
@@ -62,15 +116,20 @@ function LightWidget({ config, interactive = true }: WidgetComponentProps) {
       ? light.attributes.friendly_name
       : light.entityId);
 
-  async function run(action: () => Promise<void>) {
-    if (!interactive || pending) return;
-    setPending(true);
-    try {
-      await action();
-    } finally {
-      setPending(false);
-    }
-  }
+  const hueIsPending =
+    light.supportsRgb && hue.value !== currentHue(light.rgbColor);
+  const wash = lightWash(light, surface, {
+    brightness: brightness.value,
+    color: hueIsPending ? hueToRgb(hue.value, light.rgbColor) : undefined,
+  });
+
+  const unavailable = light.state === "unavailable";
+  const compact = cardSize.height > 0 && cardSize.height < COMPACT_HEIGHT;
+  const showHueStrip =
+    light.supportsRgb &&
+    light.isOn &&
+    cardSize.height >= HUE_STRIP_MIN_HEIGHT &&
+    cardSize.width >= HUE_STRIP_MIN_WIDTH;
 
   function openDetail() {
     if (!interactive || !pluginId) return;
@@ -86,17 +145,28 @@ function LightWidget({ config, interactive = true }: WidgetComponentProps) {
     });
   }
 
-  const cardClass = `flex h-full min-h-36 w-full flex-col rounded-2xl border p-5 text-left shadow-sm transition-colors ${
-    light.isOn
-      ? "border-primary/40 bg-primary/10 text-card-foreground"
-      : "border-border bg-card text-card-foreground"
-  } ${interactive ? "hover:border-primary/30" : ""}`;
-
   return (
     <div
+      ref={cardRef}
       role={interactive ? "button" : undefined}
       tabIndex={interactive ? 0 : undefined}
-      onClick={interactive ? openDetail : undefined}
+      onPointerDownCapture={(event) => {
+        const target = event.target as Element | null;
+        pressedControl.current = Boolean(
+          target?.closest?.("input, button, select, textarea"),
+        );
+      }}
+      onClick={
+        interactive
+          ? () => {
+              if (pressedControl.current) {
+                pressedControl.current = false;
+                return;
+              }
+              openDetail();
+            }
+          : undefined
+      }
       onKeyDown={
         interactive
           ? (event) => {
@@ -107,63 +177,94 @@ function LightWidget({ config, interactive = true }: WidgetComponentProps) {
             }
           : undefined
       }
-      className={cardClass}
+      className={`flex h-full min-h-36 w-full flex-col rounded-2xl border text-left shadow-sm motion-safe:transition-[background-color,border-color,box-shadow,color] motion-safe:duration-300 motion-safe:ease-[cubic-bezier(0.16,1,0.3,1)] ${
+        compact ? "gap-3 p-4" : "gap-4 p-5"
+      } ${
+        light.isOn
+          ? ""
+          : "border-border bg-card text-card-foreground hover:border-primary/30"
+      }`}
+      style={wash.surfaceStyle}
     >
       <div className="flex items-start justify-between gap-3">
-        <div>
-          <p className="text-xs uppercase tracking-[0.14em] text-muted-foreground">
+        <div className="min-w-0">
+          <p
+            className="text-xs uppercase tracking-[0.14em]"
+            style={{ color: wash.inkMuted }}
+          >
             Light
           </p>
-          <h3 className="mt-1 font-display text-base font-semibold tracking-tight">
+          <h3 className="mt-1 truncate font-display text-base font-semibold tracking-tight">
             {displayTitle}
           </h3>
         </div>
-        <button
-          type="button"
-          disabled={!interactive || pending}
-          onClick={(event) => {
-            stopPropagation(event);
-            void run(() => light.toggle());
-          }}
-          className={`rounded-full p-2 transition-colors disabled:opacity-60 ${
-            light.isOn
-              ? "bg-primary text-primary-foreground"
-              : "bg-muted text-muted-foreground"
-          }`}
-          aria-label={light.isOn ? "Turn off" : "Turn on"}
-        >
-          <Lightbulb className="h-4 w-4" />
-        </button>
-      </div>
-      <p className="mt-4 font-display text-3xl font-semibold tracking-tight">
-        {light.isOn ? "On" : "Off"}
-      </p>
-      {light.isOn && light.supportsBrightness ? (
-        <div
-          className="mt-auto pt-4"
-          onClick={stopPropagation}
-          onKeyDown={(event) => event.stopPropagation()}
-        >
-          <div className="mb-1 flex items-center justify-between text-xs text-muted-foreground">
-            <span>Brightness</span>
-            <span>{light.brightnessPercent}%</span>
-          </div>
-          <input
-            type="range"
-            min={1}
-            max={100}
-            value={Math.max(1, light.brightnessPercent)}
-            disabled={!interactive || pending}
-            onChange={(event) => {
-              const value = Number(event.target.value);
-              void run(() => light.setBrightnessPercent(value));
-            }}
-            className="w-full accent-primary"
-            aria-label="Brightness"
+        <div onPointerDown={stopPropagation} onClick={stopPropagation} onKeyDown={stopKeys}>
+          <Switch
+            checked={light.isOn}
+            disabled={!interactive || unavailable}
+            label={light.isOn ? "Turn off" : "Turn on"}
+            activeColor={wash.switchTrack}
+            activeThumbColor={wash.switchThumb}
+            onCheckedChange={() => void light.toggle()}
           />
         </div>
+      </div>
+
+      {compact ? null : (
+        <p className="font-display text-3xl font-semibold leading-none tracking-tight">
+          {light.isOn
+            ? light.supportsBrightness
+              ? `${Math.max(1, brightness.value)}%`
+              : "On"
+            : "Off"}
+        </p>
+      )}
+
+      {light.supportsBrightness ? (
+        <div
+          className="mt-auto flex flex-col gap-2"
+          onPointerDown={stopPropagation}
+          onClick={stopPropagation}
+          onKeyDown={stopKeys}
+        >
+          <div
+            className="flex items-center justify-between text-xs"
+            style={{ color: wash.inkMuted }}
+          >
+            <span>Brightness</span>
+            {compact ? <span>{light.isOn ? `${brightness.value}%` : "Off"}</span> : null}
+          </div>
+          <Slider
+            value={brightness.value}
+            min={0}
+            max={100}
+            size={compact ? "sm" : "md"}
+            label="Brightness"
+            disabled={!interactive || unavailable}
+            fill={wash.fill}
+            trackBackground={wash.trackBackground}
+            onValueChange={brightness.onValueChange}
+            onValueCommit={brightness.onValueCommit}
+          />
+          {showHueStrip ? (
+            <ColorStrip
+              variant="hue"
+              value={hue.value}
+              size="sm"
+              label="Color"
+              className="mt-1"
+              disabled={!interactive || unavailable}
+              swatch={hueToRgb(hue.value, light.rgbColor)}
+              onValueChange={hue.onValueChange}
+              onValueCommit={hue.onValueCommit}
+            />
+          ) : null}
+        </div>
       ) : (
-        <p className="mt-2 truncate text-xs text-muted-foreground">
+        <p
+          className="mt-auto truncate text-xs"
+          style={{ color: wash.inkMuted }}
+        >
           {interactive ? "Tap for details" : light.entityId}
         </p>
       )}

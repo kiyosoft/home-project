@@ -15,9 +15,12 @@ export {
 } from "./camera";
 export type { CameraView } from "./camera";
 export {
+  calendarRangeEnd,
+  calendarRangeStart,
   deriveCalendar,
   getCalendarEvents,
   normalizeCalendarEvents,
+  subscribeCalendarEvents,
 } from "./calendar";
 export type { CalendarEvent, CalendarView } from "./calendar";
 export { connectLive } from "./live";

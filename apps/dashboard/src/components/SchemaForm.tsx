@@ -1,3 +1,4 @@
+import { Switch } from "@ethio/core";
 import { useMemo, useState } from "react";
 import { z } from "zod";
 
@@ -116,23 +117,19 @@ export function SchemaForm({ type, config, onSave, onCancel }: SchemaFormProps) 
 
         if (looksBoolean(field, fieldSchema, def.defaultConfig)) {
           return (
-            <label
+            <div
               key={field}
               className="flex items-center justify-between gap-3 text-sm"
             >
               <span className="font-medium">{field}</span>
-              <input
-                type="checkbox"
+              <Switch
                 checked={Boolean(draft[field])}
-                onChange={(event) =>
-                  setDraft((prev) => ({
-                    ...prev,
-                    [field]: event.target.checked,
-                  }))
+                label={field}
+                onCheckedChange={(checked) =>
+                  setDraft((prev) => ({ ...prev, [field]: checked }))
                 }
-                className="h-4 w-4 accent-primary"
               />
-            </label>
+            </div>
           );
         }
 

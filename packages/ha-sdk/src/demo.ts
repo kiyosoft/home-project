@@ -21,6 +21,9 @@ const DEMO_TODO_FEATURES =
 
 const DEMO_TODO_ENTITY_ID = "todo.shopping_list";
 
+/** A real bolt takes a moment to travel, and the UI animates that gap. */
+const LOCK_TRAVEL_MS = 400;
+
 const DEMO_TODO_ITEMS: TodoItem[] = [
   {
     uid: "todo-1",
@@ -98,7 +101,7 @@ const DEMO_ENTITIES: HassEntities = {
   },
   "lock.front_door": {
     entity_id: "lock.front_door",
-    state: "locked",
+    state: "jammed",
     attributes: {
       friendly_name: "Front Door Lock",
       supported_features: 1,
@@ -431,6 +434,7 @@ export function connectDemo(): EntityClient {
   let sensorTimer: ReturnType<typeof setInterval> | undefined;
   let doorTimer: ReturnType<typeof setInterval> | undefined;
   let teamScoreTimer: ReturnType<typeof setInterval> | undefined;
+  const lockTimers = new Map<string, ReturnType<typeof setTimeout>>();
   let closed = false;
 
   const emit = () => {
@@ -716,13 +720,32 @@ export function connectDemo(): EntityClient {
       }
 
       if (domain === "lock") {
-        if (service === "lock") {
-          setEntity(entityId, { ...current, state: "locked" });
-        } else if (service === "unlock") {
-          setEntity(entityId, { ...current, state: "unlocked" });
-        } else if (service === "open") {
-          setEntity(entityId, { ...current, state: "unlocked" });
-        }
+        const settled =
+          service === "lock"
+            ? "locked"
+            : service === "unlock" || service === "open"
+              ? "unlocked"
+              : undefined;
+        if (!settled) return;
+
+        const pendingTravel = lockTimers.get(entityId);
+        if (pendingTravel) clearTimeout(pendingTravel);
+
+        setEntity(entityId, {
+          ...current,
+          state: settled === "locked" ? "locking" : "unlocking",
+        });
+
+        lockTimers.set(
+          entityId,
+          setTimeout(() => {
+            lockTimers.delete(entityId);
+            if (closed) return;
+            const latest = entities[entityId];
+            if (!latest) return;
+            setEntity(entityId, { ...latest, state: settled });
+          }, LOCK_TRAVEL_MS),
+        );
         return;
       }
 
@@ -956,31 +979,20 @@ export function connectDemo(): EntityClient {
           typeof message.service === "string" ? message.service : "";
         if (domain === "calendar" && service === "get_events") {
           const target = message.target as { entity_id?: string } | undefined;
-          const entityId = target?.entity_id ?? "";
+          const serviceData = message.service_data as
+            | { entity_id?: string }
+            | undefined;
+          const entityId =
+            (typeof target?.entity_id === "string" ? target.entity_id : "") ||
+            (typeof serviceData?.entity_id === "string"
+              ? serviceData.entity_id
+              : "");
           if (!entities[entityId]) {
             throw new Error(`Unknown entity: ${entityId}`);
           }
-          const now = Date.now();
-          const events = [
-            {
-              summary: "School pickup",
-              start: new Date(now).toISOString(),
-              end: new Date(now + 60 * 60 * 1000).toISOString(),
-              location: "School gate",
-              description: "Pick up the kids",
-              uid: "demo-event-1",
-            },
-            {
-              summary: "Team dinner",
-              start: new Date(now + 24 * 60 * 60 * 1000).toISOString(),
-              end: new Date(now + 26 * 60 * 60 * 1000).toISOString(),
-              location: "Home",
-              uid: "demo-event-2",
-            },
-          ];
           return {
             response: {
-              [entityId]: { events },
+              [entityId]: { events: demoCalendarEvents() },
             },
           } as T;
         }
@@ -1042,6 +1054,15 @@ export function connectDemo(): EntityClient {
           templateListeners.delete(push);
         };
       }
+      if (message.type === "calendar/event/subscribe") {
+        const entityId =
+          typeof message.entity_id === "string" ? message.entity_id : "";
+        if (!entities[entityId]) {
+          throw new Error(`Unknown entity: ${entityId}`);
+        }
+        onMessage({ events: demoCalendarEvents() } as T);
+        return () => {};
+      }
       if (message.type !== "todo/item/subscribe") {
         throw new Error(
           `Demo client does not support subscription type: ${String(message.type)}`,
@@ -1067,8 +1088,31 @@ export function connectDemo(): EntityClient {
       if (sensorTimer) clearInterval(sensorTimer);
       if (doorTimer) clearInterval(doorTimer);
       if (teamScoreTimer) clearInterval(teamScoreTimer);
+      for (const timer of lockTimers.values()) clearTimeout(timer);
+      lockTimers.clear();
     },
   };
+
+  function demoCalendarEvents() {
+    const now = Date.now();
+    return [
+      {
+        summary: "School pickup",
+        start: new Date(now).toISOString(),
+        end: new Date(now + 60 * 60 * 1000).toISOString(),
+        location: "School gate",
+        description: "Pick up the kids",
+        uid: "demo-event-1",
+      },
+      {
+        summary: "Team dinner",
+        start: new Date(now + 24 * 60 * 60 * 1000).toISOString(),
+        end: new Date(now + 26 * 60 * 60 * 1000).toISOString(),
+        location: "Home",
+        uid: "demo-event-2",
+      },
+    ];
+  }
 
   function assertDemoTodoEntity(entityId: unknown): void {
     if (entityId !== DEMO_TODO_ENTITY_ID) {

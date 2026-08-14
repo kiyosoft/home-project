@@ -31,6 +31,16 @@ export { todoConfigSchema } from "./widgets/TodoWidget";
 export { toggleConfigSchema } from "./widgets/ToggleWidget";
 export { weatherConfigSchema } from "./widgets/WeatherWidget";
 
+export { ColorStrip, Slider, Switch, useServiceValue } from "./ui";
+export type {
+  ColorStripProps,
+  ServiceValueBinding,
+  SliderProps,
+  SliderSize,
+  SwitchProps,
+  SwitchSize,
+} from "./ui";
+
 export const corePlugin = definePlugin({
   id: "@ethio/core",
   name: "Ethio Core",

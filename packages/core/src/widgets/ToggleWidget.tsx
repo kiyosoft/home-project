@@ -9,6 +9,8 @@ import {
   type WidgetComponentProps,
 } from "@ethio/plugin-sdk";
 
+import { Switch } from "../ui";
+
 export const toggleConfigSchema = z.object({
   title: z.string().default(""),
   entity_id: z.string().min(1, "Entity is required"),
@@ -86,14 +88,18 @@ function ToggleWidget({ config, interactive = true }: WidgetComponentProps) {
             {displayTitle}
           </h3>
         </div>
-        <div
-          className={`rounded-full p-2 ${
-            isOn
-              ? "bg-primary text-primary-foreground"
-              : "bg-muted text-muted-foreground"
-          }`}
-        >
-          <Icon className="h-4 w-4" />
+        <div className="flex items-center gap-2">
+          <Icon
+            className={`h-4 w-4 ${isOn ? "text-primary" : "text-muted-foreground"}`}
+          />
+          {interactive ? (
+            <Switch
+              presentational
+              checked={isOn}
+              label={displayTitle}
+              size="sm"
+            />
+          ) : null}
         </div>
       </div>
       <p className="mt-4 font-display text-3xl font-semibold tracking-tight">
@@ -118,6 +124,8 @@ function ToggleWidget({ config, interactive = true }: WidgetComponentProps) {
   return (
     <button
       type="button"
+      role="switch"
+      aria-checked={isOn}
       onClick={() => {
         void handleToggle();
       }}

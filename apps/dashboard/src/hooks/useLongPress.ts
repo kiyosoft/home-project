@@ -7,6 +7,10 @@ interface UseLongPressOptions {
   disabled?: boolean;
 }
 
+const MOVE_CANCEL_PX = 8;
+const CONTROL_SELECTOR =
+  "input, button, select, textarea, a, [role=slider], [role=switch]";
+
 /** Suppress the synthetic click that follows a successful long-press. */
 let suppressClickUntil = 0;
 
@@ -31,6 +35,7 @@ export function useLongPress({
 }: UseLongPressOptions) {
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const fired = useRef(false);
+  const origin = useRef({ x: 0, y: 0 });
 
   const clear = () => {
     if (timer.current) {
@@ -42,13 +47,30 @@ export function useLongPress({
   const start = (event: ReactPointerEvent) => {
     if (disabled) return;
     if (event.button != null && event.button !== 0) return;
+    const target = event.target;
+    if (
+      target instanceof Element &&
+      target.closest(CONTROL_SELECTOR)
+    ) {
+      return;
+    }
     fired.current = false;
+    origin.current = { x: event.clientX, y: event.clientY };
     clear();
     timer.current = setTimeout(() => {
       fired.current = true;
       suppressClickUntil = Date.now() + 500;
       onLongPress();
     }, ms);
+  };
+
+  const move = (event: ReactPointerEvent) => {
+    if (!timer.current) return;
+    const dx = event.clientX - origin.current.x;
+    const dy = event.clientY - origin.current.y;
+    if (dx * dx + dy * dy > MOVE_CANCEL_PX * MOVE_CANCEL_PX) {
+      clear();
+    }
   };
 
   const end = () => {
@@ -61,6 +83,7 @@ export function useLongPress({
 
   return {
     onPointerDown: start,
+    onPointerMove: move,
     onPointerUp: end,
     onPointerLeave: clear,
     onPointerCancel: clear,

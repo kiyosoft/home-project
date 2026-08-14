@@ -66,7 +66,14 @@ function CalendarWidget({ config, interactive = true }: WidgetComponentProps) {
       ? calendar.attributes.friendly_name
       : calendar.entityId);
 
-  const events = calendar.events.slice(0, maxItems);
+  const now = Date.now();
+  const events = calendar.events
+    .filter((event) => {
+      const endMs = Date.parse(event.end);
+      return Number.isNaN(endMs) || endMs >= now;
+    })
+    .sort((a, b) => Date.parse(a.start) - Date.parse(b.start))
+    .slice(0, maxItems);
 
   return (
     <div className="flex h-full min-h-36 flex-col rounded-2xl border border-border bg-card p-5 text-card-foreground shadow-sm">

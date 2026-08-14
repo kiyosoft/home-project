@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import {
+  calendarRangeEnd,
+  calendarRangeStart,
   cameraMjpegPath,
   cameraStillPath,
   deriveAlarm,
@@ -9,6 +11,7 @@ import {
   deriveLight,
   deriveLock,
   getCalendarEvents,
+  subscribeCalendarEvents,
   type AlarmView,
   type CalendarEvent,
   type CalendarView,
@@ -24,6 +27,7 @@ import {
   useCallService,
   useEntity,
   useSendMessage,
+  useSubscribeMessage,
 } from "./hooks";
 
 function useAuthToken(): string {
@@ -365,9 +369,10 @@ export function useCalendar(entityId: string): UseCalendarResult | null {
   const entity = useEntity(entityId);
   const callService = useCallService();
   const sendMessage = useSendMessage();
+  const subscribeMessage = useSubscribeMessage();
   const view = useMemo(() => deriveCalendar(entity), [entity]);
   const [events, setEvents] = useState<CalendarEvent[]>([]);
-  const [eventsLoading, setEventsLoading] = useState(false);
+  const [eventsLoading, setEventsLoading] = useState(Boolean(entityId));
   const [eventsError, setEventsError] = useState<string | null>(null);
   const [refreshToken, setRefreshToken] = useState(0);
 
@@ -403,29 +408,61 @@ export function useCalendar(entityId: string): UseCalendarResult | null {
       setEventsError(null);
       return;
     }
+
     let cancelled = false;
+    let unsubscribe: (() => void) | undefined;
     setEventsLoading(true);
     setEventsError(null);
-    const start = new Date().toISOString();
-    const end = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString();
-    void getCalendarEvents(sendMessage, entityId, start, end)
-      .then((next) => {
-        if (cancelled) return;
-        setEvents(next);
-        setEventsLoading(false);
-      })
-      .catch((err: unknown) => {
-        if (cancelled) return;
-        setEvents([]);
-        setEventsLoading(false);
-        setEventsError(
-          err instanceof Error ? err.message : "Failed to load events",
+    const start = calendarRangeStart();
+    const end = calendarRangeEnd();
+
+    void (async () => {
+      try {
+        unsubscribe = await subscribeCalendarEvents(
+          subscribeMessage,
+          entityId,
+          start,
+          end,
+          (next) => {
+            if (cancelled) return;
+            setEvents(next);
+            setEventsLoading(false);
+            setEventsError(null);
+          },
         );
-      });
+        if (cancelled) {
+          unsubscribe();
+        }
+      } catch {
+        if (cancelled) return;
+        // Older HA builds may lack calendar/event/subscribe; fall back to get_events.
+        try {
+          const next = await getCalendarEvents(
+            sendMessage,
+            entityId,
+            start,
+            end,
+          );
+          if (cancelled) return;
+          setEvents(next);
+          setEventsLoading(false);
+          setEventsError(null);
+        } catch (err: unknown) {
+          if (cancelled) return;
+          setEvents([]);
+          setEventsLoading(false);
+          setEventsError(
+            err instanceof Error ? err.message : "Failed to load events",
+          );
+        }
+      }
+    })();
+
     return () => {
       cancelled = true;
+      unsubscribe?.();
     };
-  }, [entityId, sendMessage, refreshToken]);
+  }, [entityId, sendMessage, subscribeMessage, refreshToken]);
 
   if (!view) return null;
   return {

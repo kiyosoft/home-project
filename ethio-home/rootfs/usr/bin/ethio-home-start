@@ -1,0 +1,22 @@
+#!/usr/bin/env sh
+set -eu
+
+mkdir -p /data /run/nginx
+
+echo "[ethio-home] starting tunnel agent on 127.0.0.1:8098"
+node /opt/tunnel-agent/server.mjs &
+AGENT_PID=$!
+
+cleanup() {
+  if kill -0 "$AGENT_PID" 2>/dev/null; then
+    kill "$AGENT_PID" 2>/dev/null || true
+    wait "$AGENT_PID" 2>/dev/null || true
+  fi
+}
+trap cleanup EXIT INT TERM
+
+# Give the agent a moment to bind before nginx starts accepting ingress.
+sleep 0.3
+
+echo "[ethio-home] starting nginx (ingress :8099, tunnel origin :8100)"
+exec nginx -g "daemon off;error_log /dev/stdout info;"
