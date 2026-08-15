@@ -4,8 +4,13 @@ export {
   deriveAlarm,
 } from "./alarm";
 export type { AlarmView } from "./alarm";
-export { browseMedia } from "./browse-media";
-export type { BrowseMediaOptions } from "./browse-media";
+export {
+  browseMedia,
+  browseMediaSource,
+  getHassConfig,
+} from "./browse-media";
+export type { BrowseMediaOptions, HassCoreConfig } from "./browse-media";
+export { normalizeHassError } from "./hass-error";
 export {
   CAMERA_FEATURE,
   cameraMjpegPath,

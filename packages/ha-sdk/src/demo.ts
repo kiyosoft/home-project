@@ -69,6 +69,33 @@ const DEMO_TRACKS = [
   },
 ] as const;
 
+const DEMO_RADIO_STATIONS = [
+  {
+    id: "media-source://radio_browser/station-fana",
+    title: "Fana Radio",
+    artist: "Ethiopia",
+    contentType: "audio/mpeg",
+    thumbnail:
+      "https://images.unsplash.com/photo-1478737270239-2f02b77fc618?w=400&h=400&fit=crop",
+  },
+  {
+    id: "media-source://radio_browser/station-sheger",
+    title: "Sheger FM",
+    artist: "Ethiopia",
+    contentType: "audio/mpeg",
+    thumbnail:
+      "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=400&h=400&fit=crop",
+  },
+  {
+    id: "media-source://radio_browser/station-ebc",
+    title: "EBC Radio",
+    artist: "Ethiopia",
+    contentType: "audio/mpeg",
+    thumbnail:
+      "https://images.unsplash.com/photo-1485579149621-3123dd979885?w=400&h=400&fit=crop",
+  },
+] as const;
+
 const DEMO_ENTITIES: HassEntities = {
   "light.living_room": {
     entity_id: "light.living_room",
@@ -101,7 +128,7 @@ const DEMO_ENTITIES: HassEntities = {
   },
   "lock.front_door": {
     entity_id: "lock.front_door",
-    state: "jammed",
+    state: "locked",
     attributes: {
       friendly_name: "Front Door Lock",
       supported_features: 1,
@@ -383,6 +410,70 @@ function demoBrowseRoot(): BrowseMediaItem {
         ],
       },
     ],
+  };
+}
+
+function demoRadioStationItems(): BrowseMediaItem[] {
+  return DEMO_RADIO_STATIONS.map((station) => ({
+    title: station.title,
+    media_class: "music",
+    media_content_type: station.contentType,
+    media_content_id: station.id,
+    can_play: true,
+    can_expand: false,
+    thumbnail: station.thumbnail,
+  }));
+}
+
+function demoRadioBrowserRoot(): BrowseMediaItem {
+  return {
+    title: "Radio Browser",
+    media_class: "directory",
+    media_content_type: "music",
+    media_content_id: "media-source://radio_browser",
+    can_play: false,
+    can_expand: true,
+    children: [
+      {
+        title: "Popular",
+        media_class: "directory",
+        media_content_type: "music",
+        media_content_id: "media-source://radio_browser/popular",
+        can_play: false,
+        can_expand: true,
+        children: demoRadioStationItems().slice(0, 1),
+      },
+      {
+        title: "Local stations",
+        media_class: "directory",
+        media_content_type: "music",
+        media_content_id: "media-source://radio_browser/local",
+        can_play: false,
+        can_expand: true,
+        children: demoRadioStationItems().slice(0, 2),
+      },
+      {
+        title: "Ethiopia",
+        media_class: "directory",
+        media_content_type: "music",
+        media_content_id: "media-source://radio_browser/country/ET",
+        can_play: false,
+        can_expand: true,
+        children: demoRadioStationItems(),
+      },
+    ],
+  };
+}
+
+function demoMediaSourceRoot(): BrowseMediaItem {
+  return {
+    title: "Media Sources",
+    media_class: "directory",
+    media_content_type: "app",
+    media_content_id: "",
+    can_play: false,
+    can_expand: true,
+    children: [demoRadioBrowserRoot()],
   };
 }
 
@@ -945,6 +1036,29 @@ export function connectDemo(): EntityClient {
             typeof serviceData.media_content_id === "string"
               ? serviceData.media_content_id
               : "";
+          const radio = DEMO_RADIO_STATIONS.find((item) => item.id === contentId);
+          if (radio) {
+            setEntity(entityId, {
+              ...current,
+              state: "playing",
+              attributes: {
+                ...attributes,
+                media_title: radio.title,
+                media_artist: radio.artist,
+                media_album_name: "Radio Browser",
+                media_content_id: radio.id,
+                media_content_type:
+                  typeof serviceData.media_content_type === "string"
+                    ? serviceData.media_content_type
+                    : radio.contentType,
+                media_duration: undefined,
+                media_position: 0,
+                media_position_updated_at: nowIso(),
+                entity_picture: radio.thumbnail,
+              },
+            });
+            return;
+          }
           const track =
             DEMO_TRACKS.find((item) => item.id === contentId) ?? DEMO_TRACKS[0];
           setEntity(entityId, {
@@ -1013,6 +1127,29 @@ export function connectDemo(): EntityClient {
             : undefined;
         const root = demoBrowseRoot();
         return findBrowseNode(root, contentType, contentId) as T;
+      }
+      if (message.type === "media_source/browse_media") {
+        const contentId =
+          typeof message.media_content_id === "string"
+            ? message.media_content_id
+            : "";
+        if (!contentId) return demoMediaSourceRoot() as T;
+        const radioRoot = demoRadioBrowserRoot();
+        if (contentId === radioRoot.media_content_id) return radioRoot as T;
+        const match = (radioRoot.children ?? []).find(
+          (child) => child.media_content_id === contentId,
+        );
+        if (match) return match as T;
+        return radioRoot as T;
+      }
+      if (message.type === "get_config") {
+        return {
+          country: "ET",
+          language: "en",
+          time_zone: "Africa/Addis_Ababa",
+          latitude: 9.03,
+          longitude: 38.74,
+        } as T;
       }
       if (message.type === "todo/item/list") {
         assertDemoTodoEntity(message.entity_id);

@@ -4,6 +4,7 @@ import { z } from "zod";
 import {
   defineWidget,
   useLock,
+  type UseLockResult,
   type WidgetComponentProps,
 } from "@ethio/plugin-sdk";
 
@@ -16,7 +17,7 @@ export const lockConfigSchema = z.object({
   entity_id: z.string().min(1, "Entity is required"),
 });
 
-/** Below this the big status line and the attribution crowd the padlock out. */
+/** Below this the big status line crowds the padlock out. */
 const COMPACT_HEIGHT = 208;
 /** A lock that never echoes its new state should not hold the pose forever. */
 const CONFIRM_TIMEOUT_MS = 4000;
@@ -27,33 +28,6 @@ function LockWidget({ config, interactive = true }: WidgetComponentProps) {
   const customTitle =
     typeof config.title === "string" ? config.title.trim() : "";
   const lock = useLock(entityId);
-  const [cardRef, cardSize] = useElementSize<HTMLDivElement>();
-  const [pending, setPending] = useState(false);
-  // The padlock moves on tap; Home Assistant confirms a few hundred ms later.
-  const [wanted, setWanted] = useState<boolean | null>(null);
-
-  const visuals = lockVisuals(
-    lock ?? {
-      isLocked: false,
-      isUnlocked: false,
-      isLocking: false,
-      isUnlocking: false,
-      isJammed: false,
-    },
-  );
-
-  useEffect(() => {
-    if (wanted === null) return;
-    if (visuals.open === wanted || visuals.jammed) {
-      setWanted(null);
-      return;
-    }
-    const timer = window.setTimeout(
-      () => setWanted(null),
-      CONFIRM_TIMEOUT_MS,
-    );
-    return () => window.clearTimeout(timer);
-  }, [wanted, visuals.open, visuals.jammed]);
 
   if (!entityId) {
     return (
@@ -79,6 +53,38 @@ function LockWidget({ config, interactive = true }: WidgetComponentProps) {
     );
   }
 
+  return (
+    <LockCard lock={lock} customTitle={customTitle} interactive={interactive} />
+  );
+}
+
+interface LockCardProps {
+  lock: UseLockResult;
+  customTitle: string;
+  interactive: boolean;
+}
+
+/**
+ * Split from the widget so the pose and its pending tap live behind the checks
+ * for a missing or unavailable entity.
+ */
+function LockCard({ lock, customTitle, interactive }: LockCardProps) {
+  const [cardRef, cardSize] = useElementSize<HTMLDivElement>();
+  const [pending, setPending] = useState(false);
+  // The padlock moves on tap; Home Assistant confirms a few hundred ms later.
+  const [wanted, setWanted] = useState<boolean | null>(null);
+  const visuals = lockVisuals(lock);
+
+  useEffect(() => {
+    if (wanted === null) return;
+    if (visuals.open === wanted || visuals.jammed) {
+      setWanted(null);
+      return;
+    }
+    const timer = window.setTimeout(() => setWanted(null), CONFIRM_TIMEOUT_MS);
+    return () => window.clearTimeout(timer);
+  }, [wanted, visuals.open, visuals.jammed]);
+
   const displayTitle =
     customTitle ||
     (typeof lock.attributes.friendly_name === "string"
@@ -100,7 +106,7 @@ function LockWidget({ config, interactive = true }: WidgetComponentProps) {
   }
 
   async function toggle() {
-    if (!canToggle || !lock) return;
+    if (!canToggle) return;
     const next = !shownOpen;
     setWanted(next);
     setPending(true);

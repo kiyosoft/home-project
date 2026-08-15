@@ -8,10 +8,13 @@ import {
 
 import {
   browseMedia as haBrowseMedia,
+  browseMediaSource as haBrowseMediaSource,
+  getHassConfig as haGetHassConfig,
   subscribeRenderTemplate,
   subscribeTodoItems,
   type BrowseMediaItem,
   type BrowseMediaOptions,
+  type HassCoreConfig,
   type HassEntities,
   type HassEntity,
   type TodoItem,
@@ -138,6 +141,22 @@ export function useBrowseMedia(): (
     (options: BrowseMediaOptions) => haBrowseMedia(sendMessage, options),
     [sendMessage],
   );
+}
+
+export function useBrowseMediaSource(): (
+  mediaContentId?: string,
+) => Promise<BrowseMediaItem> {
+  const sendMessage = useSendMessage();
+  return useCallback(
+    (mediaContentId?: string) =>
+      haBrowseMediaSource(sendMessage, mediaContentId),
+    [sendMessage],
+  );
+}
+
+export function useHassConfig(): () => Promise<HassCoreConfig> {
+  const sendMessage = useSendMessage();
+  return useCallback(() => haGetHassConfig(sendMessage), [sendMessage]);
 }
 
 export function useSubscribeMessage(): <T = unknown>(

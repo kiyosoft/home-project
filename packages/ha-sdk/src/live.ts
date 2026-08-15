@@ -7,6 +7,7 @@ import {
   type HassEntities as HaHassEntities,
 } from "home-assistant-js-websocket";
 
+import { normalizeHassError } from "./hass-error";
 import type { EntityClient, HassEntities, LiveConnectOptions } from "./types";
 
 function normalizeBaseUrl(url: string): string {
@@ -37,9 +38,13 @@ export async function connectLive(
       if (typeof message.type !== "string" || !message.type) {
         return Promise.reject(new Error("WebSocket message requires a type"));
       }
-      return connection.sendMessagePromise<T>(
-        message as { type: string } & Record<string, unknown>,
-      );
+      return connection
+        .sendMessagePromise<T>(
+          message as { type: string } & Record<string, unknown>,
+        )
+        .catch((error: unknown) => {
+          throw normalizeHassError(error);
+        });
     },
     async subscribeMessage<T = unknown>(
       message: Record<string, unknown>,

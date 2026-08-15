@@ -6,6 +6,7 @@ export const MEDIA_PLAYER_FEATURE = {
   NEXT_TRACK: 32,
   TURN_ON: 128,
   TURN_OFF: 256,
+  PLAY_MEDIA: 512,
   BROWSE_MEDIA: 131072,
 } as const;
 
@@ -88,6 +89,9 @@ export function isMusicAssistantPlayer(
   entityId: string,
   attrs: Record<string, unknown>,
 ): boolean {
+  if (attrs.mass_player_type != null || attrs.active_queue != null) {
+    return true;
+  }
   const haystack = [
     entityId,
     strAttr(attrs, "app_name"),
@@ -98,8 +102,8 @@ export function isMusicAssistantPlayer(
     .toLowerCase();
   return (
     haystack.includes("music_assistant") ||
-    haystack.includes("mass") ||
-    haystack.includes("music assistant")
+    haystack.includes("music assistant") ||
+    /(^|[^a-z])mass([^a-z]|$)/.test(haystack)
   );
 }
 

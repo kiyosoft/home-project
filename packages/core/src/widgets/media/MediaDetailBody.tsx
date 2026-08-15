@@ -66,10 +66,15 @@ export function MediaDetailBody({
   const powerAction = entity
     ? getPowerAction(state, supportedFeatures)
     : null;
-  const canBrowse = supportsFeature(
+  const canBrowsePlayer = supportsFeature(
     supportedFeatures,
     MEDIA_PLAYER_FEATURE.BROWSE_MEDIA,
   );
+  const canPlayMedia = supportsFeature(
+    supportedFeatures,
+    MEDIA_PLAYER_FEATURE.PLAY_MEDIA,
+  );
+  const canOpenLibrary = canBrowsePlayer || canPlayMedia;
   const canSeek = supportsFeature(supportedFeatures, MEDIA_PLAYER_FEATURE.SEEK);
   const canVolume = supportsFeature(
     supportedFeatures,
@@ -80,11 +85,8 @@ export function MediaDetailBody({
     MEDIA_PLAYER_FEATURE.VOLUME_MUTE,
   );
   const isMass = isMusicAssistantPlayer(entityId, attrs);
-  const { browseLoading, browseError, playlists, library } = useMediaBrowse(
-    entityId,
-    canBrowse,
-    showBrowse,
-  );
+  const { browseLoading, browseError, playlists, library, radio, radioLabel } =
+    useMediaBrowse(entityId, canBrowsePlayer, showBrowse, isMass);
 
   async function run(
     service: string,
@@ -291,13 +293,15 @@ export function MediaDetailBody({
 
       <MediaDetailBrowsePanel
         isMass={isMass}
-        canBrowse={canBrowse}
+        canOpenLibrary={canOpenLibrary}
         pending={pending}
         showBrowse={showBrowse}
         browseLoading={browseLoading}
         browseError={browseError}
         playlists={playlists}
         library={library}
+        radio={radio}
+        radioLabel={radioLabel}
         baseUrl={baseUrl}
         onToggleBrowse={() => setShowBrowse((prev) => !prev)}
         onPlay={(choice) => void playChoice(choice)}

@@ -3,25 +3,29 @@ import type { MediaChoice } from "./media-utils";
 
 export function MediaDetailBrowsePanel({
   isMass,
-  canBrowse,
+  canOpenLibrary,
   pending,
   showBrowse,
   browseLoading,
   browseError,
   playlists,
   library,
+  radio,
+  radioLabel,
   baseUrl,
   onToggleBrowse,
   onPlay,
 }: {
   isMass: boolean;
-  canBrowse: boolean;
+  canOpenLibrary: boolean;
   pending: boolean;
   showBrowse: boolean;
   browseLoading: boolean;
   browseError: string;
   playlists: MediaChoice[];
   library: MediaChoice[];
+  radio: MediaChoice[];
+  radioLabel: string;
   baseUrl: string;
   onToggleBrowse: () => void;
   onPlay: (choice: MediaChoice) => void;
@@ -33,15 +37,15 @@ export function MediaDetailBrowsePanel({
           <p className="text-sm font-medium">Library</p>
           <p className="text-xs text-muted-foreground">
             {isMass
-              ? "Browse Music Assistant playlists and library"
-              : canBrowse
-                ? "Browse media on this player"
-                : "This player does not expose browse_media"}
+              ? "Browse Music Assistant and Home Assistant radio"
+              : canOpenLibrary
+                ? "Browse media and Home Assistant radio"
+                : "This player cannot play or browse media"}
           </p>
         </div>
         <button
           type="button"
-          disabled={!canBrowse || pending}
+          disabled={!canOpenLibrary || pending}
           onClick={onToggleBrowse}
           className="rounded-xl border border-border px-3 py-1.5 text-sm hover:bg-muted disabled:opacity-50"
         >
@@ -71,7 +75,15 @@ export function MediaDetailBrowsePanel({
                 baseUrl={baseUrl}
                 onPlay={onPlay}
               />
-              {playlists.length === 0 && library.length === 0 ? (
+              <MediaBrowseSection
+                title={radioLabel ? `Radio · ${radioLabel}` : "Radio"}
+                items={radio}
+                baseUrl={baseUrl}
+                onPlay={onPlay}
+              />
+              {playlists.length === 0 &&
+              library.length === 0 &&
+              radio.length === 0 ? (
                 <p className="text-sm text-muted-foreground">
                   No playable media found.
                 </p>
