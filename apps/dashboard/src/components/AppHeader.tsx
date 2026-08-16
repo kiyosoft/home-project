@@ -81,7 +81,7 @@ export function AppHeader({
 
   return (
     <>
-      <header className="mx-auto w-full max-w-6xl px-4 pt-8 pb-3 sm:px-6 sm:pt-10">
+      <header className="w-full pb-[var(--dash-gap)]">
           {showHero ? (
             <div className="flex items-start justify-between gap-4">
               <div className="min-w-0">

@@ -814,6 +814,20 @@
     min-height: 100%;
   }
 
+  /* Page frame is larger than card gutters so the dashboard has a visible border */
+  .dashboard-shell {
+    --dash-gap: 1.25rem;
+    --dash-inset: clamp(3rem, 5vw, 4.5rem);
+    width: 100%;
+    padding-inline: max(
+      var(--dash-inset),
+      env(safe-area-inset-left, 0px),
+      env(safe-area-inset-right, 0px)
+    );
+    padding-top: max(var(--dash-inset), env(safe-area-inset-top, 0px));
+    padding-bottom: var(--dash-inset);
+  }
+
   /* Native <dialog> defaults to CanvasText (black). Inherit theme ink instead. */
   dialog {
     color: var(--card-foreground);

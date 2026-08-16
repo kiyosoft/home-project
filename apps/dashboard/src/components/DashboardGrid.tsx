@@ -10,7 +10,7 @@ import {
 
 import { WidgetTile } from "@/components/WidgetTile";
 import type { Breakpoint, DashboardPage, GridItem } from "@/dashboard/types";
-import { BREAKPOINTS, COLS } from "@/dashboard/types";
+import { BREAKPOINTS, COLS, DASH_GAP } from "@/dashboard/types";
 import { useCardReveal } from "@/hooks/useCardReveal";
 import { cn } from "@/lib/utils";
 import { useDashboardStore } from "@/store/dashboard-store";
@@ -129,7 +129,7 @@ export function DashboardGrid({ page }: DashboardGridProps) {
           breakpoints={BREAKPOINTS}
           cols={COLS}
           rowHeight={56}
-          margin={[12, 12] as const}
+          margin={[DASH_GAP, DASH_GAP] as const}
           containerPadding={[0, 0] as const}
           compactor={verticalCompactor}
           dragConfig={{

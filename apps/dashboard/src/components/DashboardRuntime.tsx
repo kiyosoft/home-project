@@ -85,25 +85,27 @@ export function DashboardRuntime() {
 
   return (
     <div className="min-h-screen pb-24" {...(kiosk ? canvasLongPress : {})}>
-      <AppHeader showDisconnect showBuilder />
+      <div className="dashboard-shell">
+        <AppHeader showDisconnect showBuilder />
 
-      <main className="mx-auto w-full max-w-6xl px-4 pb-8 sm:px-6">
-        {banner ? (
-          <div className="mb-4 rounded-xl border border-border bg-muted px-3 py-2 text-sm">
-            {banner}
-          </div>
-        ) : null}
+        <main className="w-full">
+          {banner ? (
+            <div className="mb-[var(--dash-gap)] rounded-xl border border-border bg-muted px-3 py-2 text-sm">
+              {banner}
+            </div>
+          ) : null}
 
-        {!kiosk ? (
-          <div className="mb-5 mt-1">
-            <p className="text-sm text-muted-foreground">{help}</p>
-          </div>
-        ) : (
-          <div className="mb-4" />
-        )}
+          {!kiosk ? (
+            <p className="mb-[var(--dash-gap)] text-sm text-muted-foreground">
+              {help}
+            </p>
+          ) : (
+            <div className="mb-[var(--dash-gap)]" />
+          )}
 
-        <DashboardGrid page={page} />
-      </main>
+          <DashboardGrid page={page} />
+        </main>
+      </div>
 
       <PageDock />
       <WidgetPicker breakpoint={breakpoint} />

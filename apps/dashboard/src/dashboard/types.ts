@@ -56,8 +56,8 @@ export interface DashboardConfig {
 export type EditorMode = "live" | "edit";
 
 export const BREAKPOINTS: Record<Breakpoint, number> = {
-  lg: 1024,
-  md: 768,
+  lg: 768,
+  md: 480,
   sm: 0,
 };
 
@@ -66,5 +66,8 @@ export const COLS: Record<Breakpoint, number> = {
   md: 8,
   sm: 4,
 };
+
+/** Outer frame and card gutters — keep these equal so the grid aligns with the header. */
+export const DASH_GAP = 20;
 
 export const BREAKPOINT_ORDER: Breakpoint[] = ["lg", "md", "sm"];
