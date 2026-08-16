@@ -4,12 +4,26 @@ import { pickLiveEntityIds } from "@/lib/entities";
 import { getWidgetOrThrow } from "@/plugins/registry";
 
 import { packLayoutsSized } from "./layout";
-import type { DashboardConfig, DashboardWidget } from "./types";
+import type {
+  DashboardConfig,
+  DashboardWidget,
+  HeaderPillConfig,
+} from "./types";
+
+const DEMO_HEADER_PILLS: HeaderPillConfig[] = [
+  { entity_id: DEMO_ENTITY_IDS.person },
+  {
+    entity_id: DEMO_ENTITY_IDS.fasting,
+    template:
+      "{% if is_state('binary_sensor.fasting', 'on') %}ዛሬ ጾም ነው{% endif %}",
+  },
+];
 
 function withLayouts(
   widgets: DashboardWidget[],
   pageId: string,
   title: string,
+  pills?: HeaderPillConfig[],
 ): DashboardConfig {
   const layouts = packLayoutsSized(
     widgets.map((widget) => {
@@ -35,6 +49,7 @@ function withLayouts(
       showDate: true,
       showTime: true,
       timeFormat: "24h",
+      pills,
     },
     pages: [
       {
@@ -166,7 +181,7 @@ export function seedDemoDashboard(): DashboardConfig {
       config: { entity_id: DEMO_ENTITY_IDS.calendar, maxItems: 5 },
     },
   ];
-  return withLayouts(widgets, "overview", "Overview");
+  return withLayouts(widgets, "overview", "Overview", DEMO_HEADER_PILLS);
 }
 
 export function seedLiveDashboard(entities: HassEntities): DashboardConfig {

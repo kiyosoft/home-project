@@ -32,6 +32,13 @@ export interface DashboardPage {
 
 export type TimeFormat = "12h" | "24h";
 
+export interface HeaderPillConfig {
+  /** Optional entity for avatar, presence, and tap-to-detail */
+  entity_id?: string;
+  /** Live HA Jinja; empty result hides the pill */
+  template?: string;
+}
+
 export interface DashboardHeaderConfig {
   /** Show dashboard title (default true) */
   showTitle?: boolean;
@@ -41,6 +48,8 @@ export interface DashboardHeaderConfig {
   showTime?: boolean;
   /** Clock format (default 24h) */
   timeFormat?: TimeFormat;
+  /** Status chips under the date */
+  pills?: HeaderPillConfig[];
 }
 
 export interface DashboardConfig {
@@ -60,6 +69,13 @@ export const BREAKPOINTS: Record<Breakpoint, number> = {
   md: 480,
   sm: 0,
 };
+
+/** Match react-grid-layout: compare against the grid container, not the viewport. */
+export function breakpointFromWidth(width: number): Breakpoint {
+  if (width >= BREAKPOINTS.lg) return "lg";
+  if (width >= BREAKPOINTS.md) return "md";
+  return "sm";
+}
 
 export const COLS: Record<Breakpoint, number> = {
   lg: 12,

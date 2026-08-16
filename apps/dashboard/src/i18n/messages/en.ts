@@ -28,6 +28,7 @@ export const en = {
   "header.importAria": "Import dashboard",
   "header.settingsAria": "Dashboard settings",
   "header.imported": "Dashboard imported",
+  "header.pillUnavailable": "unavailable",
 
   "runtime.editHelp":
     "Edit mode — drag, resize, add, and configure widgets. Changes autosave.",
@@ -53,6 +54,18 @@ export const en = {
   "settings.timeFormat": "Time format",
   "settings.time24h": "24-hour (19:53)",
   "settings.time12h": "12-hour (7:53 PM)",
+  "settings.pillsAdd": "Add",
+  "settings.pillsSave": "Save",
+  "settings.pillsAddTitle": "Add pill",
+  "settings.pillsEditTitle": "Edit pill",
+  "settings.pillsAddDescription":
+    "Pick an entity and/or write a Jinja template. An empty template result hides the chip.",
+  "settings.pillsAddAria": "Add pill",
+  "settings.pillsEntity": "Entity (optional)",
+  "settings.pillsTemplate": "Template (optional)",
+  "settings.pillsTemplatePlaceholder":
+    "{% if is_state('binary_sensor.fasting', 'on') %}ዛሬ ጾም ነው{% endif %}",
+  "settings.pillsRemove": "Remove pill",
   "settings.plugins": "Plugins",
   "settings.pluginsHint":
     "Install open-registry widgets dynamically (no app rebuild).",

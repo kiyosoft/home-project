@@ -35,11 +35,22 @@ export const dashboardPageSchema = z.object({
   widgets: z.array(dashboardWidgetSchema),
 });
 
+export const headerPillSchema = z
+  .object({
+    entity_id: z.string().optional(),
+    template: z.string().optional(),
+  })
+  .refine(
+    (pill) => Boolean(pill.entity_id?.trim() || pill.template !== undefined),
+    { message: "Pill requires entity_id or template" },
+  );
+
 export const dashboardHeaderSchema = z.object({
   showTitle: z.boolean().optional(),
   showDate: z.boolean().optional(),
   showTime: z.boolean().optional(),
   timeFormat: z.enum(["12h", "24h"]).optional(),
+  pills: z.array(headerPillSchema).optional(),
 });
 
 export const dashboardConfigSchema = z.object({

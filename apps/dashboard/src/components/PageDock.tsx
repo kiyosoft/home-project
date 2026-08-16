@@ -33,7 +33,7 @@ export function PageDock() {
 
   return (
     <>
-      <nav className="pointer-events-none fixed inset-x-0 bottom-4 z-40 flex justify-center px-4">
+      <nav className="page-dock pointer-events-none fixed inset-x-0 z-40 flex justify-center">
         <div className="pointer-events-auto flex max-w-full items-center gap-1 overflow-x-auto rounded-2xl border border-border bg-card/95 px-2 py-2 shadow-lg backdrop-blur">
           {dashboard.pages.map((page) => {
             const active = page.id === activePageId;

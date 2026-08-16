@@ -68,9 +68,9 @@ export function SetupScreen() {
   const error = localError ?? storeError;
 
   return (
-    <div className="min-h-screen">
+    <div className="dashboard-shell min-h-screen">
       <AppHeader />
-      <main className="mx-auto flex w-full max-w-xl flex-col gap-6 px-4 pb-16 sm:px-6">
+      <main className="mx-auto flex w-full max-w-xl flex-col gap-6 pb-16">
         <div className="flex items-center justify-between gap-3">
           <span className="text-sm font-medium text-muted-foreground">
             {t(locale, "setup.language")}

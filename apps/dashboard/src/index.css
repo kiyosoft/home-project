@@ -828,6 +828,16 @@
     padding-bottom: var(--dash-inset);
   }
 
+  /* Fixed chrome sits outside .dashboard-shell — keep it clear of the home indicator */
+  .page-dock {
+    bottom: max(1rem, env(safe-area-inset-bottom, 0px));
+    padding-inline: max(
+      1rem,
+      env(safe-area-inset-left, 0px),
+      env(safe-area-inset-right, 0px)
+    );
+  }
+
   /* Native <dialog> defaults to CanvasText (black). Inherit theme ink instead. */
   dialog {
     color: var(--card-foreground);

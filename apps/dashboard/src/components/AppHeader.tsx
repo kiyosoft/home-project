@@ -9,8 +9,8 @@ import {
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
-import { ConnectionStatusChip } from "@/components/ConnectionStatusChip";
 import { DashboardSettings } from "@/components/DashboardSettings";
+import { HeaderPills } from "@/components/HeaderPills";
 import { ThemeChooser } from "@/components/ThemeChooser";
 import { Button } from "@/components/ui/button";
 import { useClock } from "@/hooks/useClock";
@@ -30,10 +30,6 @@ export function AppHeader({
   showDisconnect = false,
   showBuilder = false,
 }: AppHeaderProps) {
-  const status = useHaStore((state) => state.status);
-  const mode = useHaStore((state) => state.mode);
-  const error = useHaStore((state) => state.error);
-  const reconnect = useHaStore((state) => state.reconnect);
   const disconnect = useHaStore((state) => state.disconnect);
   const locale = useLocaleStore((state) => state.locale);
 
@@ -65,8 +61,11 @@ export function AppHeader({
   const showTime = hasDashboard ? header?.showTime !== false : false;
   const timeFormat = header?.timeFormat === "12h" ? "12h" : "24h";
   const title = dashboard?.title ?? "Ethio Home";
+  const pills = header?.pills ?? [];
+  const canAddPills = showBuilder && !kiosk;
   const showToolbar = showBuilder && !kiosk;
-  const showHero = showTitle || showDate || showTime;
+  const showHero =
+    showTitle || showDate || showTime || pills.length > 0 || canAddPills;
 
   if (!showHero && !showToolbar && !showDisconnect) {
     return showBuilder ? (
@@ -82,125 +81,118 @@ export function AppHeader({
   return (
     <>
       <header className="w-full pb-[var(--dash-gap)]">
-          {showHero ? (
-            <div className="flex items-start justify-between gap-4">
-              <div className="min-w-0">
-                {showTitle ? (
-                  <h1 className="font-sans text-3xl font-semibold uppercase tracking-[0.08em] text-foreground sm:text-4xl md:text-[2.75rem] md:leading-none">
-                    {title}
-                  </h1>
-                ) : null}
-                {showDate ? (
-                  <p
-                    className={`text-xs font-medium uppercase tracking-[0.16em] text-muted-foreground sm:text-sm ${
-                      showTitle ? "mt-2" : ""
-                    }`}
-                  >
-                    {formatHeaderDate(now, locale)}
-                  </p>
-                ) : null}
-              </div>
-              {showTime ? (
-                <time
-                  dateTime={now.toISOString()}
-                  className="shrink-0 font-sans text-3xl font-semibold tabular-nums tracking-tight text-foreground sm:text-4xl md:text-[2.75rem] md:leading-none"
-                >
-                  {formatHeaderTime(now, timeFormat, locale)}
-                </time>
+        {showHero ? (
+          <div className="flex items-start justify-between gap-4">
+            <div className="min-w-0">
+              {showTitle ? (
+                <h1 className="font-sans text-3xl font-semibold uppercase tracking-[0.08em] text-foreground sm:text-4xl md:text-[2.75rem] md:leading-none">
+                  {title}
+                </h1>
               ) : null}
+              {showDate ? (
+                <p
+                  className={`text-xs font-medium uppercase tracking-[0.16em] text-muted-foreground sm:text-sm ${
+                    showTitle ? "mt-2" : ""
+                  }`}
+                >
+                  {formatHeaderDate(now, locale)}
+                </p>
+              ) : null}
+              <HeaderPills pills={pills} canAdd={canAddPills} />
             </div>
-          ) : null}
+            {showTime ? (
+              <time
+                dateTime={now.toISOString()}
+                className="shrink-0 font-sans text-3xl font-semibold tabular-nums tracking-tight text-foreground sm:text-4xl md:text-[2.75rem] md:leading-none"
+              >
+                {formatHeaderTime(now, timeFormat, locale)}
+              </time>
+            ) : null}
+          </div>
+        ) : null}
 
-          {showToolbar || showDisconnect ? (
-            <div
-              className={`flex flex-wrap items-center justify-end gap-2 ${
-                showHero ? "mt-4" : ""
-              }`}
-            >
-              <ConnectionStatusChip
-                status={status}
-                mode={mode}
-                error={error}
-                onReconnect={() => {
-                  void reconnect();
-                }}
-              />
-              {showToolbar ? <ThemeChooser /> : null}
+        {showToolbar || showDisconnect ? (
+          <div
+            className={`flex flex-wrap items-center justify-end gap-2 ${
+              showHero ? "mt-4" : ""
+            }`}
+          >
+            {showToolbar ? <ThemeChooser /> : null}
 
-              {showToolbar ? (
-                editorMode === "edit" ? (
-                  <>
-                    <Button variant="secondary" size="sm" onClick={openPicker}>
-                      <Plus className="h-4 w-4" />
-                      {t(locale, "header.add")}
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      aria-label={t(locale, "header.exportAria")}
-                      onClick={() => {
-                        const json = exportJSON();
-                        const blob = new Blob([json], {
-                          type: "application/json",
-                        });
-                        const url = URL.createObjectURL(blob);
-                        const anchor = document.createElement("a");
-                        anchor.href = url;
-                        anchor.download = `${dashboard?.id ?? "dashboard"}.json`;
-                        anchor.click();
-                        URL.revokeObjectURL(url);
-                      }}
-                    >
-                      <Download className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      aria-label={t(locale, "header.importAria")}
-                      onClick={() => fileRef.current?.click()}
-                    >
-                      <Upload className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="default"
-                      size="sm"
-                      onClick={() => setMode("live")}
-                    >
-                      <Check className="h-4 w-4" />
-                      {t(locale, "header.done")}
-                    </Button>
-                  </>
-                ) : (
-                  <Button variant="secondary" size="sm" onClick={requestEdit}>
-                    <Pencil className="h-4 w-4" />
-                    {t(locale, "header.edit")}
+            {showToolbar ? (
+              editorMode === "edit" ? (
+                <>
+                  <Button variant="secondary" size="sm" onClick={openPicker}>
+                    <Plus className="h-4 w-4" />
+                    {t(locale, "header.add")}
                   </Button>
-                )
-              ) : null}
-
-              {showToolbar ? (
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  aria-label={t(locale, "header.settingsAria")}
-                  onClick={() => setSettingsOpen(true)}
-                >
-                  <Settings className="h-4 w-4" />
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    aria-label={t(locale, "header.exportAria")}
+                    onClick={() => {
+                      const json = exportJSON();
+                      const blob = new Blob([json], {
+                        type: "application/json",
+                      });
+                      const url = URL.createObjectURL(blob);
+                      const anchor = document.createElement("a");
+                      anchor.href = url;
+                      anchor.download = `${dashboard?.id ?? "dashboard"}.json`;
+                      anchor.click();
+                      URL.revokeObjectURL(url);
+                    }}
+                  >
+                    <Download className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    aria-label={t(locale, "header.importAria")}
+                    onClick={() => fileRef.current?.click()}
+                  >
+                    <Upload className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="default"
+                    size="sm"
+                    onClick={() => setMode("live")}
+                  >
+                    <Check className="h-4 w-4" />
+                    {t(locale, "header.done")}
+                  </Button>
+                </>
+              ) : (
+                <Button variant="secondary" size="sm" onClick={requestEdit}>
+                  <Pencil className="h-4 w-4" />
+                  {t(locale, "header.edit")}
                 </Button>
-              ) : null}
+              )
+            ) : null}
 
-              {showDisconnect && !kiosk ? (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => disconnect({ clearSaved: true })}
-                >
-                  <LogOut className="h-4 w-4" />
-                  {t(locale, "header.disconnect")}
-                </Button>
-              ) : null}
-            </div>
-          ) : null}
+            {showToolbar ? (
+              <Button
+                variant="ghost"
+                size="icon"
+                aria-label={t(locale, "header.settingsAria")}
+                onClick={() => setSettingsOpen(true)}
+              >
+                <Settings className="h-4 w-4" />
+              </Button>
+            ) : null}
+
+            {showDisconnect && !kiosk ? (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => disconnect({ clearSaved: true })}
+              >
+                <LogOut className="h-4 w-4" />
+                {t(locale, "header.disconnect")}
+              </Button>
+            ) : null}
+          </div>
+        ) : null}
       </header>
 
       {showBuilder ? (

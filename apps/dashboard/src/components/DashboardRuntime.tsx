@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { AppHeader } from "@/components/AppHeader";
 import { CommandPalette } from "@/components/CommandPalette";
@@ -9,18 +9,12 @@ import { PluginsDialog } from "@/components/PluginsDialog";
 import { WidgetPicker } from "@/components/WidgetPicker";
 import { WidgetSettingsDialog } from "@/components/WidgetSettingsDialog";
 import type { Breakpoint } from "@/dashboard/types";
-import { BREAKPOINTS } from "@/dashboard/types";
+import { breakpointFromWidth } from "@/dashboard/types";
 import { useLongPress } from "@/hooks/useLongPress";
 import { t } from "@/i18n";
 import { useDashboardStore } from "@/store/dashboard-store";
 import { useHaStore } from "@/store/ha-store";
 import { useLocaleStore } from "@/store/locale-store";
-
-function breakpointFromWidth(width: number): Breakpoint {
-  if (width >= BREAKPOINTS.lg) return "lg";
-  if (width >= BREAKPOINTS.md) return "md";
-  return "sm";
-}
 
 export function DashboardRuntime() {
   const haMode = useHaStore((state) => state.mode);
@@ -35,14 +29,19 @@ export function DashboardRuntime() {
   const setBanner = useDashboardStore((state) => state.setBanner);
 
   const [breakpoint, setBreakpoint] = useState<Breakpoint>("lg");
+  const gridHostRef = useRef<HTMLElement>(null);
+  const page = dashboard?.pages.find((p) => p.id === activePageId);
 
   useEffect(() => {
-    const onResize = () =>
-      setBreakpoint(breakpointFromWidth(window.innerWidth));
-    onResize();
-    window.addEventListener("resize", onResize);
-    return () => window.removeEventListener("resize", onResize);
-  }, []);
+    const el = gridHostRef.current;
+    if (!el) return;
+
+    const update = () => setBreakpoint(breakpointFromWidth(el.clientWidth));
+    update();
+    const observer = new ResizeObserver(update);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [page?.id]);
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
@@ -66,8 +65,6 @@ export function DashboardRuntime() {
     onLongPress: () => exitKiosk(),
   });
 
-  const page = dashboard?.pages.find((p) => p.id === activePageId);
-
   if (!dashboard || !page) {
     return (
       <div className="flex min-h-screen items-center justify-center text-sm text-muted-foreground">
@@ -84,11 +81,14 @@ export function DashboardRuntime() {
         : t(locale, "runtime.liveHelp");
 
   return (
-    <div className="min-h-screen pb-24" {...(kiosk ? canvasLongPress : {})}>
+    <div
+      className="min-h-screen pb-[calc(6rem+env(safe-area-inset-bottom,0px))]"
+      {...(kiosk ? canvasLongPress : {})}
+    >
       <div className="dashboard-shell">
         <AppHeader showDisconnect showBuilder />
 
-        <main className="w-full">
+        <main ref={gridHostRef} className="w-full">
           {banner ? (
             <div className="mb-[var(--dash-gap)] rounded-xl border border-border bg-muted px-3 py-2 text-sm">
               {banner}
