@@ -16,14 +16,11 @@ import { useThemeStore } from "@/store/theme-store";
 export default function App() {
   const [ready, setReady] = useState(false);
   const status = useHaStore((state) => state.status);
-  const mode = useHaStore((state) => state.mode);
-  const entities = useHaStore((state) => state.entities);
   const bootstrap = useHaStore((state) => state.bootstrap);
   const hydrateTheme = useThemeStore((state) => state.hydrate);
   const hydrateLocale = useLocaleStore((state) => state.hydrate);
   const locale = useLocaleStore((state) => state.locale);
   const hydrateDashboard = useDashboardStore((state) => state.hydrate);
-  const dashboardHydrated = useDashboardStore((state) => state.hydrated);
   const resetSession = useDashboardStore((state) => state.resetSession);
 
   useEffect(() => {
@@ -36,20 +33,20 @@ export default function App() {
 
   useEffect(() => {
     if (status !== "connected") {
-      if (dashboardHydrated) resetSession();
+      if (useDashboardStore.getState().hydrated) resetSession();
       return;
     }
-    if (!ready || dashboardHydrated) return;
-    hydrateDashboard({ connectionMode: mode, entities });
-  }, [
-    ready,
-    status,
-    mode,
-    entities,
-    hydrateDashboard,
-    dashboardHydrated,
-    resetSession,
-  ]);
+    if (!ready) return;
+
+    const tryHydrate = () => {
+      if (useDashboardStore.getState().hydrated) return;
+      const { mode, entities } = useHaStore.getState();
+      hydrateDashboard({ connectionMode: mode, entities });
+    };
+
+    tryHydrate();
+    return useHaStore.subscribe(tryHydrate);
+  }, [ready, status, hydrateDashboard, resetSession]);
 
   if (!ready) {
     return (

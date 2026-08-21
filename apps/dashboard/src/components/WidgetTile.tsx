@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { useEntityDetail } from "@ethio/plugin-sdk";
 import { Settings2, X } from "lucide-react";
 
@@ -12,7 +13,9 @@ interface WidgetTileProps {
   widget: DashboardWidget;
 }
 
-export function WidgetTile({ widget }: WidgetTileProps) {
+export const WidgetTile = memo(function WidgetTile({
+  widget,
+}: WidgetTileProps) {
   const mode = useDashboardStore((state) => state.mode);
   const removeWidget = useDashboardStore((state) => state.removeWidget);
   const openSettings = useDashboardStore((state) => state.openSettings);
@@ -78,4 +81,4 @@ export function WidgetTile({ widget }: WidgetTileProps) {
       </div>
     </div>
   );
-}
+});

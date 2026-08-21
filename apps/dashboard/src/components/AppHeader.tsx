@@ -13,8 +13,9 @@ import { DashboardSettings } from "@/components/DashboardSettings";
 import { HeaderPills } from "@/components/HeaderPills";
 import { ThemeChooser } from "@/components/ThemeChooser";
 import { Button } from "@/components/ui/button";
+import type { TimeFormat } from "@/dashboard/types";
 import { useClock } from "@/hooks/useClock";
-import { t } from "@/i18n";
+import { t, type Locale } from "@/i18n";
 import { formatHeaderDate, formatHeaderTime } from "@/lib/header-format";
 import { useDashboardStore } from "@/store/dashboard-store";
 import { useHaStore } from "@/store/ha-store";
@@ -45,7 +46,6 @@ export function AppHeader({
 
   const [settingsOpen, setSettingsOpen] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
-  const now = useClock();
 
   useEffect(() => {
     const onOpenSettings = () => setSettingsOpen(true);
@@ -90,23 +90,12 @@ export function AppHeader({
                 </h1>
               ) : null}
               {showDate ? (
-                <p
-                  className={`text-xs font-medium uppercase tracking-[0.16em] text-muted-foreground sm:text-sm ${
-                    showTitle ? "mt-2" : ""
-                  }`}
-                >
-                  {formatHeaderDate(now, locale)}
-                </p>
+                <HeaderDate locale={locale} spaced={showTitle} />
               ) : null}
               <HeaderPills pills={pills} canAdd={canAddPills} />
             </div>
             {showTime ? (
-              <time
-                dateTime={now.toISOString()}
-                className="shrink-0 font-sans text-3xl font-semibold tabular-nums tracking-tight text-foreground sm:text-4xl md:text-[2.75rem] md:leading-none"
-              >
-                {formatHeaderTime(now, timeFormat, locale)}
-              </time>
+              <HeaderTime locale={locale} timeFormat={timeFormat} />
             ) : null}
           </div>
         ) : null}
@@ -228,5 +217,36 @@ export function AppHeader({
         </>
       ) : null}
     </>
+  );
+}
+
+function HeaderDate({ locale, spaced }: { locale: Locale; spaced: boolean }) {
+  const now = useClock();
+  return (
+    <p
+      className={`text-xs font-medium uppercase tracking-[0.16em] text-muted-foreground sm:text-sm ${
+        spaced ? "mt-2" : ""
+      }`}
+    >
+      {formatHeaderDate(now, locale)}
+    </p>
+  );
+}
+
+function HeaderTime({
+  locale,
+  timeFormat,
+}: {
+  locale: Locale;
+  timeFormat: TimeFormat;
+}) {
+  const now = useClock();
+  return (
+    <time
+      dateTime={now.toISOString()}
+      className="shrink-0 font-sans text-3xl font-semibold tabular-nums tracking-tight text-foreground sm:text-4xl md:text-[2.75rem] md:leading-none"
+    >
+      {formatHeaderTime(now, timeFormat, locale)}
+    </time>
   );
 }

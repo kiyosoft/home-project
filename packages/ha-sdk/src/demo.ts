@@ -565,7 +565,9 @@ export function connectDemo(): EntityClient {
   let closed = false;
 
   const emit = () => {
-    const snapshot = cloneEntities(entities);
+    // Shallow copy the map only. Cloning every entity would give every
+    // useEntity a new snapshot and rerender the whole dashboard on one tick.
+    const snapshot = { ...entities };
     for (const listener of listeners) {
       listener(snapshot);
     }
@@ -774,7 +776,7 @@ export function connectDemo(): EntityClient {
   return {
     subscribeEntities(onChange) {
       listeners.add(onChange);
-      onChange(cloneEntities(entities));
+      onChange({ ...entities });
       return () => {
         listeners.delete(onChange);
       };

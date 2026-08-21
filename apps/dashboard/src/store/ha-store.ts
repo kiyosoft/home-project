@@ -58,8 +58,8 @@ async function attachClient(
   cleanupClient();
   client = next;
   unsubscribe = next.subscribeEntities((entities) => {
-    // Always copy: HA may reuse the same map reference, which would skip
-    // Zustand subscribers and plugin useEntity / useEntities hooks.
+    // Shallow-copy the map so identity changes (HA often mutates in place).
+    // Entity objects stay shared so per-id selectors can skip unrelated widgets.
     set({ entities: { ...entities }, status: "connected", error: null });
   });
   set({ status: "connected", error: null });

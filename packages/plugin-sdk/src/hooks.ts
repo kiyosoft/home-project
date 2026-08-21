@@ -27,11 +27,9 @@ import type { Capability } from "./types";
 type Listener = () => void;
 
 const listeners = new Set<Listener>();
-let snapshotVersion = 0;
 
-/** Dashboard calls this when entity map changes so hooks re-render. */
+/** Dashboard calls this when entity map changes so hooks re-read snapshots. */
 export function notifyEntityStoreChanged(): void {
-  snapshotVersion += 1;
   for (const listener of listeners) {
     listener();
   }
@@ -42,10 +40,6 @@ function subscribe(listener: Listener): () => void {
   return () => {
     listeners.delete(listener);
   };
-}
-
-function getSnapshotVersion(): number {
-  return snapshotVersion;
 }
 
 function assertCapability(
@@ -74,9 +68,12 @@ export function useEntities(
   predicate?: (entity: HassEntity) => boolean,
 ): HassEntities {
   const pluginId = usePluginId();
-  useSyncExternalStore(subscribe, getSnapshotVersion, getSnapshotVersion);
+  const all = useSyncExternalStore(
+    subscribe,
+    () => getPlatformBindings().getEntities(),
+    () => getPlatformBindings().getEntities(),
+  );
   assertCapability(pluginId, "entity.read");
-  const all = getPlatformBindings().getEntities();
   if (!predicate) return all;
   return Object.fromEntries(
     Object.entries(all).filter(([, entity]) => predicate(entity)),
@@ -364,8 +361,11 @@ export function useTodoItems(entityId: string): TodoItemsState {
 }
 
 export function useBaseUrl(): string {
-  useSyncExternalStore(subscribe, getSnapshotVersion, getSnapshotVersion);
-  return getPlatformBindings().getBaseUrl?.() ?? "";
+  return useSyncExternalStore(
+    subscribe,
+    () => getPlatformBindings().getBaseUrl?.() ?? "",
+    () => getPlatformBindings().getBaseUrl?.() ?? "",
+  );
 }
 
 /** Resolve HA entity_picture (absolute or relative) against the connected base URL. */
