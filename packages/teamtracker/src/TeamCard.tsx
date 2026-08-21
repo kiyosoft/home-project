@@ -1,12 +1,15 @@
+import { useEffect } from "react";
 import { z } from "zod";
 
 import {
   defineWidget,
+  useCallService,
   useEntity,
   useEntityDetail,
   type WidgetComponentProps,
 } from "@ethio/plugin-sdk";
 
+import { LastPlayMarquee } from "./LastPlayMarquee";
 import { TeamScoreCelebrationHost } from "./ScoreCelebration";
 
 export const teamCardConfigSchema = z.object({
@@ -17,6 +20,7 @@ export const teamCardConfigSchema = z.object({
   show_league: z.boolean().default(false),
   show_league_logo: z.boolean().default(false),
   show_rank: z.boolean().default(true),
+  show_last_play: z.boolean().default(true),
   outline: z.boolean().default(false),
   score_celebration: z.boolean().default(false),
   opponent_celebration: z.boolean().default(false),
@@ -71,6 +75,86 @@ function withAlpha(color: string, alpha: number): string {
     return `rgba(${r}, ${g}, ${b}, ${alpha})`;
   }
   return color;
+}
+
+const PAUSE_CLOCK: Record<string, string> = {
+  HT: "Half time",
+  FT: "Full time",
+  OT: "Extra time",
+  ET: "Extra time",
+  AET: "Extra time",
+  PEN: "Penalties",
+};
+
+function isPauseClock(clock?: string): boolean {
+  if (!clock) return false;
+  const key = clock.trim().toUpperCase();
+  return key in PAUSE_CLOCK || key.includes("HALF");
+}
+
+/** Latest `21'` / `45'+2` stamp from soccer last_play event text. */
+function latestPlayClock(lastPlay?: string): string | undefined {
+  if (!lastPlay) return undefined;
+  const matches = [...lastPlay.matchAll(/(\d{1,3}(?:\+\d+)?)\s*'/g)];
+  const stamp = matches.at(-1)?.[1];
+  return stamp ? `${stamp}'` : undefined;
+}
+
+/** True when last_play is past the break that `clock` is still labelling. */
+function playResumedAfterPause(clock: string, playClock: string): boolean {
+  const key = clock.trim().toUpperCase();
+  const minute = Number.parseInt(playClock, 10);
+  if (!Number.isFinite(minute)) return false;
+  if (key === "HT" || clock.toLowerCase().includes("half")) return minute > 45;
+  return false;
+}
+
+function quarterLabel(quarter?: string | number): string | undefined {
+  if (quarter == null || quarter === "") return undefined;
+  const numeric =
+    typeof quarter === "number" ? quarter : Number.parseInt(String(quarter), 10);
+  if (Number.isFinite(numeric) && String(numeric) === String(quarter).trim()) {
+    if (numeric === 1) return "1st";
+    if (numeric === 2) return "2nd";
+    if (numeric === 3) return "ET";
+    if (numeric === 4) return "ET2";
+    if (numeric >= 5) return "Pens";
+  }
+  const raw = String(quarter).trim();
+  return raw || undefined;
+}
+
+/**
+ * ESPN shortDetail is "HT" at the break, and can linger after kickoff.
+ * Trust that pause unless last_play is clearly into the next half.
+ */
+function inGameStatus(
+  clock?: string,
+  quarter?: string | number,
+  lastPlay?: string,
+): string {
+  const playClock = latestPlayClock(lastPlay);
+  const period = quarterLabel(quarter);
+
+  if (clock && !isPauseClock(clock)) {
+    if (period && !clock.toLowerCase().includes(period.toLowerCase())) {
+      return `${period} · ${clock}`;
+    }
+    return clock;
+  }
+
+  if (clock && playClock && playResumedAfterPause(clock, playClock)) {
+    return playClock;
+  }
+
+  if (clock) {
+    const readable = PAUSE_CLOCK[clock.trim().toUpperCase()];
+    if (readable) return readable;
+    if (clock.toLowerCase().includes("half")) return "Half time";
+    return clock;
+  }
+
+  return playClock ?? period ?? "Live";
 }
 
 function teamGradient(leftColor?: string, rightColor?: string): string | undefined {
@@ -159,14 +243,31 @@ function TeamCard({ config, interactive }: WidgetComponentProps) {
     typeof config.card_title === "string" ? config.card_title.trim() : "";
   const entity = useEntity(entityId);
   const entityDetail = useEntityDetail();
+  const callService = useCallService();
   const homeSide = config.home_side === "right" ? "right" : "left";
   const showLeague = Boolean(config.show_league);
   const showLeagueLogo = Boolean(config.show_league_logo);
   const showRank = config.show_rank !== false;
+  const showLastPlay = config.show_last_play !== false;
   const outline = Boolean(config.outline);
   const scoreCelebration = Boolean(config.score_celebration);
   const opponentCelebration = Boolean(config.opponent_celebration);
   const celebrationSound = Boolean(config.celebration_sound);
+  const gameState = entity?.state;
+
+  useEffect(() => {
+    if (!entityId || gameState !== "IN") return;
+    const refresh = () => {
+      void callService("homeassistant", "update_entity", {
+        entity_id: entityId,
+      }).catch(() => {
+        // Demo mode and locked-down tokens have no update_entity.
+      });
+    };
+    refresh();
+    const timer = window.setInterval(refresh, 10_000);
+    return () => window.clearInterval(timer);
+  }, [callService, entityId, gameState]);
 
   if (!entityId) {
     return (
@@ -198,9 +299,11 @@ function TeamCard({ config, interactive }: WidgetComponentProps) {
   const sport = str(attrs, "sport");
   const leagueLogo = str(attrs, "league_logo");
   const clock = str(attrs, "clock");
+  const quarter = str(attrs, "quarter") ?? num(attrs, "quarter");
   const date = str(attrs, "date");
   const kickoff = str(attrs, "kickoff_in");
   const venue = str(attrs, "venue");
+  const lastPlay = str(attrs, "last_play");
   const apiMessage = str(attrs, "api_message");
 
   const teamColors = parseColors(attrs, "team_colors");
@@ -238,7 +341,7 @@ function TeamCard({ config, interactive }: WidgetComponentProps) {
   if (state === "PRE") {
     statusLine = kickoff ?? date ?? "Upcoming";
   } else if (state === "IN") {
-    statusLine = clock ?? "Live";
+    statusLine = inGameStatus(clock, quarter, lastPlay);
   } else if (state === "POST") {
     statusLine = "Final";
   } else if (state === "BYE") {
@@ -297,7 +400,7 @@ function TeamCard({ config, interactive }: WidgetComponentProps) {
             {title}
           </p>
           <span
-            className={`rounded-md px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${
+            className={`inline-flex items-center gap-1.5 rounded-md px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${
               state === "IN"
                 ? "bg-destructive/15 text-destructive"
                 : state === "POST"
@@ -305,6 +408,9 @@ function TeamCard({ config, interactive }: WidgetComponentProps) {
                   : "bg-muted text-muted-foreground"
             }`}
           >
+            {state === "IN" ? (
+              <span className="h-1.5 w-1.5 rounded-full bg-destructive motion-safe:animate-pulse" />
+            ) : null}
             {state}
           </span>
         </div>
@@ -364,9 +470,11 @@ function TeamCard({ config, interactive }: WidgetComponentProps) {
                 }
               />
             </div>
-            <div className="relative z-[1] mt-3 border-t border-border/70 pt-2 text-center">
-              <p className="text-sm font-medium">{statusLine}</p>
-              {venue && state === "PRE" ? (
+            <div className="relative z-[1] mt-3 min-w-0 border-t border-border/70 pt-2 text-center">
+              <p className="text-sm font-medium tabular-nums">{statusLine}</p>
+              {showLastPlay && lastPlay && state === "IN" ? (
+                <LastPlayMarquee text={lastPlay} />
+              ) : venue && state === "PRE" ? (
                 <p className="mt-0.5 truncate text-xs text-muted-foreground">
                   {venue}
                 </p>
@@ -392,6 +500,7 @@ export const teamCardWidget = defineWidget({
     show_league: false,
     show_league_logo: false,
     show_rank: true,
+    show_last_play: true,
     outline: false,
     score_celebration: false,
     opponent_celebration: false,
@@ -401,5 +510,5 @@ export const teamCardWidget = defineWidget({
   minSize: { w: 4, h: 3 },
   maxSize: { w: 12, h: 8 },
   entityDomains: ["sensor"],
-  capabilities: ["entity.read"],
+  capabilities: ["entity.read", "service.call"],
 });

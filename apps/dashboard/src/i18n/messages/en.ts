@@ -149,7 +149,8 @@ export const en = {
   "commands.plugins": "Open plugins",
   "commands.pluginsSub": "Browse and install registry plugins",
   "commands.theme": "Cycle theme",
-  "commands.themeSub": "Cycle Default, Atmosphere, SCIFICN, and tweakcn themes",
+  "commands.themeSub":
+    "Cycle Default, Atmosphere, SCIFICN, tweakcn, and Ein UI themes",
   "commands.disconnect": "Disconnect",
   "commands.disconnectSub": "Return to connection setup",
   "commands.addWidget": "Add widget",
@@ -199,6 +200,7 @@ export const en = {
   "theme.group.atmosphere": "Atmosphere",
   "theme.group.scificn": "SCIFICN",
   "theme.group.tweakcn": "tweakcn",
+  "theme.group.einui": "Ein UI",
   "theme.light": "Light",
   "theme.dark": "Dark",
   "theme.amoled": "AMOLED",
@@ -223,6 +225,9 @@ export const en = {
   "theme.neo-brutalism": "Neo Brutalism",
   "theme.cyberpunk": "Cyberpunk",
   "theme.doom-64": "Doom 64",
+  "theme.einui-ocean": "Ocean",
+  "theme.einui-aurora": "Aurora",
+  "theme.einui-forest": "Forest",
 
   "widgetSettings.title": "Widget settings",
   "schema.cancel": "Cancel",

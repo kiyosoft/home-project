@@ -15,6 +15,7 @@ const GROUPS: { id: ThemeGroup; labelKey: MessageKey }[] = [
   { id: "atmosphere", labelKey: "theme.group.atmosphere" },
   { id: "scificn", labelKey: "theme.group.scificn" },
   { id: "tweakcn", labelKey: "theme.group.tweakcn" },
+  { id: "einui", labelKey: "theme.group.einui" },
 ];
 
 function themeLabelKey(id: ThemeMode): MessageKey {

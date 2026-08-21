@@ -169,7 +169,7 @@ export function DashboardGrid({ page }: DashboardGridProps) {
           {page.widgets.map((widget, index) => {
             const order = revealOrder.get(widget.id) ?? index;
             return (
-              <div key={widget.id} className="overflow-hidden">
+              <div key={widget.id} className="overflow-visible">
                 <CardReveal
                   revealKey={revealKey}
                   order={order}

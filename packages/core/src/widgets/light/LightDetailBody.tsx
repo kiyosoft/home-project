@@ -83,9 +83,7 @@ export function LightDetailBody({ entityId }: { entityId: string }) {
   return (
     <div className="space-y-5">
       <div
-        className={`flex items-center justify-between gap-4 rounded-2xl border p-5 motion-safe:transition-[background-color,border-color,box-shadow,color] motion-safe:duration-300 motion-safe:ease-[cubic-bezier(0.16,1,0.3,1)] ${
-          light.isOn ? "" : "border-border bg-card text-card-foreground"
-        }`}
+        className="flex items-center justify-between gap-4 rounded-2xl border border-border bg-card p-5 text-card-foreground motion-safe:transition-[border-color,box-shadow] motion-safe:duration-300 motion-safe:ease-[cubic-bezier(0.16,1,0.3,1)]"
         style={wash.surfaceStyle}
       >
         <p className="font-display text-3xl font-semibold leading-none tracking-tight">

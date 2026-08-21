@@ -787,6 +787,83 @@
     linear-gradient(180deg, #1a1a1a 0%, #2a2a2a 100%);
 }
 
+/* ============================================================
+   Ein UI — Liquid Glass
+   https://ui.eindev.ir/docs/theming
+   ============================================================ */
+[data-theme="einui-ocean"],
+[data-theme="einui-aurora"],
+[data-theme="einui-forest"] {
+  --foreground: rgba(255, 255, 255, 0.95);
+  --card: rgba(255, 255, 255, 0.08);
+  --card-foreground: rgba(255, 255, 255, 0.95);
+  --muted: rgba(255, 255, 255, 0.06);
+  --muted-foreground: rgba(255, 255, 255, 0.5);
+  --border: rgba(255, 255, 255, 0.15);
+  --destructive: #f87171;
+  --success: #34d399;
+  --warning: #fbbf24;
+  --glass-bg: rgba(255, 255, 255, 0.08);
+  --glass-border: rgba(255, 255, 255, 0.15);
+  --glass-blur: 16px;
+  --glass-shadow: rgba(0, 0, 0, 0.37);
+  --glass-highlight: rgba(255, 255, 255, 0.2);
+}
+
+[data-theme="einui-ocean"] {
+  --background: #0f172a;
+  --primary: #22d3ee;
+  --primary-foreground: #0f172a;
+  --accent: #3b82f6;
+  --accent-foreground: #f8fafc;
+  --ring: #22d3ee;
+  --glow-cyan: rgba(6, 182, 212, 0.3);
+  --glow-blue: rgba(59, 130, 246, 0.3);
+  --glow-purple: rgba(168, 85, 247, 0.3);
+  --surface-glow: linear-gradient(
+    to bottom right,
+    #0f172a,
+    #1e1b4b,
+    #0f172a
+  );
+}
+
+[data-theme="einui-aurora"] {
+  --background: #1a1025;
+  --primary: #c084fc;
+  --primary-foreground: #1a1025;
+  --accent: #f472b6;
+  --accent-foreground: #1a1025;
+  --ring: #c084fc;
+  --glow-cyan: rgba(6, 182, 212, 0.2);
+  --glow-blue: rgba(147, 51, 234, 0.35);
+  --glow-purple: rgba(236, 72, 153, 0.35);
+  --surface-glow: linear-gradient(
+    to bottom right,
+    #1a1025,
+    #3b1d4e,
+    #1a1025
+  );
+}
+
+[data-theme="einui-forest"] {
+  --background: #042f2e;
+  --primary: #34d399;
+  --primary-foreground: #042f2e;
+  --accent: #2dd4bf;
+  --accent-foreground: #042f2e;
+  --ring: #34d399;
+  --glow-cyan: rgba(45, 212, 191, 0.3);
+  --glow-blue: rgba(16, 185, 129, 0.28);
+  --glow-purple: rgba(52, 211, 153, 0.22);
+  --surface-glow: linear-gradient(
+    to bottom right,
+    #042f2e,
+    #064e3b,
+    #042f2e
+  );
+}
+
 @layer base {
   * {
     @apply border-border;
@@ -908,6 +985,22 @@
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.18);
   }
 
+  html[data-theme^="einui-"] .bg-card {
+    background-color: var(--glass-bg);
+    background-image: linear-gradient(
+      to bottom,
+      var(--glass-highlight),
+      transparent 42%
+    );
+    border-color: var(--glass-border);
+    backdrop-filter: blur(var(--glass-blur)) saturate(1.45);
+    -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(1.45);
+    box-shadow:
+      0 8px 32px var(--glass-shadow),
+      0 0 24px color-mix(in oklab, var(--glow-cyan) 55%, transparent),
+      inset 0 1px 1px rgba(255, 255, 255, 0.12);
+  }
+
   html[data-theme="minimal"] .bg-card {
     box-shadow: none;
   }
@@ -1014,4 +1107,42 @@
 
 .rich-text s {
   text-decoration: line-through;
+}
+
+/* Ein UI liquid glass utilities — https://ui.eindev.ir/docs/theming */
+@layer components {
+  .glass-surface {
+    background: var(--glass-bg, rgba(255, 255, 255, 0.08));
+    border: 1px solid var(--glass-border, rgba(255, 255, 255, 0.15));
+    backdrop-filter: blur(var(--glass-blur, 16px));
+    -webkit-backdrop-filter: blur(var(--glass-blur, 16px));
+    box-shadow: 0 8px 32px var(--glass-shadow, rgba(0, 0, 0, 0.37));
+  }
+
+  .glass-light {
+    background: rgba(255, 255, 255, 0.02);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+
+  .glass-solid {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+  }
+
+  .glass-glow {
+    position: absolute;
+    inset: -4px;
+    border-radius: inherit;
+    pointer-events: none;
+    opacity: 0.7;
+    filter: blur(16px);
+    background: linear-gradient(
+      to right,
+      var(--glow-cyan, rgba(6, 182, 212, 0.3)),
+      var(--glow-blue, rgba(59, 130, 246, 0.3)),
+      var(--glow-purple, rgba(168, 85, 247, 0.3))
+    );
+  }
 }

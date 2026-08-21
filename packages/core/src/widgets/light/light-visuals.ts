@@ -1,7 +1,6 @@
 import type { CSSProperties } from "react";
 
 import {
-  blendRgb,
   clamp,
   hsvToRgb,
   isBrightSurface,
@@ -40,7 +39,7 @@ export function lightColor(light: LightLike): Rgb {
 
 /**
  * Intensity of the light as shown, 0 when off. A pending brightness wins over
- * entity state so dragging up from off lights the surface at once.
+ * entity state so dragging up from off lights the rim at once.
  */
 export function lightIntensity(light: LightLike, brightness?: number): number {
   if (brightness != null && brightness > 0) return clamp(brightness / 100, 0, 1);
@@ -58,26 +57,30 @@ export interface LightWash {
   inkMuted: string;
   surfaceStyle: CSSProperties;
   trackBackground: string;
-  /** Ink-contrasted switch colors, since a lamp-colored switch vanishes into the wash. */
+  /** Active switch follows the lamp so the control matches the rim. */
   switchTrack: string | undefined;
   switchThumb: string | undefined;
 }
 
 /**
- * The card is the lamp: its surface carries the real color at the real
- * brightness, and ink is chosen against the blended result.
+ * The lamp lives on the rim: color and brightness become a glow outline so the
+ * card surface stays the theme, and neighboring widgets are not washed out.
  */
 export function lightWash(
   light: LightLike,
   surface: ThemeSurface,
-  /** In-flight values from a drag, so the surface tracks the finger. */
+  /** In-flight values from a drag, so the rim tracks the finger. */
   pending: { brightness?: number; color?: Rgb } = {},
 ): LightWash {
   const color = pending.color ?? lightColor(light);
   const intensity = lightIntensity(light, pending.brightness);
   const hsv = rgbToHsv(color);
-  // Saturated past the blended surface so the filled part of the track reads.
-  const fill = rgbCss(hsvToRgb({ h: hsv.h, s: Math.min(1, hsv.s * 1.15), v: 1 }));
+  // Pale bulbs stay warm tungsten; colored ones get a slightly richer rim.
+  const lamp =
+    hsv.s < 0.12
+      ? TUNGSTEN
+      : hsvToRgb({ h: hsv.h, s: Math.min(1, hsv.s * 1.15), v: 1 });
+  const fill = rgbCss(lamp);
   const litCard = isBrightSurface(surface.card);
 
   if (intensity <= 0) {
@@ -88,39 +91,38 @@ export function lightWash(
       fill: "var(--color-muted-foreground)",
       ink: "var(--color-card-foreground)",
       inkMuted: "var(--color-muted-foreground)",
-      // A pale theme needs the dark bulb to sit below the card, otherwise a lit
-      // white light looks identical to an unlit one.
-      surfaceStyle: litCard
-        ? { backgroundColor: rgbCss(blendRgb([0, 0, 0], surface.card, 0.07)) }
-        : {},
+      surfaceStyle: {},
       trackBackground: "var(--color-muted)",
       switchTrack: undefined,
       switchThumb: undefined,
     };
   }
 
-  const alpha = 0.2 + 0.55 * intensity;
-  const blended = blendRgb(color, surface.card, alpha);
-  const bright = isBrightSurface(blended);
+  const brightLamp = isBrightSurface(lamp);
+  // Pale themes swallow glow; push the rim harder so a white bulb still reads.
+  const rim = litCard ? 0.55 + 0.4 * intensity : 0.4 + 0.5 * intensity;
+  const near = litCard ? 0.4 + 0.35 * intensity : 0.38 + 0.42 * intensity;
+  const mid = litCard ? 0.2 + 0.22 * intensity : 0.26 + 0.3 * intensity;
+  const far = litCard ? 0.08 + 0.12 * intensity : 0.12 + 0.18 * intensity;
 
   return {
     color,
     intensity,
     fill,
-    ink: bright ? "rgb(26 22 18)" : "rgb(252 251 249)",
-    inkMuted: bright ? "rgb(26 22 18 / 0.68)" : "rgb(252 251 249 / 0.74)",
-    trackBackground: bright ? "rgb(26 22 18 / 0.2)" : "rgb(252 251 249 / 0.22)",
-    switchTrack: bright ? "rgb(26 22 18 / 0.86)" : "rgb(252 251 249 / 0.9)",
-    switchThumb: rgbCss(blended),
+    ink: "var(--color-card-foreground)",
+    inkMuted: "var(--color-muted-foreground)",
+    trackBackground: rgbCss(lamp, litCard ? 0.16 : 0.22),
+    switchTrack: fill,
+    switchThumb: brightLamp ? "rgb(26 22 18)" : "rgb(252 251 249)",
     surfaceStyle: {
-      backgroundColor: rgbCss(blended),
-      backgroundImage: `radial-gradient(115% 95% at 82% -12%, ${rgbCss(
-        color,
-        0.28 + 0.34 * intensity,
-      )}, transparent 64%)`,
-      borderColor: rgbCss(blendRgb(color, bright ? [0, 0, 0] : [255, 255, 255], 0.72), 0.5),
-      boxShadow: `0 16px 36px -20px ${rgbCss(color, 0.55 * intensity)}, inset 0 1px 0 rgb(255 255 255 / ${bright ? 0.4 : 0.12})`,
-      color: bright ? "rgb(26 22 18)" : "rgb(252 251 249)",
+      borderColor: rgbCss(lamp, rim),
+      boxShadow: [
+        `inset 0 0 0 1px ${rgbCss(lamp, 0.22 + 0.5 * intensity)}`,
+        `inset 0 0 ${8 + 6 * intensity}px ${rgbCss(lamp, mid * 0.8)}`,
+        `0 0 ${12 + 10 * intensity}px ${rgbCss(lamp, near)}`,
+        `0 0 ${28 + 24 * intensity}px ${rgbCss(lamp, mid)}`,
+        `0 0 ${56 + 40 * intensity}px ${rgbCss(lamp, far)}`,
+      ].join(", "),
     },
   };
 }

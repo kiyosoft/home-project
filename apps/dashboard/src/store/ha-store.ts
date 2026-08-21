@@ -58,7 +58,9 @@ async function attachClient(
   cleanupClient();
   client = next;
   unsubscribe = next.subscribeEntities((entities) => {
-    set({ entities, status: "connected", error: null });
+    // Always copy: HA may reuse the same map reference, which would skip
+    // Zustand subscribers and plugin useEntity / useEntities hooks.
+    set({ entities: { ...entities }, status: "connected", error: null });
   });
   set({ status: "connected", error: null });
 }

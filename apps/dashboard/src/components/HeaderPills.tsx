@@ -77,12 +77,13 @@ function HeaderPill({
     title = rendered || (error ? lastGood.current : "");
     if (!title && !canManage) hidden = true;
     else if (!title) title = t(locale, "header.pillUnavailable");
+    if (entity) subtitle = getFriendlyName(entity);
   } else if (entity) {
-    title = getFriendlyName(entity);
-    subtitle = entity.state;
+    title = entity.state;
+    subtitle = getFriendlyName(entity);
   } else if (entityId) {
-    title = entityId;
-    subtitle = t(locale, "header.pillUnavailable");
+    title = t(locale, "header.pillUnavailable");
+    subtitle = entityId;
   } else if (canManage) {
     title = t(locale, "header.pillUnavailable");
   } else {
@@ -150,9 +151,16 @@ function HeaderPill({
           </span>
         ) : null}
         <span className="min-w-0">
-          <span className="block truncate text-xs font-medium">{title}</span>
+          <span
+            className={cn(
+              "block truncate text-xs font-medium",
+              !template && "capitalize",
+            )}
+          >
+            {title}
+          </span>
           {subtitle ? (
-            <span className="block truncate text-[0.65rem] capitalize text-muted-foreground">
+            <span className="block truncate text-[0.65rem] text-muted-foreground">
               {subtitle}
             </span>
           ) : null}

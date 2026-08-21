@@ -177,13 +177,9 @@ function LightWidget({ config, interactive = true }: WidgetComponentProps) {
             }
           : undefined
       }
-      className={`flex h-full min-h-36 w-full flex-col rounded-2xl border text-left shadow-sm motion-safe:transition-[background-color,border-color,box-shadow,color] motion-safe:duration-300 motion-safe:ease-[cubic-bezier(0.16,1,0.3,1)] ${
+      className={`flex h-full min-h-36 w-full flex-col rounded-2xl border border-border bg-card text-left text-card-foreground shadow-sm motion-safe:transition-[border-color,box-shadow] motion-safe:duration-300 motion-safe:ease-[cubic-bezier(0.16,1,0.3,1)] ${
         compact ? "gap-3 p-4" : "gap-4 p-5"
-      } ${
-        light.isOn
-          ? ""
-          : "border-border bg-card text-card-foreground hover:border-primary/30"
-      }`}
+      } ${light.isOn ? "" : "hover:border-primary/30"}`}
       style={wash.surfaceStyle}
     >
       <div className="flex items-start justify-between gap-3">

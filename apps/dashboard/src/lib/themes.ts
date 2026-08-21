@@ -23,11 +23,19 @@ export const THEME_IDS = [
   "neo-brutalism",
   "cyberpunk",
   "doom-64",
+  "einui-ocean",
+  "einui-aurora",
+  "einui-forest",
 ] as const;
 
 export type ThemeMode = (typeof THEME_IDS)[number];
 
-export type ThemeGroup = "default" | "atmosphere" | "scificn" | "tweakcn";
+export type ThemeGroup =
+  | "default"
+  | "atmosphere"
+  | "scificn"
+  | "tweakcn"
+  | "einui";
 
 export interface ThemeOption {
   id: ThemeMode;
@@ -102,6 +110,9 @@ export const THEME_OPTIONS: ThemeOption[] = [
   },
   { id: "cyberpunk", label: "Cyberpunk", group: "tweakcn", swatch: "#ff00c8" },
   { id: "doom-64", label: "Doom 64", group: "tweakcn", swatch: "#e53935" },
+  { id: "einui-ocean", label: "Ocean", group: "einui", swatch: "#22d3ee" },
+  { id: "einui-aurora", label: "Aurora", group: "einui", swatch: "#c084fc" },
+  { id: "einui-forest", label: "Forest", group: "einui", swatch: "#34d399" },
 ];
 
 export function isThemeMode(value: string | null): value is ThemeMode {

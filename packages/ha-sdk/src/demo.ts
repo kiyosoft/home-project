@@ -224,6 +224,8 @@ const DEMO_ENTITIES: HassEntities = {
       date: "2026-08-06T15:00:00+00:00",
       kickoff_in: "in progress",
       possession: "359",
+      last_play:
+        "Saka beats Cucurella on the right and cuts the ball back into the six-yard box.",
       api_message: "",
     },
   },
@@ -506,6 +508,40 @@ function nowIso(): string {
   return new Date().toISOString();
 }
 
+const DEMO_ARSENAL_PLAYS = [
+  "Saka beats Cucurella on the right and cuts the ball back into the six-yard box.",
+  "Ødegaard threads a pass between the centre-backs — Colwill just gets a toe to it.",
+  "Rice wins it in midfield and immediately looks for the runner in behind.",
+  "Trossard volleys from the six-yard box. Just over the bar.",
+  "Gabriel steps across to cut out a through ball. Arsenal clear their lines.",
+  "White overlaps and whips a low cross toward the penalty spot.",
+];
+
+const DEMO_CHELSEA_PLAYS = [
+  "Palmer curls one toward the far post. Raya palms it behind for a corner.",
+  "Jackson holds the ball up and lays it off to Enzo at the edge of the box.",
+  "Neto whips a cross in from the left. Saliba heads it away.",
+  "Caicedo nicks it off Ødegaard and Chelsea break the other way.",
+];
+
+const DEMO_ARSENAL_GOALS = [
+  "GOAL Arsenal! Saka finishes low into the far corner.",
+  "GOAL Arsenal! Ødegaard slots it past the keeper from 12 yards.",
+  "GOAL Arsenal! Trossard taps in at the back post.",
+];
+
+const DEMO_CHELSEA_GOALS = [
+  "GOAL Chelsea! Palmer curls it into the top corner.",
+  "GOAL Chelsea! Jackson stoops to head home from close range.",
+];
+
+function pickPlay(plays: string[], exclude?: string): string {
+  if (plays.length === 0) return exclude ?? "";
+  if (plays.length === 1) return plays[0]!;
+  const choices = exclude ? plays.filter((play) => play !== exclude) : plays;
+  return choices[Math.floor(Math.random() * choices.length)] ?? plays[0]!;
+}
+
 function touch(entity: HassEntity): HassEntity {
   const stamp = nowIso();
   return {
@@ -679,7 +715,8 @@ export function connectDemo(): EntityClient {
     }
   }, 8000);
 
-  // Periodically bump Arsenal's score so Team Card celebrations can be demoed.
+  // Live-feel ticks: clock + last_play often, score less often for celebrations.
+  let teamLiveTick = 0;
   teamScoreTimer = setInterval(() => {
     if (closed) return;
     const current = entities["sensor.demo_arsenal"];
@@ -693,17 +730,32 @@ export function connectDemo(): EntityClient {
     const clockRaw = typeof attrs.clock === "string" ? attrs.clock : "67'";
     const minute = Number.parseInt(clockRaw, 10);
     const nextMinute = Number.isFinite(minute)
-      ? Math.min(90, minute + 3 + Math.floor(Math.random() * 4))
-      : 70;
+      ? minute >= 90
+        ? 55
+        : minute + 1
+      : 68;
+    const prevPlay =
+      typeof attrs.last_play === "string" ? attrs.last_play : undefined;
 
-    // Mostly Arsenal goals (celebration), occasionally Chelsea.
-    const arsenalScores = Math.random() > 0.35;
+    teamLiveTick += 1;
+    const shouldScore = teamLiveTick % 4 === 0;
+    const arsenalOnBall = Math.random() > 0.42;
     let nextTeam = teamScore;
     let nextOpponent = opponentScore;
-    if (arsenalScores) {
-      nextTeam = teamScore >= 5 ? 1 : teamScore + 1;
-    } else {
-      nextOpponent = opponentScore >= 4 ? 0 : opponentScore + 1;
+    let lastPlay = pickPlay(
+      arsenalOnBall ? DEMO_ARSENAL_PLAYS : DEMO_CHELSEA_PLAYS,
+      prevPlay,
+    );
+
+    if (shouldScore) {
+      const arsenalScores = Math.random() > 0.35;
+      if (arsenalScores) {
+        nextTeam = teamScore >= 5 ? 1 : teamScore + 1;
+        lastPlay = pickPlay(DEMO_ARSENAL_GOALS, prevPlay);
+      } else {
+        nextOpponent = opponentScore >= 4 ? 0 : opponentScore + 1;
+        lastPlay = pickPlay(DEMO_CHELSEA_GOALS, prevPlay);
+      }
     }
 
     setEntity("sensor.demo_arsenal", {
@@ -714,9 +766,10 @@ export function connectDemo(): EntityClient {
         team_score: nextTeam,
         opponent_score: nextOpponent,
         clock: `${nextMinute}'`,
+        last_play: lastPlay,
       },
     });
-  }, 10000);
+  }, 5000);
 
   return {
     subscribeEntities(onChange) {

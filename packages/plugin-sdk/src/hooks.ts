@@ -61,10 +61,13 @@ function assertCapability(
 
 export function useEntity(entityId: string): HassEntity | undefined {
   const pluginId = usePluginId();
-  useSyncExternalStore(subscribe, getSnapshotVersion, getSnapshotVersion);
+  const entity = useSyncExternalStore(
+    subscribe,
+    () => (entityId ? getPlatformBindings().getEntity(entityId) : undefined),
+    () => (entityId ? getPlatformBindings().getEntity(entityId) : undefined),
+  );
   assertCapability(pluginId, "entity.read");
-  if (!entityId) return undefined;
-  return getPlatformBindings().getEntity(entityId);
+  return entity;
 }
 
 export function useEntities(
