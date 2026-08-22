@@ -1272,6 +1272,9 @@ export function connectDemo(): EntityClient {
         todoListeners.delete(listener);
       };
     },
+    sendBinary() {
+      throw new Error("Demo client does not support binary messages");
+    },
     disconnect() {
       closed = true;
       listeners.clear();

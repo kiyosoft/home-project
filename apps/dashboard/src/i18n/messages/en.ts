@@ -265,6 +265,28 @@ export const en = {
   "dialog.closeAria": "Close dialog",
   "entityPicker.search": "Search entities…",
   "entityPicker.empty": "No matching entities",
+
+  "assist.openAria": "Open Assist",
+  "assist.title": "Assist",
+  "assist.closeAria": "Close Assist",
+  "assist.placeholder": "Ask about the house…",
+  "assist.sendAria": "Send message",
+  "assist.micStartAria": "Start listening",
+  "assist.micStopAria": "Stop listening and send",
+  "assist.listening": "Listening…",
+  "assist.wake": "Listening for the wake word…",
+  "assist.wakeOnAria": "Turn off wake word",
+  "assist.wakeOffAria": "Turn on wake word",
+  "assist.thinking": "Thinking…",
+  "assist.empty": "Ask Assist to control the house or answer a question.",
+  "assist.emptyWake": "Say the wake word, tap the mic, or type a message.",
+  "assist.done": "Done.",
+  "assist.errorMicDenied":
+    "Microphone access was blocked. Allow it in the browser to talk to Assist.",
+  "assist.errorMicInsecure":
+    "The microphone needs HTTPS (or localhost). Open this dashboard over a secure URL.",
+  "assist.errorMicUnavailable": "No microphone is available on this device.",
+  "assist.errorGeneric": "Assist could not complete that request.",
 } as const;
 
 export type MessageKey = keyof typeof en;

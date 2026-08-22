@@ -61,6 +61,13 @@ export async function connectLive(
         void unsubscribe();
       };
     },
+    sendBinary(data) {
+      const socket = connection.socket;
+      if (!socket || socket.readyState !== WebSocket.OPEN) {
+        throw new Error("WebSocket is not connected");
+      }
+      socket.send(data);
+    },
     disconnect() {
       connection.close();
     },

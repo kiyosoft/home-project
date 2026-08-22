@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 
 import { AppHeader } from "@/components/AppHeader";
+import { AssistHost } from "@/components/AssistHost";
 import { CommandPalette } from "@/components/CommandPalette";
 import { DashboardGrid } from "@/components/DashboardGrid";
 import { PageDock } from "@/components/PageDock";
@@ -113,6 +114,7 @@ export function DashboardRuntime() {
       <PluginsDialog />
       <PinDialog />
       <CommandPalette />
+      <AssistHost />
     </div>
   );
 }

@@ -1,4 +1,20 @@
 export {
+  ASSIST_SAMPLE_RATE,
+  assistAudioEndFrame,
+  parseAssistPipelineEvent,
+  preferredPipelineHasWakeWord,
+  prefixAssistAudio,
+  resolveAssistMediaUrl,
+  startAssistRun,
+} from "./assist";
+export type {
+  AssistClient,
+  AssistPipelineEvent,
+  AssistRunHandle,
+  AssistRunInput,
+  StartAssistRunOptions,
+} from "./assist";
+export {
   ALARM_FEATURE,
   alarmSupportsFeature,
   deriveAlarm,

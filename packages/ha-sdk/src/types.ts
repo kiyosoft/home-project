@@ -37,6 +37,7 @@ export interface EntityClient {
     message: Record<string, unknown>,
     onMessage: (result: T) => void,
   ): Promise<() => void>;
+  sendBinary(data: ArrayBuffer | Uint8Array): void;
   disconnect(): void;
 }
 

@@ -37,6 +37,7 @@ interface HaState {
     message: Record<string, unknown>,
     onMessage: (result: T) => void,
   ) => Promise<() => void>;
+  sendBinary: (data: ArrayBuffer | Uint8Array) => void;
   bootstrap: () => Promise<void>;
 }
 
@@ -164,6 +165,13 @@ export const useHaStore = create<HaState>((set, get) => ({
       throw new Error("Not connected");
     }
     return client.subscribeMessage<T>(message, onMessage);
+  },
+
+  sendBinary(data) {
+    if (!client) {
+      throw new Error("Not connected");
+    }
+    client.sendBinary(data);
   },
 
   async bootstrap() {
