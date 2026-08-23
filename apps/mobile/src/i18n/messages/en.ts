@@ -69,6 +69,7 @@ export const en = {
   "widget.domain.cover": "Covers",
   "widget.domain.lock": "Locks",
   "widget.domain.switch": "Switches",
+  "widget.domain.media": "Media",
   "widget.domain.sensor": "Sensors",
 
   "widget.state.on": "On",
@@ -85,6 +86,9 @@ export const en = {
   "widget.state.closing": "Closing…",
   "widget.state.detected": "Detected",
   "widget.state.clear": "Clear",
+  "widget.state.playing": "Playing",
+  "widget.state.paused": "Paused",
+  "widget.state.idle": "Idle",
 
   "widget.action.power": "Toggle power",
   "widget.action.lock": "Lock or unlock",
@@ -93,6 +97,7 @@ export const en = {
   "widget.brightnessValue": "{percent}% brightness",
   "widget.kelvinValue": "{kelvin}K",
   "widget.hueValue": "{hue}°",
+  "widget.volumeValue": "{percent}%",
 
   "widget.light.power": "Power",
   "widget.light.brightness": "Brightness",
@@ -107,6 +112,14 @@ export const en = {
   "widget.cover.open": "Open",
   "widget.cover.close": "Close",
   "widget.cover.stop": "Stop",
+
+  "widget.media.nothingPlaying": "Nothing playing",
+  "widget.media.playPause": "Play or pause",
+  "widget.media.previous": "Previous track",
+  "widget.media.next": "Next track",
+  "widget.media.volume": "Volume",
+  "widget.media.mute": "Mute",
+  "widget.media.power": "Power",
 
   "widget.detail.state": "State",
   "widget.detail.entityId": "Entity ID",

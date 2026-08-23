@@ -1,4 +1,27 @@
 /**
+ * Resolve an HA `entity_picture` (or any media path) against the connected base
+ * URL. Absolute and data URLs pass through untouched.
+ */
+export function entityImageUrl(
+  picture: string | null | undefined,
+  baseUrl: string,
+): string | null {
+  if (!picture || typeof picture !== "string") return null;
+  const trimmed = picture.trim();
+  if (!trimmed) return null;
+  if (
+    trimmed.startsWith("http://") ||
+    trimmed.startsWith("https://") ||
+    trimmed.startsWith("data:")
+  ) {
+    return trimmed;
+  }
+  const base = baseUrl.replace(/\/+$/, "");
+  if (!base) return trimmed;
+  return trimmed.startsWith("/") ? `${base}${trimmed}` : `${base}/${trimmed}`;
+}
+
+/**
  * Append HA long-lived token (or camera access_token) to media URLs that need auth.
  * Absolute http(s) URLs that already carry a query token are left alone when
  * `preferExisting` is true.

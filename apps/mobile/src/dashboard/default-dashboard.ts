@@ -11,6 +11,7 @@ export const DEFAULT_DOMAIN_GROUPS: { id: string; domains: string[] }[] = [
   { id: "covers", domains: ["cover"] },
   { id: "locks", domains: ["lock"] },
   { id: "switches", domains: ["switch", "input_boolean"] },
+  { id: "media", domains: ["media_player"] },
   { id: "sensors", domains: ["sensor", "binary_sensor"] },
 ];
 

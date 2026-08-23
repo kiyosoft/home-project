@@ -1,14 +1,9 @@
-export const MEDIA_PLAYER_FEATURE = {
-  SEEK: 2,
-  VOLUME_SET: 4,
-  VOLUME_MUTE: 8,
-  PREVIOUS_TRACK: 16,
-  NEXT_TRACK: 32,
-  TURN_ON: 128,
-  TURN_OFF: 256,
-  PLAY_MEDIA: 512,
-  BROWSE_MEDIA: 131072,
-} as const;
+export {
+  MEDIA_PLAYER_FEATURE,
+  mediaIsActive as isMediaActive,
+  mediaPowerAction as getPowerAction,
+  mediaSupportsFeature as supportsFeature,
+} from "@ethio/ha-sdk";
 
 export interface MediaChoice {
   id: string;
@@ -45,44 +40,6 @@ export function numAttr(
     return Number(value);
   }
   return undefined;
-}
-
-export function supportsFeature(
-  supportedFeatures: number,
-  bit: number,
-): boolean {
-  return (supportedFeatures & bit) !== 0;
-}
-
-export function getPowerAction(
-  state: string,
-  supportedFeatures: number,
-): "turn_on" | "turn_off" | null {
-  const normalized = state.toLowerCase();
-  if (!normalized || normalized === "unavailable" || normalized === "unknown") {
-    return null;
-  }
-  const canOn = supportsFeature(supportedFeatures, MEDIA_PLAYER_FEATURE.TURN_ON);
-  const canOff = supportsFeature(
-    supportedFeatures,
-    MEDIA_PLAYER_FEATURE.TURN_OFF,
-  );
-  if (normalized === "off") return canOn ? "turn_on" : null;
-  return canOff ? "turn_off" : null;
-}
-
-export function isMediaActive(state: string, hasMedia: boolean): boolean {
-  const normalized = state.toLowerCase();
-  if (
-    normalized === "playing" ||
-    normalized === "paused" ||
-    normalized === "buffering" ||
-    normalized === "on"
-  ) {
-    return true;
-  }
-  // Idle only counts as active when something is loaded on the player.
-  return normalized === "idle" && hasMedia;
 }
 
 export function isMusicAssistantPlayer(

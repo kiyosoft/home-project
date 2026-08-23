@@ -10,6 +10,7 @@ import { CoverTile } from "@/widgets/tiles/CoverTile";
 import { EntityStateTile } from "@/widgets/tiles/EntityStateTile";
 import { LightTile } from "@/widgets/tiles/LightTile";
 import { LockTile } from "@/widgets/tiles/LockTile";
+import { MediaTile } from "@/widgets/tiles/MediaTile";
 import { SinksarTile } from "@/widgets/tiles/SinksarTile";
 import { TeamTrackerTile } from "@/widgets/tiles/TeamTrackerTile";
 import { ToggleTile } from "@/widgets/tiles/ToggleTile";
@@ -50,6 +51,12 @@ export const MOBILE_WIDGETS: MobileWidgetDef[] = [
     component: CoverTile,
     defaultSize: "md",
     domains: ["cover"],
+  },
+  {
+    id: "@ethio/core/media",
+    component: MediaTile,
+    defaultSize: "md",
+    domains: ["media_player"],
   },
   {
     id: "@ethio/sinksar/today",

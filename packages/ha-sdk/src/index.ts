@@ -106,7 +106,15 @@ export type {
   TeamTrackerState,
   TeamTrackerView,
 } from "./teamtracker";
-export { withAuthToken } from "./media-auth";
+export {
+  deriveMedia,
+  MEDIA_PLAYER_FEATURE,
+  mediaIsActive,
+  mediaPowerAction,
+  mediaSupportsFeature,
+} from "./media";
+export type { MediaView } from "./media";
+export { entityImageUrl, withAuthToken } from "./media-auth";
 export { EMPTY_AREA_INDEX, fetchAreaIndex } from "./registry";
 export type {
   AreaIndex,

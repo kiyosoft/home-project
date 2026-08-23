@@ -36,6 +36,7 @@ const DOMAIN_LABELS: Record<string, MessageKey> = {
   lock: "widget.domain.lock",
   switch: "widget.domain.switch",
   input_boolean: "widget.domain.switch",
+  media_player: "widget.domain.media",
   sensor: "widget.domain.sensor",
   binary_sensor: "widget.domain.sensor",
 };

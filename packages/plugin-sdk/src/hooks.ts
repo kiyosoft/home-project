@@ -9,6 +9,7 @@ import {
 import {
   browseMedia as haBrowseMedia,
   browseMediaSource as haBrowseMediaSource,
+  entityImageUrl,
   getHassConfig as haGetHassConfig,
   subscribeRenderTemplate,
   subscribeTodoItems,
@@ -373,20 +374,8 @@ export function resolveEntityImageUrl(
   picture: string | null | undefined,
   baseUrl?: string,
 ): string | null {
-  if (!picture || typeof picture !== "string") return null;
-  const trimmed = picture.trim();
-  if (!trimmed) return null;
-  if (
-    trimmed.startsWith("http://") ||
-    trimmed.startsWith("https://") ||
-    trimmed.startsWith("data:")
-  ) {
-    return trimmed;
-  }
-  const base = (baseUrl ?? getPlatformBindings().getBaseUrl?.() ?? "").replace(
-    /\/+$/,
-    "",
+  return entityImageUrl(
+    picture,
+    baseUrl ?? getPlatformBindings().getBaseUrl?.() ?? "",
   );
-  if (!base) return trimmed;
-  return trimmed.startsWith("/") ? `${base}${trimmed}` : `${base}/${trimmed}`;
 }

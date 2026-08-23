@@ -69,6 +69,7 @@ export const am: Record<MessageKey, string> = {
   "widget.domain.cover": "መጋረጃዎች",
   "widget.domain.lock": "ቁልፎች",
   "widget.domain.switch": "ማብሪያዎች",
+  "widget.domain.media": "ሚዲያ",
   "widget.domain.sensor": "ሴንሰሮች",
 
   "widget.state.on": "በርቷል",
@@ -85,6 +86,9 @@ export const am: Record<MessageKey, string> = {
   "widget.state.closing": "በመዝጋት ላይ…",
   "widget.state.detected": "ተገኝቷል",
   "widget.state.clear": "ንጹህ",
+  "widget.state.playing": "እየተጫወተ ነው",
+  "widget.state.paused": "ቆሟል",
+  "widget.state.idle": "ዝግጁ",
 
   "widget.action.power": "ኃይል ቀያይር",
   "widget.action.lock": "ቁልፍ ቆልፍ ወይም ክፈት",
@@ -93,6 +97,7 @@ export const am: Record<MessageKey, string> = {
   "widget.brightnessValue": "{percent}% ብርሃን",
   "widget.kelvinValue": "{kelvin}K",
   "widget.hueValue": "{hue}°",
+  "widget.volumeValue": "{percent}%",
 
   "widget.light.power": "ኃይል",
   "widget.light.brightness": "ብርሃን",
@@ -107,6 +112,14 @@ export const am: Record<MessageKey, string> = {
   "widget.cover.open": "ክፈት",
   "widget.cover.close": "ዝጋ",
   "widget.cover.stop": "አቁም",
+
+  "widget.media.nothingPlaying": "ምንም አይጫወትም",
+  "widget.media.playPause": "አጫውት ወይም አቁም",
+  "widget.media.previous": "ቀዳሚ ትራክ",
+  "widget.media.next": "ቀጣይ ትራክ",
+  "widget.media.volume": "ድምጽ",
+  "widget.media.mute": "ድምጽ ዝጋ",
+  "widget.media.power": "ኃይል",
 
   "widget.detail.state": "ሁኔታ",
   "widget.detail.entityId": "የኤንቲቲ መለያ",
