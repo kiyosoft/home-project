@@ -39,12 +39,28 @@ export const en = {
   "setup.startDemo": "Start demo",
   "setup.errorDemo": "Failed to start demo mode.",
 
+  "tabs.home": "Home",
+  "tabs.assist": "Assist",
+  "tabs.activity": "Activity",
+  "tabs.settings": "Settings",
+
   "home.placeholderTitle": "Connected",
   "home.placeholderDemo": "Demo mode",
   "home.placeholderBody":
     "The dashboard, tiles, and add-widget flow land in the next slice.",
   "home.entityCount": "{count} entities streaming",
-  "home.disconnect": "Disconnect",
+
+  "assist.comingBody":
+    "Talk to Home Assistant with voice and text. That lands in a later slice.",
+  "activity.comingBody":
+    "Notifications and history from the hub. That lands in a later slice.",
+
+  "settings.title": "Settings",
+  "settings.hub": "Home Assistant",
+  "settings.disconnect": "Disconnect",
+  "settings.disconnectConfirm":
+    "This phone will forget the hub and go back to Connect.",
+  "settings.disconnectCancel": "Cancel",
 
   "settings.langEn": "English",
   "settings.langAm": "አማርኛ",

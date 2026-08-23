@@ -38,11 +38,25 @@ export const am: Record<MessageKey, string> = {
   "setup.startDemo": "ሙከራ ጀምር",
   "setup.errorDemo": "የሙከራ ሁነታን መጀመር አልተቻለም።",
 
+  "tabs.home": "መነሻ",
+  "tabs.assist": "አሲስት",
+  "tabs.activity": "እንቅስቃሴ",
+  "tabs.settings": "ቅንብሮች",
+
   "home.placeholderTitle": "ተገናኙቷል",
   "home.placeholderDemo": "የሙከራ ሁነታ",
   "home.placeholderBody": "ዳሽቦርዱ፣ ታይሎቹ እና ውጅት የመጨመር ሂደት በሚቀጥለው ክፍል ይመጣሉ።",
   "home.entityCount": "{count} ኤንቲቲዎች በቀጥታ እየመጡ ነው",
-  "home.disconnect": "አቋርጥ",
+
+  "assist.comingBody":
+    "በድምጽ እና በጽሑፍ ከ ሆም አሲስታንት ጋር ይነጋገሩ። ያ በኋላ በሚመጣው ክፍል ይጨመራል።",
+  "activity.comingBody": "ከሃቡ የሚመጡ ማሳወቂያዎች እና ታሪክ። ያ በኋላ በሚመጣው ክፍል ይጨመራል።",
+
+  "settings.title": "ቅንብሮች",
+  "settings.hub": "ሆም አሲስታንት",
+  "settings.disconnect": "አቋርጥ",
+  "settings.disconnectConfirm": "ይህ ስልክ ሃቡን ይረሳል እና ወደ መገናኘት ይመለሳል።",
+  "settings.disconnectCancel": "ተወው",
 
   "settings.langEn": "English",
   "settings.langAm": "አማርኛ",

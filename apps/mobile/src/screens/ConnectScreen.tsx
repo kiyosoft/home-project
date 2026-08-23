@@ -1,18 +1,22 @@
 import * as Clipboard from "expo-clipboard";
 import {
   Button,
+  Card,
+  Chip,
   FieldError,
   Input,
   Label,
+  LinkButton,
+  Spinner,
+  Text,
   TextField,
+  useThemeColor,
 } from "heroui-native";
 import { useState } from "react";
 import {
   KeyboardAvoidingView,
   Platform,
-  Pressable,
   ScrollView,
-  Text,
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -21,7 +25,6 @@ import type { MessageKey } from "@/i18n";
 import { failureField, failureMessageKey } from "@/lib/connection-error";
 import { useHaStore } from "@/store/ha-store";
 import { useT } from "@/store/locale-store";
-import { GlassSurface } from "@/ui/GlassSurface";
 import { LanguageSwitcher } from "@/ui/LanguageSwitcher";
 
 /** Client-side checks that run before we bother the network. */
@@ -35,6 +38,7 @@ const LOCAL_ERROR_KEYS: Record<Exclude<LocalError, null>, MessageKey> = {
 export function ConnectScreen() {
   const t = useT();
   const insets = useSafeAreaInsets();
+  const accentForeground = useThemeColor("accent-foreground");
 
   const status = useHaStore((state) => state.status);
   const failure = useHaStore((state) => state.failure);
@@ -104,129 +108,131 @@ export function ConnectScreen() {
         keyboardShouldPersistTaps="handled"
       >
         <View className="gap-2">
-          <Text className="text-foreground text-[32px] font-bold">
-            {t("setup.connectTitle")}
-          </Text>
-          <Text className="text-muted text-[15px] leading-5">
+          <Text.Heading type="h1">{t("setup.connectTitle")}</Text.Heading>
+          <Text.Paragraph color="muted">
             {t("setup.connectDescription")}
-          </Text>
+          </Text.Paragraph>
         </View>
 
-        <GlassSurface level="chrome" className="gap-5 p-5">
-          <TextField isInvalid={addressInvalid}>
-            <View className="flex-row items-center justify-between">
-              <Label>{t("setup.urlLabel")}</Label>
-              {addressConfirmed ? (
-                <Text className="text-success text-[13px] font-medium">
-                  {t("setup.addressReachable")}
-                </Text>
-              ) : addressInvalid ? (
-                <Text className="text-danger text-[13px] font-medium">
-                  {t("setup.addressUnreachable")}
-                </Text>
-              ) : null}
-            </View>
-            <Input
-              value={baseUrl}
-              onChangeText={(next) => {
-                setBaseUrl(next);
-                setLocalError(null);
-              }}
-              placeholder={t("setup.urlPlaceholder")}
-              autoCapitalize="none"
-              autoCorrect={false}
-              keyboardType="url"
-              textContentType="URL"
-              editable={!busy}
-            />
-          </TextField>
+        <Card>
+          <Card.Body className="gap-5">
+            <TextField isInvalid={addressInvalid}>
+              <View className="flex-row items-center justify-between gap-2">
+                <Label>{t("setup.urlLabel")}</Label>
+                {addressConfirmed ? (
+                  <Chip size="sm" color="success" variant="soft">
+                    {t("setup.addressReachable")}
+                  </Chip>
+                ) : addressInvalid ? (
+                  <Chip size="sm" color="danger" variant="soft">
+                    {t("setup.addressUnreachable")}
+                  </Chip>
+                ) : null}
+              </View>
+              <Input
+                value={baseUrl}
+                onChangeText={(next) => {
+                  setBaseUrl(next);
+                  setLocalError(null);
+                }}
+                placeholder={t("setup.urlPlaceholder")}
+                autoCapitalize="none"
+                autoCorrect={false}
+                keyboardType="url"
+                textContentType="URL"
+                editable={!busy}
+              />
+            </TextField>
 
-          <TextField isInvalid={tokenInvalid}>
-            <View className="flex-row items-center justify-between">
-              <Label>{t("setup.tokenLabel")}</Label>
-              {tokenInvalid ? (
-                <Text className="text-danger text-[13px] font-medium">
-                  {t("setup.tokenRejected")}
-                </Text>
-              ) : null}
-            </View>
-            <Input
-              value={token}
-              onChangeText={(next) => {
-                setToken(next);
-                setLocalError(null);
-              }}
-              placeholder={t("setup.tokenPlaceholder")}
-              secureTextEntry={!tokenVisible}
-              autoCapitalize="none"
-              autoCorrect={false}
-              autoComplete="off"
-              editable={!busy}
-            />
-            {/* Pasting is the expected input for a long-lived token, not typing. */}
-            <View className="flex-row justify-end gap-1">
-              <Pressable
-                accessibilityRole="button"
-                onPress={handlePaste}
-                disabled={busy}
-                className="min-h-11 justify-center px-3"
-              >
-                <Text className="text-link text-[15px] font-medium">
-                  {t("setup.paste")}
-                </Text>
-              </Pressable>
-              <Pressable
-                accessibilityRole="button"
-                onPress={() => setTokenVisible((visible) => !visible)}
-                disabled={busy || !token}
-                className="min-h-11 justify-center px-3"
-              >
-                <Text className="text-link text-[15px] font-medium">
-                  {tokenVisible ? t("setup.hideToken") : t("setup.showToken")}
-                </Text>
-              </Pressable>
-            </View>
-          </TextField>
-
-          {/*
-            One slot for every failure: required, malformed, unreachable, or
-            rejected. Retry only appears when retrying is the right next move.
-          */}
-          {messageKey ? (
-            <View className="gap-2">
-              <FieldError>{t(messageKey)}</FieldError>
-              {failure?.kind === "unreachable" && !localError ? (
-                <Button
-                  variant="tertiary"
+            <TextField isInvalid={tokenInvalid}>
+              <View className="flex-row items-center justify-between gap-2">
+                <Label>{t("setup.tokenLabel")}</Label>
+                {tokenInvalid ? (
+                  <Chip size="sm" color="danger" variant="soft">
+                    {t("setup.tokenRejected")}
+                  </Chip>
+                ) : null}
+              </View>
+              <Input
+                value={token}
+                onChangeText={(next) => {
+                  setToken(next);
+                  setLocalError(null);
+                }}
+                placeholder={t("setup.tokenPlaceholder")}
+                secureTextEntry={!tokenVisible}
+                autoCapitalize="none"
+                autoCorrect={false}
+                autoComplete="off"
+                editable={!busy}
+              />
+              {/* Pasting is the expected input for a long-lived token, not typing. */}
+              <View className="flex-row justify-end">
+                <LinkButton
                   size="sm"
-                  onPress={handleConnect}
+                  onPress={handlePaste}
                   isDisabled={busy}
                 >
-                  {t("setup.retry")}
-                </Button>
+                  {t("setup.paste")}
+                </LinkButton>
+                <LinkButton
+                  size="sm"
+                  onPress={() => setTokenVisible((visible) => !visible)}
+                  isDisabled={busy || !token}
+                >
+                  {tokenVisible ? t("setup.hideToken") : t("setup.showToken")}
+                </LinkButton>
+              </View>
+            </TextField>
+
+            {/*
+              One slot for every failure: required, malformed, unreachable, or
+              rejected. Retry only appears when retrying is the right next move.
+            */}
+            {messageKey ? (
+              <View className="gap-2">
+                <FieldError>{t(messageKey)}</FieldError>
+                {failure?.kind === "unreachable" && !localError ? (
+                  <Button
+                    variant="tertiary"
+                    size="sm"
+                    onPress={handleConnect}
+                    isDisabled={busy}
+                  >
+                    {t("setup.retry")}
+                  </Button>
+                ) : null}
+              </View>
+            ) : null}
+          </Card.Body>
+          <Card.Footer>
+            <Button onPress={handleConnect} isDisabled={busy}>
+              {busy ? (
+                <Spinner size="sm" color={accentForeground} />
               ) : null}
-            </View>
-          ) : null}
+              {busy ? t("setup.connecting") : t("setup.connect")}
+            </Button>
+          </Card.Footer>
+        </Card>
 
-          <Button onPress={handleConnect} isDisabled={busy}>
-            {busy ? t("setup.connecting") : t("setup.connect")}
-          </Button>
-        </GlassSurface>
-
-        <GlassSurface level="chrome" className="gap-3 p-5">
-          <Text className="text-foreground text-[20px] font-semibold">
-            {t("setup.demoTitle")}
-          </Text>
-          <Text className="text-muted text-[15px] leading-5">
-            {t("setup.demoDescription")}
-          </Text>
-          <Button variant="secondary" onPress={connectDemo} isDisabled={busy}>
-            {t("setup.startDemo")}
-          </Button>
-        </GlassSurface>
+        <Card>
+          <Card.Body className="gap-2">
+            <Card.Title>{t("setup.demoTitle")}</Card.Title>
+            <Card.Description>{t("setup.demoDescription")}</Card.Description>
+          </Card.Body>
+          <Card.Footer>
+            <Button
+              variant="secondary"
+              onPress={connectDemo}
+              isDisabled={busy}
+            >
+              {t("setup.startDemo")}
+            </Button>
+          </Card.Footer>
+        </Card>
 
         <View className="flex-row items-center justify-between gap-3 px-1">
-          <Text className="text-muted text-[15px]">{t("setup.language")}</Text>
+          <Label>{t("setup.language")}</Label>
           <LanguageSwitcher />
         </View>
       </ScrollView>

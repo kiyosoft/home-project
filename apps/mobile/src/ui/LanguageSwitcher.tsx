@@ -1,9 +1,7 @@
-import { Pressable, Text, View } from "react-native";
+import { Tabs } from "heroui-native";
 
-import type { Locale } from "@/i18n";
+import { isLocale, type Locale } from "@/i18n";
 import { useLocaleStore, useT } from "@/store/locale-store";
-
-import { cn } from "./cn";
 
 const OPTIONS: { locale: Locale; labelKey: "settings.langEn" | "settings.langAm" }[] = [
   { locale: "en", labelKey: "settings.langEn" },
@@ -11,8 +9,8 @@ const OPTIONS: { locale: Locale; labelKey: "settings.langEn" | "settings.langAm"
 ];
 
 /**
- * The one place both scripts sit together, per the v1 UI spec. Rendered as a
- * segmented pair rather than a picker so neither language is buried.
+ * The one place both scripts sit together, per the v1 UI spec. Tabs keep
+ * English and Amharic on the same row so neither language is buried.
  */
 export function LanguageSwitcher() {
   const t = useT();
@@ -20,31 +18,20 @@ export function LanguageSwitcher() {
   const setLocale = useLocaleStore((state) => state.setLocale);
 
   return (
-    <View className="bg-surface-secondary flex-row gap-1 rounded-inner p-1">
-      {OPTIONS.map((option) => {
-        const active = locale === option.locale;
-        return (
-          <Pressable
-            key={option.locale}
-            accessibilityRole="button"
-            accessibilityState={{ selected: active }}
-            onPress={() => setLocale(option.locale)}
-            className={cn(
-              "min-h-11 justify-center rounded-inner px-4",
-              active && "bg-segment",
-            )}
-          >
-            <Text
-              className={cn(
-                "text-[17px]",
-                active ? "text-foreground font-semibold" : "text-muted",
-              )}
-            >
-              {t(option.labelKey)}
-            </Text>
-          </Pressable>
-        );
-      })}
-    </View>
+    <Tabs
+      value={locale}
+      onValueChange={(value) => {
+        if (isLocale(value)) setLocale(value);
+      }}
+    >
+      <Tabs.List className="self-start">
+        <Tabs.Indicator />
+        {OPTIONS.map((option) => (
+          <Tabs.Trigger key={option.locale} value={option.locale}>
+            <Tabs.Label>{t(option.labelKey)}</Tabs.Label>
+          </Tabs.Trigger>
+        ))}
+      </Tabs.List>
+    </Tabs>
   );
 }
