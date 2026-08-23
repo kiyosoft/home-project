@@ -12,6 +12,10 @@ export default defineConfig({
   resolve: {
     alias: {
       "@": path.resolve(rootDir, "./src"),
+      "@ethio/dashboard-schema": path.resolve(
+        rootDir,
+        "../../packages/dashboard-schema/src/index.ts",
+      ),
       "@ethio/ha-sdk": path.resolve(
         rootDir,
         "../../packages/ha-sdk/src/index.ts",

@@ -1,0 +1,111 @@
+@import 'tailwindcss';
+@import 'uniwind';
+@import 'heroui-native/styles';
+
+/*
+ * Concentric radii from the v1 UI spec: floating chrome sits outside tiles,
+ * tiles outside their own content. Nesting a smaller radius inside a larger
+ * one is what keeps the curves visually parallel.
+ */
+@theme {
+  --radius-chrome: 28px;
+  --radius-tile: 22px;
+  --radius-inner: 16px;
+}
+
+/*
+ * Ethio Home palette, ported from apps/dashboard/src/index.css. HeroUI derives
+ * every --color-* utility from these base tokens, so overriding them here
+ * rebrands the component library rather than sitting alongside it.
+ */
+@layer theme {
+  :root {
+    @variant light {
+      --background: #f3f0ea;
+      --foreground: #1c1916;
+
+      --surface: #fffdf8;
+      --surface-foreground: #1c1916;
+      --surface-secondary: #ece7dd;
+      --surface-secondary-foreground: #1c1916;
+      --surface-tertiary: #e8e2d8;
+      --surface-tertiary-foreground: #1c1916;
+
+      --overlay: #fffdf8;
+      --overlay-foreground: #1c1916;
+      --backdrop: rgba(28, 25, 22, 0.2);
+
+      --muted: #6b645b;
+
+      --default: #e8e2d8;
+      --default-foreground: #1c1916;
+
+      --accent: #0f6b5c;
+      --accent-foreground: #f4fffb;
+
+      --field-background: #fffdf8;
+      --field-foreground: #1c1916;
+      --field-placeholder: #6b645b;
+      --field-border: #d9d1c4;
+
+      --success: #15803d;
+      --success-foreground: #f4fffb;
+      --warning: #b45309;
+      --warning-foreground: #fffdf8;
+      --danger: #b42318;
+      --danger-foreground: #fff5f4;
+
+      --segment: #fffdf8;
+      --segment-foreground: #1c1916;
+
+      --border: #d9d1c4;
+      --separator: #d9d1c4;
+      --focus: #0f6b5c;
+      --link: #0f6b5c;
+    }
+
+    @variant dark {
+      --background: #0c1218;
+      --foreground: #eef6f8;
+
+      --surface: rgba(255, 255, 255, 0.08);
+      --surface-foreground: #eef6f8;
+      --surface-secondary: rgba(255, 255, 255, 0.06);
+      --surface-secondary-foreground: #eef6f8;
+      --surface-tertiary: rgba(255, 255, 255, 0.12);
+      --surface-tertiary-foreground: #eef6f8;
+
+      --overlay: #131b23;
+      --overlay-foreground: #eef6f8;
+      --backdrop: rgba(0, 0, 0, 0.4);
+
+      --muted: #9db0b8;
+
+      --default: rgba(255, 255, 255, 0.1);
+      --default-foreground: #eef6f8;
+
+      --accent: #7dd3c0;
+      --accent-foreground: #06201a;
+
+      --field-background: rgba(255, 255, 255, 0.06);
+      --field-foreground: #eef6f8;
+      --field-placeholder: #9db0b8;
+      --field-border: rgba(255, 255, 255, 0.14);
+
+      --success: #6ee7b7;
+      --success-foreground: #06201a;
+      --warning: #fbbf24;
+      --warning-foreground: #1c1916;
+      --danger: #ff7b72;
+      --danger-foreground: #1a0a09;
+
+      --segment: rgba(255, 255, 255, 0.1);
+      --segment-foreground: #eef6f8;
+
+      --border: rgba(255, 255, 255, 0.14);
+      --separator: rgba(255, 255, 255, 0.14);
+      --focus: #7dd3c0;
+      --link: #7dd3c0;
+    }
+  }
+}

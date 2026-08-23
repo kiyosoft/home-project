@@ -1,0 +1,35 @@
+{
+  "expo": {
+    "name": "Ethio Home",
+    "slug": "ethio-home-companion",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "scheme": "ethiohome",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
+    "ios": {
+      "bundleIdentifier": "app.ethiohome.companion",
+      "supportsTablet": false
+    },
+    "android": {
+      "package": "app.ethiohome.companion",
+      "edgeToEdgeEnabled": true
+    },
+    "plugins": [
+      "expo-router",
+      "expo-secure-store",
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#f3f0ea",
+          "dark": {
+            "backgroundColor": "#0c1218"
+          }
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}
