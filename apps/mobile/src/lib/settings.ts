@@ -13,6 +13,7 @@ import { isLocale, type Locale } from "@/i18n";
 const CONNECTION_KEY = "ethio-home.connection:v1";
 const LOCALE_KEY = "ethio-home.locale";
 const TOKEN_KEY = "ethio-home.token.v1";
+const DASHBOARD_KEY = "ethio-home.mobile-dashboard:v1";
 
 export type ConnectionMode = "live" | "demo";
 
@@ -72,6 +73,24 @@ export async function saveConnectionSettings(
 export async function clearConnectionSettings(): Promise<void> {
   await AsyncStorage.removeItem(CONNECTION_KEY);
   await SecureStore.deleteItemAsync(TOKEN_KEY);
+}
+
+/** Raw JSON; the caller validates it against the mobile dashboard schema. */
+export async function loadDashboardDocument(): Promise<unknown | null> {
+  try {
+    const raw = await AsyncStorage.getItem(DASHBOARD_KEY);
+    return raw ? (JSON.parse(raw) as unknown) : null;
+  } catch {
+    return null;
+  }
+}
+
+export async function saveDashboardDocument(document: unknown): Promise<void> {
+  await AsyncStorage.setItem(DASHBOARD_KEY, JSON.stringify(document));
+}
+
+export async function clearDashboardDocument(): Promise<void> {
+  await AsyncStorage.removeItem(DASHBOARD_KEY);
 }
 
 export async function loadLocale(): Promise<Locale> {

@@ -44,11 +44,61 @@ export const en = {
   "tabs.activity": "Activity",
   "tabs.settings": "Settings",
 
-  "home.placeholderTitle": "Connected",
-  "home.placeholderDemo": "Demo mode",
-  "home.placeholderBody":
-    "The dashboard, tiles, and add-widget flow land in the next slice.",
+  "home.title": "Home",
+  "home.demoBadge": "Demo mode",
   "home.entityCount": "{count} entities streaming",
+  "home.emptyTitle": "Nothing to show yet",
+  "home.emptyBody":
+    "No entity here maps to a tile yet. More widget types land in the next slice.",
+
+  "widget.section.favorites": "Favourites",
+
+  "widget.domain.light": "Lights",
+  "widget.domain.climate": "Climate",
+  "widget.domain.cover": "Covers",
+  "widget.domain.lock": "Locks",
+  "widget.domain.switch": "Switches",
+  "widget.domain.sensor": "Sensors",
+
+  "widget.state.on": "On",
+  "widget.state.off": "Off",
+  "widget.state.unavailable": "Unavailable",
+  "widget.state.locked": "Locked",
+  "widget.state.unlocked": "Unlocked",
+  "widget.state.locking": "Locking…",
+  "widget.state.unlocking": "Unlocking…",
+  "widget.state.jammed": "Jammed",
+  "widget.state.open": "Open",
+  "widget.state.closed": "Closed",
+  "widget.state.opening": "Opening…",
+  "widget.state.closing": "Closing…",
+  "widget.state.detected": "Detected",
+  "widget.state.clear": "Clear",
+
+  "widget.brightnessValue": "{percent}% brightness",
+  "widget.kelvinValue": "{kelvin}K",
+
+  "widget.light.power": "Power",
+  "widget.light.brightness": "Brightness",
+  "widget.light.warmth": "Warmth",
+  "widget.light.effects": "Effects",
+
+  "widget.climate.currentValue": "Now {value}",
+  "widget.climate.warmer": "Warmer",
+  "widget.climate.cooler": "Cooler",
+
+  "widget.cover.positionValue": "{label} · {percent}%",
+  "widget.cover.open": "Open",
+  "widget.cover.close": "Close",
+  "widget.cover.stop": "Stop",
+
+  "widget.detail.state": "State",
+  "widget.detail.entityId": "Entity ID",
+  "widget.detail.lastChanged": "Last changed",
+  "widget.detail.attributes": "Attributes",
+
+  "widget.unknownType": "Unsupported widget",
+  "widget.entityMissing": "This entity is no longer on the hub.",
 
   "assist.comingBody":
     "Talk to Home Assistant with voice and text. That lands in a later slice.",
@@ -57,6 +107,7 @@ export const en = {
 
   "settings.title": "Settings",
   "settings.hub": "Home Assistant",
+  "settings.connected": "Connected",
   "settings.disconnect": "Disconnect",
   "settings.disconnectConfirm":
     "This phone will forget the hub and go back to Connect.",

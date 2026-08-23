@@ -1,6 +1,9 @@
 import {
   connectDemo,
   connectLive,
+  EMPTY_AREA_INDEX,
+  fetchAreaIndex,
+  type AreaRegistryEntry,
   type ConnectionStatus,
   type EntityClient,
   type HassEntities,
@@ -18,6 +21,9 @@ import {
 
 interface HaState {
   entities: HassEntities;
+  /** Empty until the area registry resolves. */
+  areas: AreaRegistryEntry[];
+  areaByEntity: Record<string, string>;
   status: ConnectionStatus;
   /** Null until a connection attempt fails. Drives the per-field verdicts. */
   failure: ConnectFailure | null;
@@ -59,10 +65,32 @@ function attachClient(
     set({ entities: { ...entities }, status: "connected", failure: null });
   });
   set({ status: "connected", failure: null });
+  void loadAreas(next, set);
+}
+
+/**
+ * Registry reads need an admin token. A non-admin still gets a working dashboard,
+ * minus the area sections, so a failure here must not break the connection.
+ */
+async function loadAreas(
+  target: EntityClient,
+  set: (partial: Partial<HaState>) => void,
+) {
+  try {
+    const index = await fetchAreaIndex(target);
+    // A reconnect may have swapped the client while this was in flight.
+    if (client !== target) return;
+    set({ areas: index.areas, areaByEntity: index.areaByEntity });
+  } catch {
+    if (client !== target) return;
+    set({ areas: EMPTY_AREA_INDEX.areas, areaByEntity: EMPTY_AREA_INDEX.areaByEntity });
+  }
 }
 
 export const useHaStore = create<HaState>((set, get) => ({
   entities: {},
+  areas: [],
+  areaByEntity: {},
   status: "idle",
   failure: null,
   mode: null,
@@ -82,6 +110,8 @@ export const useHaStore = create<HaState>((set, get) => ({
         status: "error",
         failure: classifyConnectError(error),
         entities: {},
+        areas: [],
+        areaByEntity: {},
         mode: "live",
         baseUrl,
       });
@@ -101,6 +131,8 @@ export const useHaStore = create<HaState>((set, get) => ({
         status: "error",
         failure: classifyConnectError(error),
         entities: {},
+        areas: [],
+        areaByEntity: {},
         mode: "demo",
         baseUrl: "",
       });
@@ -115,6 +147,8 @@ export const useHaStore = create<HaState>((set, get) => ({
     }
     set({
       entities: {},
+      areas: [],
+      areaByEntity: {},
       status: "idle",
       failure: null,
       mode: null,

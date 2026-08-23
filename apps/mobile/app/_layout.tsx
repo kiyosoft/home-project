@@ -8,8 +8,10 @@ import { useEffect } from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
+import { useDashboardStore } from "@/store/dashboard-store";
 import { useHaStore } from "@/store/ha-store";
 import { useLocaleStore } from "@/store/locale-store";
+import { DetailSheetProvider } from "@/widgets/DetailSheet";
 
 void SplashScreen.preventAutoHideAsync();
 
@@ -17,11 +19,13 @@ export default function RootLayout() {
   const hydrated = useHaStore((state) => state.hydrated);
   const bootstrap = useHaStore((state) => state.bootstrap);
   const hydrateLocale = useLocaleStore((state) => state.hydrate);
+  const hydrateDashboard = useDashboardStore((state) => state.hydrate);
 
   useEffect(() => {
     // Locale first so the Connect screen never flashes the wrong script.
     void hydrateLocale().then(() => bootstrap());
-  }, [bootstrap, hydrateLocale]);
+    void hydrateDashboard();
+  }, [bootstrap, hydrateLocale, hydrateDashboard]);
 
   useEffect(() => {
     if (hydrated) void SplashScreen.hideAsync();
@@ -34,7 +38,9 @@ export default function RootLayout() {
       <SafeAreaProvider>
         <HeroUINativeProvider>
           <StatusBar style="auto" />
-          <Stack screenOptions={{ headerShown: false }} />
+          <DetailSheetProvider>
+            <Stack screenOptions={{ headerShown: false }} />
+          </DetailSheetProvider>
         </HeroUINativeProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>

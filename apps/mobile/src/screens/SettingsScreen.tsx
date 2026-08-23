@@ -46,11 +46,11 @@ export function SettingsScreen() {
         <Card.Body className="gap-2">
           <Label>{t("settings.hub")}</Label>
           <Card.Title>
-            {mode === "demo" ? t("home.placeholderDemo") : hubHost(baseUrl)}
+            {mode === "demo" ? t("home.demoBadge") : hubHost(baseUrl)}
           </Card.Title>
           <Chip size="sm" color="success" variant="soft">
             {mode === "live"
-              ? `${t("home.placeholderTitle")} · ${t("home.entityCount", { count: entityCount })}`
+              ? `${t("settings.connected")} · ${t("home.entityCount", { count: entityCount })}`
               : t("home.entityCount", { count: entityCount })}
           </Chip>
         </Card.Body>

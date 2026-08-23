@@ -43,10 +43,61 @@ export const am: Record<MessageKey, string> = {
   "tabs.activity": "እንቅስቃሴ",
   "tabs.settings": "ቅንብሮች",
 
-  "home.placeholderTitle": "ተገናኙቷል",
-  "home.placeholderDemo": "የሙከራ ሁነታ",
-  "home.placeholderBody": "ዳሽቦርዱ፣ ታይሎቹ እና ውጅት የመጨመር ሂደት በሚቀጥለው ክፍል ይመጣሉ።",
+  "home.title": "መነሻ",
+  "home.demoBadge": "የሙከራ ሁነታ",
   "home.entityCount": "{count} ኤንቲቲዎች በቀጥታ እየመጡ ነው",
+  "home.emptyTitle": "እስካሁን የሚታይ ነገር የለም",
+  "home.emptyBody":
+    "እዚህ ያለ ማንኛውም ኤንቲቲ ገና ከታይል ጋር አልተገናኘም። ተጨማሪ የውጅት ዓይነቶች በሚቀጥለው ክፍል ይመጣሉ።",
+
+  "widget.section.favorites": "ተወዳጆች",
+
+  "widget.domain.light": "መብራቶች",
+  "widget.domain.climate": "የአየር ንብረት",
+  "widget.domain.cover": "መጋረጃዎች",
+  "widget.domain.lock": "ቁልፎች",
+  "widget.domain.switch": "ማብሪያዎች",
+  "widget.domain.sensor": "ሴንሰሮች",
+
+  "widget.state.on": "በርቷል",
+  "widget.state.off": "ጠፍቷል",
+  "widget.state.unavailable": "አይገኝም",
+  "widget.state.locked": "ተቆልፏል",
+  "widget.state.unlocked": "ተከፍቷል",
+  "widget.state.locking": "በመቆለፍ ላይ…",
+  "widget.state.unlocking": "በመክፈት ላይ…",
+  "widget.state.jammed": "ተጣብቋል",
+  "widget.state.open": "ክፍት",
+  "widget.state.closed": "ዝግ",
+  "widget.state.opening": "በመክፈት ላይ…",
+  "widget.state.closing": "በመዝጋት ላይ…",
+  "widget.state.detected": "ተገኝቷል",
+  "widget.state.clear": "ንጹህ",
+
+  "widget.brightnessValue": "{percent}% ብርሃን",
+  "widget.kelvinValue": "{kelvin}K",
+
+  "widget.light.power": "ኃይል",
+  "widget.light.brightness": "ብርሃን",
+  "widget.light.warmth": "ሙቀት",
+  "widget.light.effects": "ተጽዕኖዎች",
+
+  "widget.climate.currentValue": "አሁን {value}",
+  "widget.climate.warmer": "ሙቀት ጨምር",
+  "widget.climate.cooler": "ሙቀት ቀንስ",
+
+  "widget.cover.positionValue": "{label} · {percent}%",
+  "widget.cover.open": "ክፈት",
+  "widget.cover.close": "ዝጋ",
+  "widget.cover.stop": "አቁም",
+
+  "widget.detail.state": "ሁኔታ",
+  "widget.detail.entityId": "የኤንቲቲ መለያ",
+  "widget.detail.lastChanged": "መጨረሻ የተቀየረበት",
+  "widget.detail.attributes": "ባህሪያት",
+
+  "widget.unknownType": "ያልተደገፈ ውጅት",
+  "widget.entityMissing": "ይህ ኤንቲቲ ከሃቡ ላይ የለም።",
 
   "assist.comingBody":
     "በድምጽ እና በጽሑፍ ከ ሆም አሲስታንት ጋር ይነጋገሩ። ያ በኋላ በሚመጣው ክፍል ይጨመራል።",
@@ -54,6 +105,7 @@ export const am: Record<MessageKey, string> = {
 
   "settings.title": "ቅንብሮች",
   "settings.hub": "ሆም አሲስታንት",
+  "settings.connected": "ተገናኝቷል",
   "settings.disconnect": "አቋርጥ",
   "settings.disconnectConfirm": "ይህ ስልክ ሃቡን ይረሳል እና ወደ መገናኘት ይመለሳል።",
   "settings.disconnectCancel": "ተወው",

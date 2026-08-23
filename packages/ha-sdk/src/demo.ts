@@ -1,3 +1,8 @@
+import type {
+  AreaRegistryEntry,
+  DeviceRegistryEntry,
+  EntityRegistryEntry,
+} from "./registry";
 import { renderDemoTemplate } from "./template";
 import { TODO_FEATURE, type TodoItem } from "./todo";
 import type {
@@ -354,6 +359,43 @@ const DEMO_ENTITIES: HassEntities = {
     },
   },
 };
+
+const DEMO_AREAS: AreaRegistryEntry[] = [
+  { area_id: "living_room", name: "Living Room", icon: "mdi:sofa", floor_id: "ground" },
+  { area_id: "front_door", name: "Front Door", icon: "mdi:door", floor_id: "ground" },
+  { area_id: "kitchen", name: "Kitchen", icon: "mdi:silverware-fork-knife", floor_id: "ground" },
+  { area_id: "outdoors", name: "Outdoors", icon: "mdi:tree", floor_id: null },
+];
+
+/** Entities wired straight to an area, with no device in between. */
+const DEMO_ENTITY_AREAS: Record<string, string> = {
+  "light.living_room": "living_room",
+  "climate.living_room": "living_room",
+  "cover.living_blinds": "living_room",
+  "media_player.homepod": "living_room",
+  "binary_sensor.front_door": "front_door",
+  "switch.porch": "outdoors",
+  "sensor.outdoor_temperature": "outdoors",
+  "todo.shopping_list": "kitchen",
+};
+
+/** Devices carrying the area for their entities, so the inheritance path stays exercised. */
+const DEMO_DEVICES: DeviceRegistryEntry[] = [
+  { id: "demo-device-front-door", area_id: "front_door" },
+];
+
+const DEMO_DEVICE_ENTITIES: Record<string, string> = {
+  "camera.front_door": "demo-device-front-door",
+  "lock.front_door": "demo-device-front-door",
+};
+
+function demoEntityRegistry(): EntityRegistryEntry[] {
+  return Object.keys(DEMO_ENTITIES).map((entityId) => ({
+    entity_id: entityId,
+    area_id: DEMO_ENTITY_AREAS[entityId] ?? null,
+    device_id: DEMO_DEVICE_ENTITIES[entityId] ?? null,
+  }));
+}
 
 function demoBrowseRoot(): BrowseMediaItem {
   return {
@@ -1196,6 +1238,15 @@ export function connectDemo(): EntityClient {
         );
         if (match) return match as T;
         return radioRoot as T;
+      }
+      if (message.type === "config/area_registry/list") {
+        return structuredClone(DEMO_AREAS) as T;
+      }
+      if (message.type === "config/entity_registry/list") {
+        return demoEntityRegistry() as T;
+      }
+      if (message.type === "config/device_registry/list") {
+        return structuredClone(DEMO_DEVICES) as T;
       }
       if (message.type === "get_config") {
         return {

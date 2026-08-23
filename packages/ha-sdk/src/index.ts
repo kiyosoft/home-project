@@ -62,6 +62,13 @@ export {
 } from "./lock";
 export type { LockView } from "./lock";
 export { withAuthToken } from "./media-auth";
+export { EMPTY_AREA_INDEX, fetchAreaIndex } from "./registry";
+export type {
+  AreaIndex,
+  AreaRegistryEntry,
+  DeviceRegistryEntry,
+  EntityRegistryEntry,
+} from "./registry";
 export {
   decodeEntitiesInJinjaBlocks,
   renderDemoTemplate,
