@@ -1,8 +1,10 @@
 import { deriveLight } from "@ethio/ha-sdk";
-import { Slider, Switch } from "heroui-native";
+import { Slider } from "heroui-native";
 
 import { useT } from "@/store/locale-store";
 import { LightDetailBody } from "@/widgets/detail/LightDetailBody";
+import { LampSwitch } from "@/widgets/light/LampSwitch";
+import { useLightWash } from "@/widgets/light/light-wash";
 import { singleSliderValue, type WidgetBodyProps } from "@/widgets/types";
 import { useOptimistic } from "@/widgets/use-optimistic";
 import { useCallService } from "@/widgets/use-service";
@@ -20,10 +22,16 @@ export function LightTile({ config, size }: WidgetBodyProps) {
     light?.brightnessPercent ?? 0,
   );
 
+  const wash = useLightWash(light && !unavailable ? { ...light, isOn } : null, {
+    brightness: isOn ? brightness : 0,
+  });
+
   const toggle = () => {
     if (unavailable) return;
     setOptimisticOn(!isOn);
-    callService("light", isOn ? "turn_off" : "turn_on", { entity_id: entityId });
+    callService("light", isOn ? "turn_off" : "turn_on", {
+      entity_id: entityId,
+    });
   };
 
   const setBrightness = (percent: number) => {
@@ -51,7 +59,8 @@ export function LightTile({ config, size }: WidgetBodyProps) {
       : t("widget.state.off");
 
   // A slider needs room to be draggable; a half tile gets the switch instead.
-  const showSlider = size !== "sm" && (light?.supportsBrightness ?? false);
+  // Colour lives in the detail sheet: two strips crowd a tile.
+  const showSlider = size === "md" && (light?.supportsBrightness ?? false);
 
   return (
     <WidgetTile
@@ -61,28 +70,38 @@ export function LightTile({ config, size }: WidgetBodyProps) {
       size={size}
       active={isOn && !unavailable}
       disabled={unavailable}
-      onPress={toggle}
+      tint={wash ? { overlay: wash.overlay, border: wash.border } : undefined}
+      // Tapping opens the controls; the switch is how the grid toggles.
+      onPress={openDetail}
       onLongPress={openDetail}
       accessory={
-        <Switch
+        <LampSwitch
           isSelected={isOn}
           onSelectedChange={toggle}
           isDisabled={unavailable}
+          wash={wash}
         />
       }
     >
       {showSlider ? (
         <Slider
           value={brightness}
-          onChange={(value) => setOptimisticBrightness(singleSliderValue(value))}
+          onChange={(value) =>
+            setOptimisticBrightness(singleSliderValue(value))
+          }
           onChangeEnd={(value) => setBrightness(singleSliderValue(value))}
           minValue={0}
           maxValue={100}
           step={1}
           isDisabled={unavailable}
+          accessibilityLabel={t("widget.light.brightness")}
         >
-          <Slider.Track>
-            <Slider.Fill />
+          <Slider.Track
+            style={wash ? { backgroundColor: wash.track } : undefined}
+          >
+            <Slider.Fill
+              style={wash ? { backgroundColor: wash.fill } : undefined}
+            />
             <Slider.Thumb />
           </Slider.Track>
         </Slider>

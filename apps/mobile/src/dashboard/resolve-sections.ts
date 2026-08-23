@@ -9,6 +9,9 @@ import type { MessageKey, TranslateParams } from "@/i18n";
 import { entityDomain, entityName } from "@/store/use-entity";
 import { widgetForEntity } from "@/widgets/registry";
 
+/** Favourites live on the document root, not in `sections`. */
+export const FAVORITES_SECTION_ID = "favorites";
+
 export interface ResolvedSection {
   id: string;
   title: string;
@@ -22,6 +25,8 @@ export interface ResolveOptions {
   areas: AreaRegistryEntry[];
   areaByEntity: Record<string, string>;
   t: (key: MessageKey, params?: TranslateParams) => string;
+  /** Edit mode keeps emptied sections on screen so they still take an add tile. */
+  includeEmpty?: boolean;
 }
 
 const DOMAIN_LABELS: Record<string, MessageKey> = {
@@ -45,7 +50,7 @@ function domainLabel(
   return key ? t(key) : raw.charAt(0).toUpperCase() + raw.slice(1);
 }
 
-function widgetForId(
+export function widgetForId(
   sectionId: string,
   entityId: string,
   entities: HassEntities,
@@ -83,7 +88,7 @@ function resolveSection(
       const entityId = widget.config.entity_id;
       if (typeof entityId === "string") seen.add(entityId);
     }
-    if (!widgets.length) return null;
+    if (!widgets.length && !options.includeEmpty) return null;
     return {
       id: section.id,
       title: section.title ?? "",
@@ -109,7 +114,7 @@ function resolveSection(
     seen.add(entityId);
     widgets.push(widget);
   }
-  if (!widgets.length) return null;
+  if (!widgets.length && !options.includeEmpty) return null;
 
   const derived =
     source.kind === "area"
@@ -125,6 +130,18 @@ function resolveSection(
   };
 }
 
+/** A resize is stored on the document, so it survives a section it cannot edit. */
+function applySizes(
+  widgets: MobileWidget[],
+  sizes: MobileDashboard["sizes"],
+): MobileWidget[] {
+  if (!sizes) return widgets;
+  return widgets.map((widget) => {
+    const size = sizes[widget.id];
+    return size && size !== widget.size ? { ...widget, size } : widget;
+  });
+}
+
 /**
  * Flattens a dashboard document into the sections a screen renders. Sections
  * resolve in order and a query section skips entities an earlier section
@@ -133,19 +150,20 @@ function resolveSection(
 export function resolveSections(options: ResolveOptions): ResolvedSection[] {
   const seen = new Set<string>();
   const resolved: ResolvedSection[] = [];
+  const sizes = options.document.sizes;
 
   const favorites = options.document.favorites ?? [];
   if (favorites.length) {
     const widgets: MobileWidget[] = [];
     for (const entityId of favorites) {
-      const widget = widgetForId("favorites", entityId, options.entities);
+      const widget = widgetForId(FAVORITES_SECTION_ID, entityId, options.entities);
       if (!widget) continue;
       seen.add(entityId);
       widgets.push(widget);
     }
-    if (widgets.length) {
+    if (widgets.length || options.includeEmpty) {
       resolved.push({
-        id: "favorites",
+        id: FAVORITES_SECTION_ID,
         title: options.t("widget.section.favorites"),
         collapsed: false,
         widgets,
@@ -158,5 +176,8 @@ export function resolveSections(options: ResolveOptions): ResolvedSection[] {
     if (next) resolved.push(next);
   }
 
-  return resolved;
+  return resolved.map((section) => ({
+    ...section,
+    widgets: applySizes(section.widgets, sizes),
+  }));
 }

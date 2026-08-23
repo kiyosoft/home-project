@@ -1,4 +1,4 @@
-import type { HassEntity } from "@ethio/ha-sdk";
+import { isSinksarEntity, type HassEntity } from "@ethio/ha-sdk";
 
 import { entityDomain } from "@/store/use-entity";
 import { ClimateTile } from "@/widgets/tiles/ClimateTile";
@@ -6,6 +6,7 @@ import { CoverTile } from "@/widgets/tiles/CoverTile";
 import { EntityStateTile } from "@/widgets/tiles/EntityStateTile";
 import { LightTile } from "@/widgets/tiles/LightTile";
 import { LockTile } from "@/widgets/tiles/LockTile";
+import { SinksarTile } from "@/widgets/tiles/SinksarTile";
 import { ToggleTile } from "@/widgets/tiles/ToggleTile";
 import type { MobileWidgetDef } from "@/widgets/types";
 
@@ -46,6 +47,13 @@ export const MOBILE_WIDGETS: MobileWidgetDef[] = [
     domains: ["cover"],
   },
   {
+    id: "@ethio/sinksar/today",
+    component: SinksarTile,
+    defaultSize: "md",
+    domains: ["sensor"],
+    matches: isSinksarEntity,
+  },
+  {
     id: "@ethio/core/entity-state",
     component: EntityStateTile,
     defaultSize: "sm",
@@ -64,5 +72,8 @@ export function widgetForEntity(
 ): MobileWidgetDef | undefined {
   const domain = entityDomain(entity.entity_id);
   if (!domain) return undefined;
-  return MOBILE_WIDGETS.find((def) => def.domains.includes(domain));
+  return MOBILE_WIDGETS.find((def) => {
+    if (!def.domains.includes(domain)) return false;
+    return def.matches ? def.matches(entity) : true;
+  });
 }

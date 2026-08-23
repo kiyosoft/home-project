@@ -1,3 +1,4 @@
+import type { HassEntity } from "@ethio/ha-sdk";
 import type { TileSize } from "@ethio/mobile-schema";
 import type { ComponentType } from "react";
 
@@ -11,6 +12,8 @@ export interface MobileWidgetDef {
   component: ComponentType<WidgetBodyProps>;
   defaultSize: TileSize;
   domains: string[];
+  /** When set, this widget only claims entities it recognizes in a shared domain. */
+  matches?: (entity: HassEntity) => boolean;
 }
 
 export function readString(

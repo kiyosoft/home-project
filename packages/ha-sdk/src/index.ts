@@ -26,6 +26,19 @@ export {
   getHassConfig,
 } from "./browse-media";
 export type { BrowseMediaOptions, HassCoreConfig } from "./browse-media";
+export {
+  blendRgb,
+  clamp,
+  hexToRgb,
+  hsvToRgb,
+  isBrightSurface,
+  kelvinToRgb,
+  relativeLuminance,
+  rgbaCss,
+  rgbToHex,
+  rgbToHsv,
+} from "./color";
+export type { Hsv, Rgb } from "./color";
 export { normalizeHassError } from "./hass-error";
 export {
   CAMERA_FEATURE,
@@ -56,11 +69,33 @@ export {
 } from "./light";
 export type { LightColorMode, LightView } from "./light";
 export {
+  currentHue,
+  hueToRgb,
+  lampColor,
+  lampInk,
+  lightColor,
+  lightGlow,
+  lightIntensity,
+  resolveKelvin,
+  TUNGSTEN,
+} from "./light-visuals";
+export type { LightGlow, LightLike } from "./light-visuals";
+export {
   deriveLock,
   LOCK_FEATURE,
   lockSupportsFeature,
 } from "./lock";
 export type { LockView } from "./lock";
+export {
+  deriveSinksar,
+  ethiopianDateFromDayOfYear,
+  formatEthiopianDayOfYear,
+  isSinksarEntity,
+  sinksarArke,
+  sinksarPrimaryIndex,
+  sinksarStory,
+} from "./sinksar";
+export type { SinksarEntry, SinksarView } from "./sinksar";
 export { withAuthToken } from "./media-auth";
 export { EMPTY_AREA_INDEX, fetchAreaIndex } from "./registry";
 export type {

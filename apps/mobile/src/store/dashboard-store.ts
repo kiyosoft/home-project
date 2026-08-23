@@ -10,10 +10,15 @@ import {
   saveDashboardDocument,
 } from "@/lib/settings";
 
+export type EditorMode = "live" | "edit";
+
 interface DashboardState {
   /** Null means "no saved document", so the generated default is used instead. */
   document: MobileDashboard | null;
   hydrated: boolean;
+  /** Shared by the Home header and the grid so both agree on the chrome. */
+  mode: EditorMode;
+  setMode: (mode: EditorMode) => void;
   hydrate: () => Promise<void>;
   save: (document: MobileDashboard) => Promise<void>;
   reset: () => Promise<void>;
@@ -22,6 +27,11 @@ interface DashboardState {
 export const useDashboardStore = create<DashboardState>((set) => ({
   document: null,
   hydrated: false,
+  mode: "live",
+
+  setMode(mode) {
+    set({ mode });
+  },
 
   async hydrate() {
     const raw = await loadDashboardDocument();
@@ -36,7 +46,7 @@ export const useDashboardStore = create<DashboardState>((set) => ({
   },
 
   async reset() {
-    set({ document: null });
+    set({ document: null, mode: "live" });
     await clearDashboardDocument();
   },
 }));

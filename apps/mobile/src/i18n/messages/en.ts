@@ -1,11 +1,13 @@
 export const en = {
   "app.starting": "Starting Ethio Home…",
 
-  "setup.connectTitle": "Connect Home Assistant",
+  "common.cancel": "Cancel",
+
+  "setup.connectTitle": "Connect your hub",
   "setup.connectDescription":
-    "Use a long-lived access token from your HA profile. Entity data stays on your network.",
-  "setup.urlLabel": "Home Assistant URL",
-  "setup.urlPlaceholder": "http://homeassistant.local:8123",
+    "Use a long-lived access token from your profile. Entity data stays on your network.",
+  "setup.urlLabel": "Hub URL",
+  "setup.urlPlaceholder": "http://192.168.1.1:8123",
   "setup.tokenLabel": "Long-lived access token",
   "setup.tokenPlaceholder": "Paste token",
   "setup.connect": "Connect",
@@ -22,20 +24,18 @@ export const en = {
   "setup.addressUnreachable": "Unreachable",
   "setup.tokenRejected": "Rejected",
 
-  "setup.errorRequired":
-    "Home Assistant URL and long-lived access token are required.",
-  "setup.errorInvalidUrl":
-    "Enter a valid URL, e.g. http://homeassistant.local:8123",
+  "setup.errorRequired": "Hub URL and long-lived access token are required.",
+  "setup.errorInvalidUrl": "Enter a valid URL, e.g. http://192.168.1.1:8123",
   "setup.errorUnreachable":
     "Nothing answered at that address. Check the hub is on and on this network.",
   "setup.errorTokenRejected":
-    "The server answered, so the address is right. Paste a new long-lived access token from your HA profile.",
+    "The server answered, so the address is right. Paste a new long-lived access token from your profile.",
   "setup.errorConnectionLost": "The connection dropped before setup finished.",
-  "setup.errorGeneric": "Could not reach Home Assistant.",
+  "setup.errorGeneric": "Could not reach the hub.",
 
   "setup.demoTitle": "Try demo mode",
   "setup.demoDescription":
-    "Explore a sample dashboard with simulated lights, switches, and sensors — no Home Assistant required.",
+    "Explore a sample dashboard with simulated lights, switches, and sensors — no hub required.",
   "setup.startDemo": "Start demo",
   "setup.errorDemo": "Failed to start demo mode.",
 
@@ -50,6 +50,17 @@ export const en = {
   "home.emptyTitle": "Nothing to show yet",
   "home.emptyBody":
     "No entity here maps to a tile yet. More widget types land in the next slice.",
+  "home.edit": "Edit",
+  "home.done": "Done",
+  "home.addWidget": "Add tile",
+  "home.removeWidget": "Remove tile",
+  "home.widthFull": "Make tile full width",
+  "home.widthHalf": "Make tile half width",
+
+  "picker.title": "Add a tile",
+  "picker.description": "Pick an entity. Its type decides the tile.",
+  "picker.searchPlaceholder": "Search entities",
+  "picker.empty": "Every supported entity is already on the dashboard.",
 
   "widget.section.favorites": "Favourites",
 
@@ -75,11 +86,17 @@ export const en = {
   "widget.state.detected": "Detected",
   "widget.state.clear": "Clear",
 
+  "widget.action.power": "Toggle power",
+  "widget.action.lock": "Lock or unlock",
+  "widget.action.cover": "Open or close",
+
   "widget.brightnessValue": "{percent}% brightness",
   "widget.kelvinValue": "{kelvin}K",
+  "widget.hueValue": "{hue}°",
 
   "widget.light.power": "Power",
   "widget.light.brightness": "Brightness",
+  "widget.light.color": "Colour",
   "widget.light.warmth": "Warmth",
   "widget.light.effects": "Effects",
 
@@ -87,7 +104,6 @@ export const en = {
   "widget.climate.warmer": "Warmer",
   "widget.climate.cooler": "Cooler",
 
-  "widget.cover.positionValue": "{label} · {percent}%",
   "widget.cover.open": "Open",
   "widget.cover.close": "Close",
   "widget.cover.stop": "Stop",
@@ -97,21 +113,32 @@ export const en = {
   "widget.detail.lastChanged": "Last changed",
   "widget.detail.attributes": "Attributes",
 
+  "widget.sinksar.title": "ስንክሳር",
+  "widget.sinksar.story": "Story",
+  "widget.sinksar.arke": "አርኬ",
+  "widget.sinksar.empty": "No Sinksar entries for today.",
+  "widget.sinksar.noStory": "No story for this entry.",
+
   "widget.unknownType": "Unsupported widget",
   "widget.entityMissing": "This entity is no longer on the hub.",
 
   "assist.comingBody":
-    "Talk to Home Assistant with voice and text. That lands in a later slice.",
+    "Talk to your home with voice and text. That lands in a later slice.",
   "activity.comingBody":
     "Notifications and history from the hub. That lands in a later slice.",
 
   "settings.title": "Settings",
-  "settings.hub": "Home Assistant",
+  "settings.hub": "Hub",
   "settings.connected": "Connected",
   "settings.disconnect": "Disconnect",
   "settings.disconnectConfirm":
     "This phone will forget the hub and go back to Connect.",
-  "settings.disconnectCancel": "Cancel",
+
+  "settings.dashboard": "Dashboard",
+  "settings.resetLayout": "Reset layout",
+  "settings.resetLayoutDescription":
+    "Tiles you added or removed are discarded and the layout is generated from your areas again.",
+  "settings.resetLayoutConfirm": "Reset the dashboard to its generated layout?",
 
   "settings.langEn": "English",
   "settings.langAm": "አማርኛ",

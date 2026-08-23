@@ -1,5 +1,4 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
-import { Switch } from "heroui-native";
 
 import { entityDomain } from "@/store/use-entity";
 import { useT } from "@/store/locale-store";
@@ -43,15 +42,10 @@ export function ToggleTile({ config, size }: WidgetBodyProps) {
       size={size}
       active={isOn && !unavailable}
       disabled={unavailable}
-      onPress={toggle}
+      onPress={openEntityDetail}
       onLongPress={openEntityDetail}
-      accessory={
-        <Switch
-          isSelected={isOn}
-          onSelectedChange={toggle}
-          isDisabled={unavailable}
-        />
-      }
+      onIconPress={toggle}
+      iconLabel={t("widget.action.power")}
     />
   );
 }

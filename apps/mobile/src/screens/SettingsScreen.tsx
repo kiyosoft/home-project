@@ -10,6 +10,7 @@ import {
   Text,
 } from "heroui-native";
 
+import { useDashboardStore } from "@/store/dashboard-store";
 import { useHaStore } from "@/store/ha-store";
 import { useT } from "@/store/locale-store";
 import { LanguageSwitcher } from "@/ui/LanguageSwitcher";
@@ -26,7 +27,9 @@ export function SettingsScreen() {
   const t = useT();
   const insets = useSafeAreaInsets();
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [resetOpen, setResetOpen] = useState(false);
 
+  const resetDashboard = useDashboardStore((state) => state.reset);
   const mode = useHaStore((state) => state.mode);
   const baseUrl = useHaStore((state) => state.baseUrl);
   const entityCount = useHaStore(
@@ -37,7 +40,7 @@ export function SettingsScreen() {
   return (
     <ScrollView
       className="bg-background flex-1"
-      contentContainerClassName="gap-6 px-5"
+      contentContainerClassName="gap-6 px-5 pb-28"
       contentContainerStyle={{ paddingTop: insets.top + 24 }}
     >
       <Text.Heading type="h1">{t("settings.title")}</Text.Heading>
@@ -63,6 +66,44 @@ export function SettingsScreen() {
         </Card.Body>
       </Card>
 
+      <Card>
+        <Card.Body className="gap-3">
+          <Label>{t("settings.dashboard")}</Label>
+          <Card.Description>
+            {t("settings.resetLayoutDescription")}
+          </Card.Description>
+          <Dialog isOpen={resetOpen} onOpenChange={setResetOpen}>
+            <Dialog.Trigger asChild>
+              <Button variant="secondary" className="self-start">
+                {t("settings.resetLayout")}
+              </Button>
+            </Dialog.Trigger>
+            <Dialog.Portal>
+              <Dialog.Overlay />
+              <Dialog.Content>
+                <Dialog.Title>{t("settings.resetLayout")}</Dialog.Title>
+                <Dialog.Description>
+                  {t("settings.resetLayoutConfirm")}
+                </Dialog.Description>
+                <View className="flex-row justify-end gap-3">
+                  <Button variant="ghost" onPress={() => setResetOpen(false)}>
+                    {t("common.cancel")}
+                  </Button>
+                  <Button
+                    onPress={() => {
+                      setResetOpen(false);
+                      void resetDashboard();
+                    }}
+                  >
+                    {t("settings.resetLayout")}
+                  </Button>
+                </View>
+              </Dialog.Content>
+            </Dialog.Portal>
+          </Dialog>
+        </Card.Body>
+      </Card>
+
       <Dialog isOpen={confirmOpen} onOpenChange={setConfirmOpen}>
         <Dialog.Trigger asChild>
           <Button variant="danger-soft">{t("settings.disconnect")}</Button>
@@ -76,7 +117,7 @@ export function SettingsScreen() {
             </Dialog.Description>
             <View className="flex-row justify-end gap-3">
               <Button variant="ghost" onPress={() => setConfirmOpen(false)}>
-                {t("settings.disconnectCancel")}
+                {t("common.cancel")}
               </Button>
               <Button
                 variant="danger"

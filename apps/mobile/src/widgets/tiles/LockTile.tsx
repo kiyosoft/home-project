@@ -55,8 +55,10 @@ export function LockTile({ config, size }: WidgetBodyProps) {
       size={size}
       active={isLocked && !unavailable}
       disabled={unavailable}
-      onPress={toggle}
+      onPress={openEntityDetail}
       onLongPress={openEntityDetail}
+      onIconPress={toggle}
+      iconLabel={t("widget.action.lock")}
     />
   );
 }

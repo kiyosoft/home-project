@@ -55,8 +55,13 @@ export {
   alarmSupportsFeature,
   CAMERA_FEATURE,
   cameraSupportsFeature,
+  deriveSinksar,
+  isSinksarEntity,
   LOCK_FEATURE,
   lockSupportsFeature,
+  sinksarArke,
+  sinksarPrimaryIndex,
+  sinksarStory,
   TODO_FEATURE,
   todoSupportsFeature,
 } from "@ethio/ha-sdk";
@@ -69,6 +74,8 @@ export type {
   HassEntity,
   LightView,
   LockView,
+  SinksarEntry,
+  SinksarView,
   TodoItem,
   TodoItemStatus,
 } from "@ethio/ha-sdk";

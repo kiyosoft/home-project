@@ -3,8 +3,13 @@ import { z } from "zod";
 
 import {
   defineWidget,
+  deriveSinksar,
+  sinksarArke,
+  sinksarPrimaryIndex,
+  sinksarStory,
   useDetailModal,
   useEntity,
+  type SinksarView,
   type WidgetComponentProps,
 } from "@ethio/plugin-sdk";
 
@@ -14,111 +19,19 @@ export const sinksarTodayConfigSchema = z.object({
   show_entries: z.boolean().default(true),
 });
 
-type Attrs = Record<string, unknown>;
-
-type SinksarEntry = {
-  title: string;
-  type?: string;
-  order?: number;
-  story?: string;
-  arke: string[];
-};
-
-function str(attrs: Attrs, key: string): string | undefined {
-  const value = attrs[key];
-  return typeof value === "string" && value.trim() ? value : undefined;
-}
-
-function num(attrs: Attrs, key: string): number | undefined {
-  const value = attrs[key];
-  if (typeof value === "number" && Number.isFinite(value)) return value;
-  if (typeof value === "string" && value.trim() && !Number.isNaN(Number(value))) {
-    return Number(value);
-  }
-  return undefined;
-}
-
-function parseArke(value: unknown): string[] {
-  if (!Array.isArray(value)) return [];
-  return value
-    .filter((item): item is string => typeof item === "string" && Boolean(item.trim()))
-    .map((item) => item.trim());
-}
-
-function parseEntries(
-  attrs: Attrs,
-  topStory?: string,
-  topArke: string[] = [],
-): SinksarEntry[] {
-  const value = attrs.entries;
-  if (!Array.isArray(value)) return [];
-  const entries: SinksarEntry[] = [];
-  for (const [index, item] of value.entries()) {
-    if (!item || typeof item !== "object") continue;
-    const record = item as Record<string, unknown>;
-    const title = typeof record.title === "string" ? record.title.trim() : "";
-    if (!title) continue;
-    const type =
-      typeof record.type === "string" && record.type.trim()
-        ? record.type.trim()
-        : undefined;
-    const order =
-      typeof record.order === "number" && Number.isFinite(record.order)
-        ? record.order
-        : undefined;
-    const entryStory =
-      typeof record.story === "string" && record.story.trim()
-        ? record.story.trim()
-        : undefined;
-    const entryArke = parseArke(record.arke);
-    entries.push({
-      title,
-      type,
-      order,
-      story: entryStory ?? (index === 0 ? topStory : undefined),
-      arke: entryArke.length > 0 ? entryArke : index === 0 ? topArke : [],
-    });
-  }
-  return entries;
-}
-
-function resolveStory(
-  entry: SinksarEntry | undefined,
-  index: number,
-  topStory?: string,
-): string | undefined {
-  if (entry?.story) return entry.story;
-  if (index === 0) return topStory;
-  return undefined;
-}
-
-function resolveArke(
-  entry: SinksarEntry | undefined,
-  index: number,
-  topArke: string[],
-): string[] {
-  if (entry && entry.arke.length > 0) return entry.arke;
-  if (index === 0) return topArke;
-  return [];
-}
-
 function SinksarDetailBody({
-  entries,
+  view,
   initialIndex,
-  topStory,
-  topArke,
 }: {
-  entries: SinksarEntry[];
+  view: SinksarView;
   initialIndex: number;
-  topStory?: string;
-  topArke: string[];
 }) {
   const [selected, setSelected] = useState(() =>
-    Math.max(0, Math.min(initialIndex, Math.max(entries.length - 1, 0))),
+    Math.max(0, Math.min(initialIndex, Math.max(view.entries.length - 1, 0))),
   );
-  const entry = entries[selected];
-  const story = resolveStory(entry, selected, topStory);
-  const arke = resolveArke(entry, selected, topArke);
+  const entry = view.entries[selected];
+  const story = sinksarStory(view, selected);
+  const arke = sinksarArke(view, selected);
 
   if (!entry) {
     return (
@@ -128,9 +41,9 @@ function SinksarDetailBody({
 
   return (
     <div className="space-y-4">
-      {entries.length > 1 ? (
+      {view.entries.length > 1 ? (
         <ul className="flex flex-wrap gap-2">
-          {entries.map((item, index) => {
+          {view.entries.map((item, index) => {
             const active = index === selected;
             return (
               <li key={`${item.order ?? "x"}:${item.type ?? ""}:${item.title}`}>
@@ -201,6 +114,7 @@ function SinksarToday({ config, interactive }: WidgetComponentProps) {
   const entity = useEntity(entityId);
   const showEntries = config.show_entries !== false;
   const detailModal = useDetailModal();
+  const view = deriveSinksar(entity);
 
   if (!entityId) {
     return (
@@ -215,7 +129,7 @@ function SinksarToday({ config, interactive }: WidgetComponentProps) {
     );
   }
 
-  if (!entity) {
+  if (!entity || !view) {
     return (
       <div className="flex h-full min-h-40 flex-col justify-center rounded-2xl border border-dashed border-border bg-card p-5">
         <p className="font-display text-base font-semibold">
@@ -226,51 +140,31 @@ function SinksarToday({ config, interactive }: WidgetComponentProps) {
     );
   }
 
-  const attrs = entity.attributes;
-  const primaryTitle =
-    entity.state && entity.state !== "unknown" && entity.state !== "unavailable"
-      ? entity.state
-      : undefined;
-  const dayOfYear = num(attrs, "day_of_year");
-  const topStory = str(attrs, "story");
-  const topArke = parseArke(attrs.arke);
-  const entries = parseEntries(attrs, topStory, topArke);
   const listEntries =
-    showEntries && primaryTitle
-      ? entries.filter((entry) => entry.title !== primaryTitle)
+    showEntries && view.primaryTitle
+      ? view.entries.filter((entry) => entry.title !== view.primaryTitle)
       : showEntries
-        ? entries
+        ? view.entries
         : [];
 
   const openDetail = (initialIndex: number) => {
     if (!interactive) return;
     const safeIndex =
-      entries.length === 0
+      view.entries.length === 0
         ? 0
-        : Math.max(0, Math.min(initialIndex, entries.length - 1));
-    const selected = entries[safeIndex];
+        : Math.max(0, Math.min(initialIndex, view.entries.length - 1));
+    const selected = view.entries[safeIndex];
     detailModal.open({
       title: "ስንክሳር",
-      description:
-        dayOfYear != null
-          ? `ቀን ${dayOfYear}${selected ? ` · ${selected.title}` : ""}`
-          : selected?.title,
+      description: view.dateLabel
+        ? `${view.dateLabel}${selected ? ` · ${selected.title}` : ""}`
+        : selected?.title,
       className: "max-w-2xl",
-      body: (
-        <SinksarDetailBody
-          entries={entries}
-          initialIndex={safeIndex}
-          topStory={topStory}
-          topArke={topArke}
-        />
-      ),
+      body: <SinksarDetailBody view={view} initialIndex={safeIndex} />,
     });
   };
 
-  const foundPrimary = primaryTitle
-    ? entries.findIndex((entry) => entry.title === primaryTitle)
-    : 0;
-  const primaryIndex = foundPrimary >= 0 ? foundPrimary : 0;
+  const primaryIndex = sinksarPrimaryIndex(view);
 
   return (
     <div
@@ -297,21 +191,23 @@ function SinksarToday({ config, interactive }: WidgetComponentProps) {
         <p className="text-xs font-medium tracking-[0.08em] text-muted-foreground">
           {customTitle || "ስንክሳር"}
         </p>
-        {dayOfYear != null ? (
+        {view.dateLabel ? (
           <span className="rounded-md bg-muted px-2 py-0.5 text-[10px] font-semibold tabular-nums text-muted-foreground">
-            ቀን {dayOfYear}
+            {view.dateLabel}
           </span>
         ) : null}
       </div>
 
       <h3 className="font-display text-lg font-semibold leading-snug tracking-tight">
-        {primaryTitle ?? "—"}
+        {view.primaryTitle ?? "—"}
       </h3>
 
       {listEntries.length > 0 ? (
         <ul className="mt-3 space-y-1.5 overflow-y-auto">
           {listEntries.map((entry) => {
-            const index = entries.findIndex((item) => item.title === entry.title);
+            const index = view.entries.findIndex(
+              (item) => item.title === entry.title,
+            );
             return (
               <li key={`${entry.order ?? ""}-${entry.title}`}>
                 {interactive ? (

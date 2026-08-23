@@ -17,6 +17,7 @@
     "build": "tsc --noEmit"
   },
   "dependencies": {
+    "@ethio/ha-sdk": "workspace:*",
     "@ethio/plugin-sdk": "workspace:*",
     "lucide-react": "^0.525.0",
     "zod": "^4.4.3"

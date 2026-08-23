@@ -1,8 +1,8 @@
 /** Plugin widget id, shared with the web dashboard (e.g. "@ethio/core/light"). */
 export type WidgetType = string;
 
-/** Phone tiles flow instead of sitting on a grid: half width, full width, or full width and tall. */
-export type TileSize = "sm" | "md" | "lg";
+/** Phone tiles flow instead of sitting on a grid: half width or full width. */
+export type TileSize = "sm" | "md";
 
 export interface MobileWidget {
   id: string;
@@ -46,11 +46,21 @@ export interface MobileDashboard {
   title: string;
   /** Entity ids pinned above every section. */
   favorites?: string[];
+  /**
+   * Per-widget width, keyed by widget id. It lives here rather than on the
+   * widget so a tile from a query section or from favourites — neither of
+   * which has a stored widget to edit — can still be resized.
+   */
+  sizes?: Record<string, TileSize>;
   sections: MobileSection[];
 }
 
-export const TILE_SIZES: TileSize[] = ["sm", "md", "lg"];
+export const TILE_SIZES: TileSize[] = ["sm", "md"];
 
 export function tileSpan(size: TileSize): 1 | 2 {
   return size === "sm" ? 1 : 2;
+}
+
+export function otherTileSize(size: TileSize): TileSize {
+  return size === "sm" ? "md" : "sm";
 }

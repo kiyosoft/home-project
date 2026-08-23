@@ -54,29 +54,31 @@ export function ClimateTile({ config, size }: WidgetBodyProps) {
       disabled={unavailable}
       onPress={openEntityDetail}
       onLongPress={openEntityDetail}
-      accessory={
-        hasTarget ? (
-          <View className="flex-row gap-2">
-            <TileButton
-              icon="remove"
-              label={t("widget.climate.cooler")}
-              onPress={() => step(-STEP)}
-              disabled={unavailable}
-            />
-            <TileButton
-              icon="add"
-              label={t("widget.climate.warmer")}
-              onPress={() => step(STEP)}
-              disabled={unavailable}
-            />
-          </View>
-        ) : null
-      }
     >
       {hasTarget ? (
-        <View className="flex-row items-baseline gap-1">
-          <Text className="text-foreground text-3xl font-semibold">{target}</Text>
-          <Text className="text-muted text-base">{unit}</Text>
+        <View className="flex-row items-end justify-between gap-2">
+          <View className="flex-row items-baseline gap-1">
+            <Text className="text-foreground text-3xl font-semibold">{target}</Text>
+            <Text className="text-muted text-base">{unit}</Text>
+          </View>
+          {/* The setpoint needs a stop either side of it; a half tile sends the
+              stepper to the detail sheet rather than squeeze it in. */}
+          {size === "md" ? (
+            <View className="flex-row gap-2">
+              <TileButton
+                icon="remove"
+                label={t("widget.climate.cooler")}
+                onPress={() => step(-STEP)}
+                disabled={unavailable}
+              />
+              <TileButton
+                icon="add"
+                label={t("widget.climate.warmer")}
+                onPress={() => step(STEP)}
+                disabled={unavailable}
+              />
+            </View>
+          ) : null}
         </View>
       ) : null}
     </WidgetTile>
