@@ -119,6 +119,19 @@ export const en = {
   "widget.sinksar.empty": "No Sinksar entries for today.",
   "widget.sinksar.noStory": "No story for this entry.",
 
+  "widget.team.title": "Team Tracker",
+  "widget.team.upcoming": "Upcoming",
+  "widget.team.live": "Live",
+  "widget.team.final": "Final",
+  "widget.team.bye": "Bye week",
+  "widget.team.notFound": "No game found",
+  "widget.team.vs": "vs",
+  "widget.team.lastPlay": "Last play",
+  "widget.team.venue": "Venue",
+  "widget.team.kickoff": "Kickoff",
+  "widget.team.league": "League",
+  "widget.team.clock": "Clock",
+
   "widget.unknownType": "Unsupported widget",
   "widget.entityMissing": "This entity is no longer on the hub.",
 

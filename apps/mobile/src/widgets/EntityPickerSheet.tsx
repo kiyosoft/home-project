@@ -100,7 +100,12 @@ export function EntityPickerSheet({
           entityId: entity.entity_id,
           name: entityName(entity),
           domain: entityDomain(entity.entity_id),
-          icon: def?.id === "@ethio/sinksar/today" ? "book-outline" : undefined,
+          icon:
+            def?.id === "@ethio/sinksar/today"
+              ? "book-outline"
+              : def?.id === "@ethio/teamtracker/team-card"
+                ? "football-outline"
+                : undefined,
         };
       });
     list.sort((a, b) => a.name.localeCompare(b.name));

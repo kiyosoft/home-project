@@ -119,6 +119,19 @@ export const am: Record<MessageKey, string> = {
   "widget.sinksar.empty": "ለዛሬ ስንክሳር የለም።",
   "widget.sinksar.noStory": "ለዚህ ገጽ ታሪክ የለም።",
 
+  "widget.team.title": "የቡድን መከታተያ",
+  "widget.team.upcoming": "በቅርብ",
+  "widget.team.live": "በቀጥታ",
+  "widget.team.final": "ተጠናቋል",
+  "widget.team.bye": "እረፍት ሳምንት",
+  "widget.team.notFound": "ጨዋታ አልተገኘም",
+  "widget.team.vs": "ከ",
+  "widget.team.lastPlay": "የመጨረሻ እንቅስቃሴ",
+  "widget.team.venue": "ሜዳ",
+  "widget.team.kickoff": "መጀመሪያ",
+  "widget.team.league": "ሊግ",
+  "widget.team.clock": "ሰዓት",
+
   "widget.unknownType": "ያልተደገፈ ውጅት",
   "widget.entityMissing": "ይህ ኤንቲቲ ከሃቡ ላይ የለም።",
 

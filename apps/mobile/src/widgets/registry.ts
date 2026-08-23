@@ -1,4 +1,8 @@
-import { isSinksarEntity, type HassEntity } from "@ethio/ha-sdk";
+import {
+  isSinksarEntity,
+  isTeamTrackerEntity,
+  type HassEntity,
+} from "@ethio/ha-sdk";
 
 import { entityDomain } from "@/store/use-entity";
 import { ClimateTile } from "@/widgets/tiles/ClimateTile";
@@ -7,6 +11,7 @@ import { EntityStateTile } from "@/widgets/tiles/EntityStateTile";
 import { LightTile } from "@/widgets/tiles/LightTile";
 import { LockTile } from "@/widgets/tiles/LockTile";
 import { SinksarTile } from "@/widgets/tiles/SinksarTile";
+import { TeamTrackerTile } from "@/widgets/tiles/TeamTrackerTile";
 import { ToggleTile } from "@/widgets/tiles/ToggleTile";
 import type { MobileWidgetDef } from "@/widgets/types";
 
@@ -52,6 +57,13 @@ export const MOBILE_WIDGETS: MobileWidgetDef[] = [
     defaultSize: "md",
     domains: ["sensor"],
     matches: isSinksarEntity,
+  },
+  {
+    id: "@ethio/teamtracker/team-card",
+    component: TeamTrackerTile,
+    defaultSize: "md",
+    domains: ["sensor"],
+    matches: isTeamTrackerEntity,
   },
   {
     id: "@ethio/core/entity-state",

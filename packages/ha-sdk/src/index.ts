@@ -96,6 +96,16 @@ export {
   sinksarStory,
 } from "./sinksar";
 export type { SinksarEntry, SinksarView } from "./sinksar";
+export {
+  deriveTeamTracker,
+  inGameClock,
+  isTeamTrackerEntity,
+} from "./teamtracker";
+export type {
+  TeamSide,
+  TeamTrackerState,
+  TeamTrackerView,
+} from "./teamtracker";
 export { withAuthToken } from "./media-auth";
 export { EMPTY_AREA_INDEX, fetchAreaIndex } from "./registry";
 export type {
