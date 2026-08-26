@@ -1,50 +1,24 @@
-import {
-  cameraStillPath,
-  deriveCamera,
-  entityImageUrl,
-  requestCameraStream,
-  withAuthToken,
-} from "@ethio/ha-sdk";
+import { cameraStillPath, deriveCamera, requestCameraStream } from "@ethio/ha-sdk";
 import { useCallback, useMemo, useState } from "react";
 
-import { savedConnection, useHaStore } from "@/store/ha-store";
+import { useHaStore } from "@/store/ha-store";
 import { isUnavailable, useEntity } from "@/store/use-entity";
+import { useHubUrl } from "@/widgets/use-hub-url";
 import { useCallService } from "@/widgets/use-service";
-
-/**
- * Hub-relative paths get the access token. Absolute CDN/demo URLs do not:
- * picsum has no business seeing a long-lived token.
- */
-function hubAuthedUrl(
-  path: string | null | undefined,
-  baseUrl: string,
-  extraToken?: string,
-): string | null {
-  const url = entityImageUrl(path, baseUrl);
-  if (!url) return null;
-  if (url.startsWith("data:")) return url;
-  if (!baseUrl || !url.startsWith(baseUrl)) return url;
-  return withAuthToken(url, extraToken || savedConnection()?.token);
-}
 
 export function useCamera(entityId: string) {
   const entity = useEntity(entityId);
   const view = useMemo(() => deriveCamera(entity), [entity]);
-  const baseUrl = useHaStore((state) => state.baseUrl);
+  const activeUrl = useHaStore((state) => state.activeUrl);
   const mode = useHaStore((state) => state.mode);
   const sendMessagePromise = useHaStore((state) => state.sendMessagePromise);
   const callService = useCallService();
-  const [refreshKey, setRefreshKey] = useState(0);
+  const [refreshKey, setRefreshKey] = useState(1);
 
-  const stillUrl = useMemo(() => {
-    if (!view) return null;
-    const path = cameraStillPath(view.entityId, view.entityPicture);
-    const url = hubAuthedUrl(path, baseUrl, view.accessToken);
-    if (!url) return null;
-    if (url.startsWith("data:")) return url;
-    const separator = url.includes("?") ? "&" : "?";
-    return `${url}${separator}t=${refreshKey}`;
-  }, [view, baseUrl, refreshKey]);
+  const stillPath = view
+    ? cameraStillPath(view.entityId, view.entityPicture)
+    : null;
+  const stillUrl = useHubUrl(stillPath, refreshKey);
 
   const refreshImage = useCallback(() => {
     setRefreshKey((key) => key + 1);
@@ -60,10 +34,11 @@ export function useCamera(entityId: string) {
 
   const startLive = useCallback(async () => {
     const path = await requestCameraStream(sendMessagePromise, entityId);
-    const url = hubAuthedUrl(path, baseUrl);
-    if (!url) throw new Error("Camera stream URL could not be resolved");
-    return url;
-  }, [sendMessagePromise, entityId, baseUrl]);
+    const base = activeUrl.replace(/\/+$/, "");
+    if (path.startsWith("http://") || path.startsWith("https://")) return path;
+    if (!base) throw new Error("Camera stream URL could not be resolved");
+    return `${base}${path.startsWith("/") ? path : `/${path}`}`;
+  }, [sendMessagePromise, entityId, activeUrl]);
 
   return {
     view,
@@ -73,7 +48,6 @@ export function useCamera(entityId: string) {
     turnOff,
     startLive,
     canLive: mode === "live" && Boolean(view?.supportsStream),
-    authToken: savedConnection()?.token ?? "",
     unavailable: isUnavailable(entity),
   };
 }

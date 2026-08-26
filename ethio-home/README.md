@@ -12,8 +12,6 @@ https://github.com/kiyosoft/home-project
 
 Install **Ethio Home**, start it, open from the sidebar, then connect with your HA URL and a long-lived access token.
 
-Remote access (Cloudflare Quick / Named tunnels) is managed from **Dashboard settings → Remote access**. See [DOCS.md](./DOCS.md).
-
 ## Refresh built UI (maintainers)
 
 From the monorepo root (requires Node 20+ and pnpm):

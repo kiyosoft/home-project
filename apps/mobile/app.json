@@ -9,11 +9,25 @@
     "newArchEnabled": true,
     "ios": {
       "bundleIdentifier": "app.ethiohome.companion",
-      "supportsTablet": false
+      "supportsTablet": false,
+      "entitlements": {
+        "com.apple.developer.networking.wifi-info": true
+      },
+      "infoPlist": {
+        "NSBonjourServices": ["_home-assistant._tcp"],
+        "NSLocalNetworkUsageDescription": "Ethio Home looks for your Home Assistant on this network so you can connect without typing an address."
+      }
     },
     "android": {
       "package": "app.ethiohome.companion",
-      "edgeToEdgeEnabled": true
+      "edgeToEdgeEnabled": true,
+      "permissions": [
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.ACCESS_NETWORK_STATE",
+        "android.permission.ACCESS_WIFI_STATE",
+        "android.permission.CHANGE_WIFI_MULTICAST_STATE",
+        "android.permission.INTERNET"
+      ]
     },
     "plugins": [
       "expo-router",
@@ -28,7 +42,15 @@
         }
       ],
       "expo-video",
-      "./plugins/with-exconstants-script.js"
+      "expo-web-browser",
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Ethio Home reads the name of the Wi-Fi network you are on to tell whether it should use your home address or your remote one. Your location is never stored or sent anywhere.",
+          "isAndroidBackgroundLocationEnabled": false,
+          "isIosBackgroundLocationEnabled": false
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true

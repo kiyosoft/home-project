@@ -23,6 +23,7 @@ import { resolveSections, widgetForId } from "@/dashboard/resolve-sections";
 import { useDashboardStore } from "@/store/dashboard-store";
 import { useHaStore } from "@/store/ha-store";
 import { useT } from "@/store/locale-store";
+import { ConnectionStatusChip } from "@/ui/ConnectionStatusChip";
 import { Screen } from "@/ui/Screen";
 import { EntityPickerSheet } from "@/widgets/EntityPickerSheet";
 import { TILE_GAP, TileRow } from "@/widgets/TileRow";
@@ -159,7 +160,9 @@ export function HomeScreen() {
           <Chip size="sm" color="success" variant="soft" className="self-start">
             {t("home.demoBadge")}
           </Chip>
-        ) : null}
+        ) : (
+          <ConnectionStatusChip />
+        )}
       </View>
       <Button
         size="sm"

@@ -8,7 +8,7 @@ import {
 } from "expo-router/unstable-native-tabs";
 import { DynamicColorIOS, Platform } from "react-native";
 
-import { useHaStore } from "@/store/ha-store";
+import { hasSession, useHaStore } from "@/store/ha-store";
 import { useT } from "@/store/locale-store";
 
 export const unstable_settings = {
@@ -24,7 +24,7 @@ export default function TabLayout() {
   const t = useT();
   const status = useHaStore((state) => state.status);
 
-  if (status !== "connected") {
+  if (!hasSession(status)) {
     return <Redirect href="/" />;
   }
 

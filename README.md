@@ -82,47 +82,6 @@ Maintainers: run `pnpm prepare:addon` after UI changes, then commit `ethio-home/
 
 Details: [ethio-home/DOCS.md](./ethio-home/DOCS.md).
 
-## Remote access (Cloudflare Tunnel)
-
-Live mode needs **both** public origins: the SPA and Home Assistant (browser WebSocket + long-lived token).
-
-### Home Assistant add-on (Settings UI)
-
-With the Ethio Home add-on installed, open **Dashboard settings → Remote access**:
-
-- **Quick** — one-click temporary `*.trycloudflare.com` URLs
-- **Named** — Cloudflare API token + account/zone IDs + hostnames; the add-on creates a remotely managed tunnel, DNS, and runs `cloudflared`
-
-API tokens stay in add-on `/data`. See [`ethio-home/DOCS.md`](./ethio-home/DOCS.md) for token permissions and `trusted_proxies`.
-
-### Local Vite (`pnpm tunnel`)
-
-For development without the add-on:
-
-1. Install [`cloudflared`](https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/downloads/) on your `PATH`
-2. Run `pnpm dev` (`http://127.0.0.1:5180`)
-3. Point `ETHIO_HA_ORIGIN` at a reachable HA if not on `127.0.0.1:8123`
-4. Run `pnpm tunnel` (Quick) or `pnpm tunnel:named` after copying [`scripts/tunnel/config.example.yml`](./scripts/tunnel/config.example.yml) → `scripts/tunnel/config.yml`
-
-`pnpm tunnel` probes both origins before starting; a Cloudflare **502** usually means the origin was down or bound only on IPv6.
-
-### Home Assistant reverse-proxy config (required)
-
-Cloudflared sends `X-Forwarded-*` headers. Without trusting the proxy, HA responds with **`400: Bad Request`**.
-
-```yaml
-http:
-  use_x_forwarded_for: true
-  trusted_proxies:
-    # LAN machine running `pnpm tunnel`, or Supervisor/add-on ranges when using the add-on
-    - 192.168.100.0/24
-    - 172.30.32.0/23
-    - 127.0.0.1
-    - ::1
-```
-
-Optional local env overrides: `ETHIO_DASHBOARD_ORIGIN`, `ETHIO_HA_ORIGIN`, `ETHIO_HA_HOST_HEADER`, `CLOUDFLARED_BIN`, `ETHIO_TUNNEL_CONFIG`.
-
 ## Workspace
 
 ```text
@@ -131,7 +90,7 @@ packages/plugin-sdk      Plugin contracts + HA hooks
 packages/core            Official core widgets
 packages/teamtracker     Team Tracker plugin
 packages/ha-sdk          HA client + demo entities
-ethio-home               Home Assistant add-on (nginx + tunnel agent + ingress)
+ethio-home               Home Assistant add-on (nginx + ingress)
 docs/plugins.md          Plugin authoring guide
 ```
 
@@ -143,8 +102,6 @@ docs/plugins.md          Plugin authoring guide
 | `pnpm build`         | Build packages and the dashboard              |
 | `pnpm prepare:addon` | Build and sync UI into `ethio-home/www`       |
 | `pnpm preview`       | Preview the production dashboard build        |
-| `pnpm tunnel`        | Quick Tunnels for dashboard + HA              |
-| `pnpm tunnel:named`  | Named tunnel via `scripts/tunnel/config.yml`  |
 
 ## Themes
 

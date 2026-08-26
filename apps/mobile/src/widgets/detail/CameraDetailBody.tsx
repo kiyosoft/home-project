@@ -15,20 +15,8 @@ type LiveState =
   | { kind: "playing"; uri: string }
   | { kind: "failed" };
 
-function LivePlayer({
-  uri,
-  token,
-  label,
-}: {
-  uri: string;
-  token: string;
-  label: string;
-}) {
-  const source: VideoSource = {
-    uri,
-    contentType: "hls",
-    ...(token ? { headers: { Authorization: `Bearer ${token}` } } : {}),
-  };
+function LivePlayer({ uri, label }: { uri: string; label: string }) {
+  const source: VideoSource = { uri, contentType: "hls" };
   const player = useVideoPlayer(source, (next) => {
     next.muted = true;
     next.play();
@@ -81,11 +69,7 @@ export function CameraDetailBody({ entityId }: { entityId: string }) {
     <View className="gap-6">
       <Surface variant="secondary" className="rounded-inner overflow-hidden">
         {playing ? (
-          <LivePlayer
-            uri={live.uri}
-            token={camera.authToken}
-            label={camera.view.entityId}
-          />
+          <LivePlayer uri={live.uri} label={camera.view.entityId} />
         ) : (
           <View className="relative">
             <CameraStill

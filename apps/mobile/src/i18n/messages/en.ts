@@ -2,21 +2,32 @@ export const en = {
   "app.starting": "Starting Ethio Home…",
 
   "common.cancel": "Cancel",
+  "common.back": "Back",
 
   "setup.connectTitle": "Connect your hub",
   "setup.connectDescription":
-    "Use a long-lived access token from your profile. Entity data stays on your network.",
+    "Sign in through Home Assistant. Entity data stays on your network.",
   "setup.urlLabel": "Hub URL",
   "setup.urlPlaceholder": "http://192.168.1.1:8123",
   "setup.tokenLabel": "Long-lived access token",
   "setup.tokenPlaceholder": "Paste token",
   "setup.connect": "Connect",
   "setup.connecting": "Connecting…",
+  "setup.signIn": "Sign in",
+  "setup.signingIn": "Opening Home Assistant…",
   "setup.retry": "Retry",
   "setup.paste": "Paste",
   "setup.showToken": "Show token",
   "setup.hideToken": "Hide token",
   "setup.language": "Language",
+
+  "setup.useToken": "Use a long-lived access token instead",
+  "setup.useSignIn": "Sign in through Home Assistant instead",
+
+  "setup.discoverTitle": "On this network",
+  "setup.discoverEmpty":
+    "Nothing found. Enter the address by hand, or check the hub is on this network.",
+  "setup.discoverRescan": "Search again",
 
   // Field-level verdicts. The address and the token fail independently, so the
   // screen says which half is wrong rather than showing one merged error.
@@ -31,6 +42,10 @@ export const en = {
   "setup.errorTokenRejected":
     "The server answered, so the address is right. Paste a new long-lived access token from your profile.",
   "setup.errorConnectionLost": "The connection dropped before setup finished.",
+  "setup.errorNoAddress": "No address saved yet. Enter one to connect.",
+  "setup.errorSignedOut": "Your sign-in is no longer valid. Sign in again.",
+  "setup.errorSigninUnavailable":
+    "This hub is not set up for app sign-in yet. Install the Et Remote Access add-on, then try again.",
   "setup.errorGeneric": "Could not reach the hub.",
 
   "setup.demoTitle": "Try demo mode",
@@ -161,9 +176,44 @@ export const en = {
   "activity.comingBody":
     "Notifications and history from the hub. That lands in a later slice.",
 
+  "status.reconnecting": "Reconnecting…",
+  "status.offline": "Offline",
+  "status.retry": "Retry",
+
+  "connection.title": "Connection",
+  "connection.description":
+    "Two addresses for one home: the one that works on your Wi-Fi, and the one that works everywhere else.",
+  "connection.internalUrl": "Internal address",
+  "connection.internalUrlHelp":
+    "Used when you are on one of the home networks below. Usually a local address like http://homeassistant.local:8123",
+  "connection.externalUrl": "External address",
+  "connection.externalUrlHelp":
+    "Used when you are away. Your tunnel or public hostname.",
+  "connection.prioritizeInternal": "Prefer the internal address",
+  "connection.prioritizeInternalHelp":
+    "Try the internal address first no matter which network you are on. Useful when the Wi-Fi name cannot be read.",
+  "connection.homeNetworks": "Home Wi-Fi networks",
+  "connection.homeNetworksHelp":
+    "On these networks the app uses the internal address. For one specific access point, add BSSID:1a:2b:3c:4d:5e:6f instead of the name.",
+  "connection.networkPlaceholder": "Network name",
+  "connection.addNetwork": "Add",
+  "connection.addCurrent": "Add the network I am on",
+  "connection.removeNetwork": "Remove {name}",
+  "connection.noNetworks":
+    "None yet, so the external address is used unless the internal one is preferred.",
+  "connection.permissionTitle": "Location permission needed",
+  "connection.permissionBody":
+    "iOS and Android only reveal the Wi-Fi network name to apps with location permission. Nothing about your location is stored or sent anywhere.",
+  "connection.grantPermission": "Allow",
+  "connection.activeAddress": "Now using",
+  "connection.reconnect": "Reconnect",
+  "connection.errorInvalidUrl": "Enter a valid URL, or leave it empty.",
+
   "settings.title": "Settings",
   "settings.hub": "Hub",
   "settings.connected": "Connected",
+  "settings.connection": "Connection",
+  "settings.connectionDescription": "Addresses and home Wi-Fi networks.",
   "settings.disconnect": "Disconnect",
   "settings.disconnectConfirm":
     "This phone will forget the hub and go back to Connect.",

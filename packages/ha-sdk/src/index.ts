@@ -58,7 +58,21 @@ export {
   subscribeCalendarEvents,
 } from "./calendar";
 export type { CalendarEvent, CalendarView } from "./calendar";
-export { connectLive } from "./live";
+export { normalizeBaseUrl } from "./base-url";
+export { connectLive, connectLiveWithTokens } from "./live";
+export type { TokenConnectOptions } from "./live";
+export {
+  buildAuthorizeUrl,
+  exchangeCode,
+  HaOAuthError,
+  refreshTokens,
+  revokeTokens,
+} from "./oauth";
+export type {
+  AuthorizeUrlOptions,
+  HaOAuthErrorKind,
+  HaTokens,
+} from "./oauth";
 export { connectDemo, DEMO_ENTITY_IDS } from "./demo";
 export {
   deriveLight,
@@ -116,6 +130,7 @@ export {
 } from "./media";
 export type { MediaView } from "./media";
 export { entityImageUrl, withAuthToken } from "./media-auth";
+export { carriesCredential, signPath } from "./signed-path";
 export { EMPTY_AREA_INDEX, fetchAreaIndex } from "./registry";
 export type {
   AreaIndex,

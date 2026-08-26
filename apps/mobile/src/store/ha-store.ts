@@ -1,8 +1,11 @@
 import {
   connectDemo,
   connectLive,
+  connectLiveWithTokens,
   EMPTY_AREA_INDEX,
   fetchAreaIndex,
+  getHassConfig,
+  revokeTokens,
   type AreaRegistryEntry,
   type ConnectionStatus,
   type EntityClient,
@@ -10,14 +13,26 @@ import {
 } from "@ethio/ha-sdk";
 import { create } from "zustand";
 
-import { classifyConnectError, type ConnectFailure } from "@/lib/connection-error";
+import {
+  classifyConnectError,
+  type ConnectFailure,
+} from "@/lib/connection-error";
+import { loginWithHomeAssistant, type LoginFailure } from "@/lib/ha-auth";
+import { orderedCandidates } from "@/lib/select-url";
 import {
   clearConnectionSettings,
+  defaultProfile,
   loadConnectionSettings,
   saveConnectionSettings,
+  saveTokens,
+  type AuthMode,
   type ConnectionMode,
+  type ConnectionProfile,
   type ConnectionSettings,
 } from "@/lib/settings";
+import { trimTrailingSlash } from "@/lib/url";
+
+export type AddressSlot = "internal" | "external";
 
 interface HaState {
   entities: HassEntities;
@@ -25,14 +40,25 @@ interface HaState {
   areas: AreaRegistryEntry[];
   areaByEntity: Record<string, string>;
   status: ConnectionStatus;
-  /** Null until a connection attempt fails. Drives the per-field verdicts. */
   failure: ConnectFailure | null;
   mode: ConnectionMode | null;
-  baseUrl: string;
+  authMode: AuthMode;
+  profile: ConnectionProfile;
+  /** The address the live socket is on. */
+  activeUrl: string;
   /** False until saved credentials have been read off disk. */
   hydrated: boolean;
-  connectLive: (baseUrl: string, token: string) => Promise<void>;
+  login: (baseUrl: string, slot?: AddressSlot) => Promise<void>;
+  connectWithToken: (
+    baseUrl: string,
+    token: string,
+    slot?: AddressSlot,
+  ) => Promise<void>;
+  connect: () => Promise<void>;
+  /** New socket to the current address. False when there is no client to refresh. */
+  forceReconnect: () => boolean;
   connectDemo: () => Promise<void>;
+  saveProfile: (patch: Partial<ConnectionProfile>) => Promise<void>;
   disconnect: (options?: { clearSaved?: boolean }) => void;
   callService: (
     domain: string,
@@ -42,16 +68,25 @@ interface HaState {
   sendMessagePromise: <T = unknown>(
     message: Record<string, unknown>,
   ) => Promise<T>;
+  ping: () => Promise<void>;
   bootstrap: () => Promise<void>;
+}
+
+/** Connected, or dropped and already retrying — stay on the dashboard. */
+export function hasSession(status: ConnectionStatus): boolean {
+  return status === "connected" || status === "reconnecting";
 }
 
 let client: EntityClient | null = null;
 let unsubscribe: (() => void) | null = null;
-let savedCredentials: ConnectionSettings | null = null;
+let unsubscribeStatus: (() => void) | null = null;
+let saved: ConnectionSettings | null = null;
 
 function cleanupClient() {
   unsubscribe?.();
   unsubscribe = null;
+  unsubscribeStatus?.();
+  unsubscribeStatus = null;
   client?.disconnect();
   client = null;
 }
@@ -66,6 +101,25 @@ function attachClient(
     // Shallow-copy the map so identity changes (HA often mutates in place).
     // Entity objects stay shared so per-id selectors can skip unrelated tiles.
     set({ entities: { ...entities }, status: "connected", failure: null });
+  });
+  unsubscribeStatus = next.onStatusChange((status) => {
+    if (client !== next) return;
+    if (status !== "error") {
+      set({ status, failure: null });
+      return;
+    }
+    cleanupClient();
+    set({
+      status: "error",
+      failure:
+        saved?.authMode === "oauth"
+          ? { kind: "signed-out" }
+          : { kind: "token-rejected" },
+      entities: {},
+      areas: [],
+      areaByEntity: {},
+      activeUrl: "",
+    });
   });
   set({ status: "connected", failure: null });
   void loadAreas(next, set);
@@ -90,6 +144,68 @@ async function loadAreas(
   }
 }
 
+function openClient(
+  url: string,
+  settings: ConnectionSettings,
+): Promise<EntityClient> {
+  if (settings.authMode === "token") {
+    return connectLive({ baseUrl: url, token: settings.token });
+  }
+  if (!settings.tokens) {
+    return Promise.reject(new SignedOutError());
+  }
+  return connectLiveWithTokens({
+    baseUrl: url,
+    tokens: settings.tokens,
+    onTokens: (next) => {
+      if (saved) saved.tokens = next;
+      void saveTokens(next);
+    },
+  });
+}
+
+/** Distinguished from a rejected token: there is nothing to reject. */
+class SignedOutError extends Error {}
+
+function toFailure(error: unknown): ConnectFailure {
+  if (error instanceof SignedOutError) return { kind: "signed-out" };
+  return classifyConnectError(error);
+}
+
+const LOGIN_FAILURES: Record<
+  Exclude<LoginFailure, "cancelled">,
+  ConnectFailure
+> = {
+  unreachable: { kind: "unreachable" },
+  rejected: { kind: "signed-out" },
+  "no-client-id": { kind: "signin-unavailable" },
+  unknown: { kind: "unknown" },
+};
+
+async function adoptInstanceAddresses(
+  target: EntityClient,
+  profile: ConnectionProfile,
+): Promise<Partial<ConnectionProfile>> {
+  try {
+    const config = await getHassConfig((message) =>
+      target.sendMessagePromise(message),
+    );
+    const patch: Partial<ConnectionProfile> = {};
+    if (!profile.internalUrl && config.internal_url) {
+      patch.internalUrl = trimTrailingSlash(config.internal_url);
+    }
+    if (!profile.externalUrl && config.external_url) {
+      patch.externalUrl = trimTrailingSlash(config.external_url);
+    }
+    if (!profile.instanceName && config.location_name) {
+      patch.instanceName = config.location_name;
+    }
+    return patch;
+  } catch {
+    return {};
+  }
+}
+
 export const useHaStore = create<HaState>((set, get) => ({
   entities: {},
   areas: [],
@@ -97,56 +213,152 @@ export const useHaStore = create<HaState>((set, get) => ({
   status: "idle",
   failure: null,
   mode: null,
-  baseUrl: "",
+  authMode: "oauth",
+  profile: defaultProfile,
+  activeUrl: "",
   hydrated: false,
 
-  async connectLive(baseUrl, token) {
-    set({ status: "connecting", failure: null, mode: "live", baseUrl });
-    try {
-      const next = await connectLive({ baseUrl, token });
-      savedCredentials = { mode: "live", baseUrl, token };
-      await saveConnectionSettings(savedCredentials);
-      attachClient(next, set);
-    } catch (error) {
-      cleanupClient();
-      set({
-        status: "error",
-        failure: classifyConnectError(error),
-        entities: {},
-        areas: [],
-        areaByEntity: {},
-        mode: "live",
-        baseUrl,
-      });
+  async login(baseUrl, slot = "external") {
+    const address = trimTrailingSlash(baseUrl);
+    set({ status: "connecting", failure: null, mode: "live" });
+
+    const result = await loginWithHomeAssistant(address);
+    if (!result.ok) {
+      if (result.failure === "cancelled") {
+        set({ status: "idle", failure: null, mode: null });
+        return;
+      }
+      set({ status: "error", failure: LOGIN_FAILURES[result.failure] });
+      return;
     }
+
+    await beginLive(
+      {
+        mode: "live",
+        authMode: "oauth",
+        profile: withAddress(get().profile, address, slot),
+        token: "",
+        tokens: result.tokens,
+      },
+      address,
+      set,
+    );
+  },
+
+  async connectWithToken(baseUrl, token, slot = "external") {
+    const address = trimTrailingSlash(baseUrl);
+    await beginLive(
+      {
+        mode: "live",
+        authMode: "token",
+        profile: withAddress(get().profile, address, slot),
+        token,
+        tokens: null,
+      },
+      address,
+      set,
+    );
+  },
+
+  async connect() {
+    const settings = saved;
+    if (!settings || settings.mode !== "live") return;
+
+    set({
+      status: "connecting",
+      failure: null,
+      mode: "live",
+      authMode: settings.authMode,
+      profile: settings.profile,
+    });
+
+    const candidates = await orderedCandidates(settings.profile);
+    if (candidates.length === 0) {
+      cleanupClient();
+      set({ status: "error", failure: { kind: "no-address" }, activeUrl: "" });
+      return;
+    }
+
+    let failure: ConnectFailure = { kind: "unreachable" };
+    for (const candidate of candidates) {
+      try {
+        const next = await openClient(candidate.url, settings);
+        set({ activeUrl: candidate.url });
+        attachClient(next, set);
+        return;
+      } catch (error) {
+        failure = toFailure(error);
+        if (failure.kind !== "unreachable") break;
+      }
+    }
+
+    cleanupClient();
+    set({
+      status: "error",
+      failure,
+      entities: {},
+      areas: [],
+      areaByEntity: {},
+      activeUrl: "",
+    });
+  },
+
+  forceReconnect() {
+    if (!client) return false;
+    client.reconnect();
+    set({ status: "reconnecting", failure: null });
+    return true;
   },
 
   async connectDemo() {
-    set({ status: "connecting", failure: null, mode: "demo", baseUrl: "" });
+    set({ status: "connecting", failure: null, mode: "demo", activeUrl: "" });
     try {
       const next = connectDemo();
-      savedCredentials = { mode: "demo", baseUrl: "", token: "" };
-      await saveConnectionSettings(savedCredentials);
+      saved = {
+        mode: "demo",
+        authMode: "token",
+        profile: defaultProfile,
+        token: "",
+        tokens: null,
+      };
+      await saveConnectionSettings(saved);
+      set({ profile: defaultProfile });
       attachClient(next, set);
     } catch (error) {
       cleanupClient();
       set({
         status: "error",
-        failure: classifyConnectError(error),
+        failure: toFailure(error),
         entities: {},
         areas: [],
         areaByEntity: {},
         mode: "demo",
-        baseUrl: "",
+        activeUrl: "",
       });
     }
   },
 
+  async saveProfile(patch) {
+    const profile = { ...get().profile, ...patch };
+    set({ profile });
+    if (!saved) return;
+    saved = { ...saved, profile };
+    await saveConnectionSettings(saved);
+  },
+
   disconnect(options) {
+    const previous = saved;
+    const revokeUrl = get().activeUrl || previous?.profile.externalUrl;
     cleanupClient();
     if (options?.clearSaved) {
+      if (previous?.tokens && revokeUrl) {
+        void revokeTokens({
+          baseUrl: revokeUrl,
+          refreshToken: previous.tokens.refreshToken,
+        });
+      }
       void clearConnectionSettings();
-      savedCredentials = null;
+      saved = null;
     }
     set({
       entities: {},
@@ -155,7 +367,8 @@ export const useHaStore = create<HaState>((set, get) => ({
       status: "idle",
       failure: null,
       mode: null,
-      baseUrl: "",
+      activeUrl: "",
+      profile: options?.clearSaved ? defaultProfile : get().profile,
     });
   },
 
@@ -173,29 +386,80 @@ export const useHaStore = create<HaState>((set, get) => ({
     return client.sendMessagePromise<T>(message);
   },
 
+  async ping() {
+    if (!client) {
+      throw new Error("Not connected");
+    }
+    await client.ping();
+  },
+
   async bootstrap() {
     try {
       const settings = await loadConnectionSettings();
       if (!settings) return;
-      savedCredentials = settings;
+      saved = settings;
+      set({ profile: settings.profile, authMode: settings.authMode });
 
       if (settings.mode === "demo") {
         await get().connectDemo();
         return;
       }
-      if (settings.baseUrl && settings.token) {
-        // connectLive already records the failure; stay on Connect either way.
-        await get().connectLive(settings.baseUrl, settings.token);
-      } else {
-        set({ baseUrl: settings.baseUrl });
-      }
+      await get().connect();
     } finally {
       set({ hydrated: true });
     }
   },
 }));
 
-/** Credentials read at startup, so Connect can prefill without a re-read. */
-export function savedConnection(): ConnectionSettings | null {
-  return savedCredentials;
+async function beginLive(
+  settings: ConnectionSettings,
+  address: string,
+  set: (partial: Partial<HaState>) => void,
+) {
+  set({
+    status: "connecting",
+    failure: null,
+    mode: "live",
+    authMode: settings.authMode,
+    profile: settings.profile,
+  });
+
+  let next: EntityClient;
+  try {
+    next = await openClient(address, settings);
+  } catch (error) {
+    cleanupClient();
+    set({
+      status: "error",
+      failure: toFailure(error),
+      entities: {},
+      areas: [],
+      areaByEntity: {},
+      activeUrl: "",
+    });
+    return;
+  }
+
+  saved = settings;
+  await saveConnectionSettings(settings);
+  set({ activeUrl: address });
+  attachClient(next, set);
+
+  const patch = await adoptInstanceAddresses(next, settings.profile);
+  if (Object.keys(patch).length === 0 || client !== next) return;
+  const profile = { ...settings.profile, ...patch };
+  saved = { ...settings, profile };
+  await saveConnectionSettings(saved);
+  set({ profile });
 }
+
+function withAddress(
+  profile: ConnectionProfile,
+  address: string,
+  slot: AddressSlot,
+): ConnectionProfile {
+  return slot === "internal"
+    ? { ...profile, internalUrl: address }
+    : { ...profile, externalUrl: address };
+}
+

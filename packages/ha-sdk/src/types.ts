@@ -1,4 +1,9 @@
-export type ConnectionStatus = "idle" | "connecting" | "connected" | "error";
+export type ConnectionStatus =
+  | "idle"
+  | "connecting"
+  | "connected"
+  | "reconnecting"
+  | "error";
 
 export interface HassEntity {
   entity_id: string;
@@ -38,6 +43,9 @@ export interface EntityClient {
     onMessage: (result: T) => void,
   ): Promise<() => void>;
   sendBinary(data: ArrayBuffer | Uint8Array): void;
+  onStatusChange(onChange: (status: ConnectionStatus) => void): () => void;
+  reconnect(): void;
+  ping(): Promise<void>;
   disconnect(): void;
 }
 

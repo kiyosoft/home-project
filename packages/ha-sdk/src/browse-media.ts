@@ -12,6 +12,9 @@ export interface HassCoreConfig {
   time_zone?: string;
   latitude?: number;
   longitude?: number;
+  location_name?: string;
+  internal_url?: string | null;
+  external_url?: string | null;
 }
 
 /** Build and send a media_player/browse_media WebSocket request. */

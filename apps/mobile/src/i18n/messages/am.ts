@@ -4,21 +4,32 @@ export const am: Record<MessageKey, string> = {
   "app.starting": "ኢትዮ ሆም እየጀመረ ነው…",
 
   "common.cancel": "ተወው",
+  "common.back": "ተመለስ",
 
   "setup.connectTitle": "ከሃቡ ጋር ይገናኙ",
   "setup.connectDescription":
-    "ከመገለጫዎ የረጅም ጊዜ የመዳረሻ ቶከን ይጠቀሙ። የኤንቲቲ ውሂብ በኔትዎርክዎ ውስጥ ይቆያል።",
+    "በሆም አሲስታንት በኩል ይግቡ። የኤንቲቲ ውሂብ በኔትዎርክዎ ውስጥ ይቆያል።",
   "setup.urlLabel": "የሃብ URL",
   "setup.urlPlaceholder": "http://192.168.1.1:8123",
   "setup.tokenLabel": "የረጅም ጊዜ የመዳረሻ ቶከን",
   "setup.tokenPlaceholder": "ቶከን ይለጥፉ",
   "setup.connect": "ተገናኙ",
   "setup.connecting": "በመገናኘት ላይ…",
+  "setup.signIn": "ይግቡ",
+  "setup.signingIn": "ሆም አሲስታንት በመክፈት ላይ…",
   "setup.retry": "እንደገና ሞክር",
   "setup.paste": "ለጥፍ",
   "setup.showToken": "ቶከን አሳይ",
   "setup.hideToken": "ቶከን ደብቅ",
   "setup.language": "ቋንቋ",
+
+  "setup.useToken": "በምትኩ የረጅም ጊዜ የመዳረሻ ቶከን ይጠቀሙ",
+  "setup.useSignIn": "በምትኩ በሆም አሲስታንት በኩል ይግቡ",
+
+  "setup.discoverTitle": "በዚህ ኔትዎርክ ላይ",
+  "setup.discoverEmpty":
+    "ምንም አልተገኘም። አድራሻውን በእጅ ያስገቡ፣ ወይም ሃቡ በዚህ ኔትዎርክ ላይ መሆኑን ያረጋግጡ።",
+  "setup.discoverRescan": "እንደገና ፈልግ",
 
   "setup.addressReachable": "ይደረሳል",
   "setup.addressUnreachable": "አይደረስም",
@@ -31,6 +42,10 @@ export const am: Record<MessageKey, string> = {
   "setup.errorTokenRejected":
     "አገልጋዩ ምላሽ ሰጥቷል፣ ስለዚህ አድራሻው ትክክል ነው። ከመገለጫዎ አዲስ የረጅም ጊዜ የመዳረሻ ቶከን ይለጥፉ።",
   "setup.errorConnectionLost": "ማዋቀሩ ከመጠናቀቁ በፊት ግንኙነቱ ተቋርጧል።",
+  "setup.errorNoAddress": "እስካሁን አድራሻ አልተቀመጠም። ለመገናኘት አንድ ያስገቡ።",
+  "setup.errorSignedOut": "መግቢያዎ ከአገልግሎት ውጪ ሆኗል። እንደገና ይግቡ።",
+  "setup.errorSigninUnavailable":
+    "ይህ ሃብ እስካሁን ለመተግበሪያ መግቢያ አልተዘጋጀም። የEt Remote Access አክዖን ጫኑ፣ ከዚያ እንደገና ይሞክሩ።",
   "setup.errorGeneric": "ሃቡ ላይ መድረስ አልተቻለም።",
 
   "setup.demoTitle": "የሙከራ ሁነታን ይሞክሩ",
@@ -160,9 +175,44 @@ export const am: Record<MessageKey, string> = {
     "በድምጽ እና በጽሑፍ ከቤትዎ ጋር ይነጋገሩ። ያ በኋላ በሚመጣው ክፍል ይጨመራል።",
   "activity.comingBody": "ከሃቡ የሚመጡ ማሳወቂያዎች እና ታሪክ። ያ በኋላ በሚመጣው ክፍል ይጨመራል።",
 
+  "status.reconnecting": "እንደገና በመገናኘት ላይ…",
+  "status.offline": "ከመስመር ውጪ",
+  "status.retry": "እንደገና ሞክር",
+
+  "connection.title": "ግንኙነት",
+  "connection.description":
+    "ለአንድ ቤት ሁለት አድራሻዎች፦ በዋይ-ፋይዎ ላይ የሚሠራው፣ እና በሌላ ቦታ ሁሉ የሚሠራው።",
+  "connection.internalUrl": "የቤት ውስጥ አድራሻ",
+  "connection.internalUrlHelp":
+    "ከታች ካሉት የቤት ኔትዎርኮች በአንዱ ላይ ሲሆኑ ይጠቀማል። አብዛኛውን ጊዜ እንደ http://homeassistant.local:8123 ያለ የአካባቢ አድራሻ ነው።",
+  "connection.externalUrl": "የውጪ አድራሻ",
+  "connection.externalUrlHelp":
+    "ከቤት ውጪ ሲሆኑ ይጠቀማል። የተነልዎ ወይም የይፋዊ ሆስት ስምዎ።",
+  "connection.prioritizeInternal": "የቤት ውስጥ አድራሻን ቅድሚያ ስጥ",
+  "connection.prioritizeInternalHelp":
+    "በማንኛውም ኔትዎርክ ላይ ቢሆኑ የቤት ውስጥ አድራሻውን አስቀድሞ ይሞክራል። የዋይ-ፋይ ስም ሊነበብ በማይችልበት ጊዜ ይጠቅማል።",
+  "connection.homeNetworks": "የቤት ዋይ-ፋይ ኔትዎርኮች",
+  "connection.homeNetworksHelp":
+    "በእነዚህ ኔትዎርኮች ላይ መተግበሪያው የቤት ውስጥ አድራሻውን ይጠቀማል። ለአንድ የተወሰነ አክሰስ ፖይንት፣ ከስሙ ይልቅ BSSID:1a:2b:3c:4d:5e:6f ያክሉ።",
+  "connection.networkPlaceholder": "የኔትዎርክ ስም",
+  "connection.addNetwork": "ጨምር",
+  "connection.addCurrent": "ያለሁበትን ኔትዎርክ ጨምር",
+  "connection.removeNetwork": "{name}ን አስወግድ",
+  "connection.noNetworks":
+    "እስካሁን አንድም የለም፤ ስለዚህ የቤት ውስጥ አድራሻ ቅድሚያ ካልተሰጠው በስተቀር የውጪው ይጠቀማል።",
+  "connection.permissionTitle": "የአካባቢ ፈቃድ ያስፈልጋል",
+  "connection.permissionBody":
+    "iOS እና አንድሮይድ የዋይ-ፋይ ኔትዎርክ ስምን የሚያሳዩት የአካባቢ ፈቃድ ላላቸው መተግበሪያዎች ብቻ ነው። ስለ አካባቢዎ ምንም አይቀመጥም ወይም አይላክም።",
+  "connection.grantPermission": "ፍቀድ",
+  "connection.activeAddress": "አሁን በአገልግሎት ላይ",
+  "connection.reconnect": "እንደገና ተገናኝ",
+  "connection.errorInvalidUrl": "ትክክለኛ URL ያስገቡ፣ ወይም ባዶ ይተውት።",
+
   "settings.title": "ቅንብሮች",
   "settings.hub": "ሃብ",
   "settings.connected": "ተገናኝቷል",
+  "settings.connection": "ግንኙነት",
+  "settings.connectionDescription": "አድራሻዎች እና የቤት ዋይ-ፋይ ኔትዎርኮች።",
   "settings.disconnect": "አቋርጥ",
   "settings.disconnectConfirm": "ይህ ስልክ ሃቡን ይረሳል እና ወደ መገናኘት ይመለሳል።",
 

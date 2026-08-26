@@ -2,7 +2,6 @@ import { Switch } from "@ethio/core";
 import { useEffect, useRef, useState } from "react";
 
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
-import { RemoteAccessSettings } from "@/components/RemoteAccessSettings";
 import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -176,11 +175,6 @@ export function DashboardSettings({ open, onClose }: DashboardSettingsProps) {
             {t(locale, "settings.browseRegistry")}
           </Button>
         </section>
-
-        <RemoteAccessSettings
-          locale={locale}
-          ensureUnlocked={ensureUnlocked}
-        />
 
         <section className="space-y-2">
           <h3 className="font-medium">{t(locale, "settings.pinLock")}</h3>

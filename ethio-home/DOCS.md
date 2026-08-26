@@ -45,37 +45,11 @@ git add ethio-home/www
 
 Bump `version` in `ethio-home/config.yaml`, commit, push, then update the add-on in Home Assistant.
 
-## Remote access (Cloudflare Tunnel)
+## Mobile app sign-in
 
-From **Dashboard settings → Remote access** (while the add-on is running):
-
-- **Quick** — temporary `*.trycloudflare.com` URLs for the dashboard SPA and Home Assistant. URLs change each start.
-- **Named** — paste a Cloudflare API token plus account ID, zone ID, and two hostnames. The add-on creates/updates a remotely managed tunnel, DNS CNAMEs, and runs `cloudflared`.
-
-Secrets (API token, tunnel token) are stored under the add-on’s `/data` directory, not in the browser.
-
-### Cloudflare API token permissions
-
-- Account — Cloudflare Tunnel — Edit
-- Zone — DNS — Edit
-- Zone — Zone — Read
-
-### Home Assistant reverse proxy
-
-Cloudflared sends `X-Forwarded-*` headers. Add to Home Assistant `configuration.yaml` and restart:
-
-```yaml
-http:
-  use_x_forwarded_for: true
-  trusted_proxies:
-    - 172.30.32.0/23   # typical Supervisor / add-on network
-    - 127.0.0.1
-    - ::1
-```
-
-Adjust the subnet if your install differs. After a tunnel starts, use **Use HA tunnel URL in connection** (or paste the HA URL on the setup screen) with your long-lived access token.
+Signing in from the Ethio Home mobile app needs a verification page that Home Assistant fetches to confirm the app may receive your login. That page is published by the **Et Remote Access** add-on, not this one. Install it and sign-in works on the local network and over the public URL.
 
 ## Notes
 
-- Ingress only allows traffic from the Supervisor ingress proxy. The tunnel agent is reached at `/api/tunnel/` through that same ingress path.
+- Ingress only allows traffic from the Supervisor ingress proxy.
 - Rebuild/reinstall after pulling UI updates that change `ethio-home/www/`.

@@ -8,9 +8,7 @@
     "build": "pnpm --filter @ethio/dashboard-schema build && pnpm --filter @ethio/ha-sdk build && pnpm --filter @ethio/plugin-sdk build && pnpm --filter @ethio/core build && pnpm --filter @ethio/teamtracker build && pnpm --filter @ethio/sinksar build && pnpm --filter @ethio/dashboard build",
     "prepare:addon": "bash scripts/prepare-addon.sh",
     "lint": "pnpm -r lint",
-    "preview": "pnpm --filter @ethio/dashboard preview",
-    "tunnel": "node scripts/tunnel/run.mjs",
-    "tunnel:named": "ETHIO_TUNNEL_MODE=named node scripts/tunnel/run.mjs"
+    "preview": "pnpm --filter @ethio/dashboard preview"
   },
   "packageManager": "pnpm@10.9.0",
   "engines": {

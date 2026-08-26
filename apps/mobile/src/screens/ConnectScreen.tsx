@@ -16,18 +16,20 @@ import { useState } from "react";
 import {
   KeyboardAvoidingView,
   Platform,
+  Pressable,
   ScrollView,
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import { useDiscovery, type DiscoveredInstance } from "@/lib/discovery";
 import type { MessageKey } from "@/i18n";
 import { failureField, failureMessageKey } from "@/lib/connection-error";
+import { isHttpUrl } from "@/lib/url";
 import { useHaStore } from "@/store/ha-store";
 import { useT } from "@/store/locale-store";
 import { LanguageSwitcher } from "@/ui/LanguageSwitcher";
 
-/** Client-side checks that run before we bother the network. */
 type LocalError = "required" | "invalid-url" | null;
 
 const LOCAL_ERROR_KEYS: Record<Exclude<LocalError, null>, MessageKey> = {
@@ -42,42 +44,57 @@ export function ConnectScreen() {
 
   const status = useHaStore((state) => state.status);
   const failure = useHaStore((state) => state.failure);
-  const savedBaseUrl = useHaStore((state) => state.baseUrl);
-  const connectLive = useHaStore((state) => state.connectLive);
+  const savedProfile = useHaStore((state) => state.profile);
+  const login = useHaStore((state) => state.login);
+  const connectWithToken = useHaStore((state) => state.connectWithToken);
   const connectDemo = useHaStore((state) => state.connectDemo);
 
-  const [baseUrl, setBaseUrl] = useState(savedBaseUrl);
+  const [baseUrl, setBaseUrl] = useState(
+    savedProfile.externalUrl || savedProfile.internalUrl,
+  );
   const [token, setToken] = useState("");
   const [tokenVisible, setTokenVisible] = useState(false);
+  const [manual, setManual] = useState(false);
   const [localError, setLocalError] = useState<LocalError>(null);
 
   const busy = status === "connecting";
+  const discovery = useDiscovery(!busy);
 
-  // A local validation error outranks a stale network verdict.
   const badField = localError ? null : failureField(failure);
   const addressInvalid = localError === "invalid-url" || badField === "address";
   const tokenInvalid = badField === "token";
 
-  // The server answered but refused the token, so the address is confirmed good.
-  const addressConfirmed = failure?.kind === "token-rejected";
+  const addressConfirmed =
+    failure?.kind === "token-rejected" || failure?.kind === "signed-out";
 
-  async function handleConnect() {
+  function validate(url: string): boolean {
+    if (!url) {
+      setLocalError("required");
+      return false;
+    }
+    if (!isHttpUrl(url)) {
+      setLocalError("invalid-url");
+      return false;
+    }
+    setLocalError(null);
+    return true;
+  }
+
+  async function handleSignIn() {
+    const trimmedUrl = baseUrl.trim();
+    if (!validate(trimmedUrl)) return;
+    await login(trimmedUrl);
+  }
+
+  async function handleTokenConnect() {
     const trimmedUrl = baseUrl.trim();
     const trimmedToken = token.trim();
-
     if (!trimmedUrl || !trimmedToken) {
       setLocalError("required");
       return;
     }
-    try {
-      new URL(trimmedUrl);
-    } catch {
-      setLocalError("invalid-url");
-      return;
-    }
-
-    setLocalError(null);
-    await connectLive(trimmedUrl, trimmedToken);
+    if (!validate(trimmedUrl)) return;
+    await connectWithToken(trimmedUrl, trimmedToken);
   }
 
   async function handlePaste() {
@@ -86,6 +103,12 @@ export function ConnectScreen() {
       setToken(clipped.trim());
       setLocalError(null);
     }
+  }
+
+  async function handleDiscovered(instance: DiscoveredInstance) {
+    setBaseUrl(instance.internalUrl);
+    setLocalError(null);
+    await login(instance.internalUrl, "internal");
   }
 
   const messageKey: MessageKey | null = localError
@@ -113,6 +136,49 @@ export function ConnectScreen() {
             {t("setup.connectDescription")}
           </Text.Paragraph>
         </View>
+
+        {discovery.available ? (
+          <Card>
+            <Card.Body className="gap-3">
+              <View className="flex-row items-center justify-between gap-2">
+                <Card.Title>{t("setup.discoverTitle")}</Card.Title>
+                {discovery.scanning ? <Spinner size="sm" /> : null}
+              </View>
+
+              {discovery.instances.map((instance) => (
+                <Pressable
+                  key={instance.id}
+                  onPress={() => void handleDiscovered(instance)}
+                  disabled={busy}
+                  accessibilityRole="button"
+                >
+                  <View className="border-border rounded-inner border p-3">
+                    <Text className="font-medium">{instance.name}</Text>
+                    <Text className="text-muted text-sm">
+                      {instance.internalUrl}
+                    </Text>
+                  </View>
+                </Pressable>
+              ))}
+
+              {discovery.instances.length === 0 && !discovery.scanning ? (
+                <Card.Description>{t("setup.discoverEmpty")}</Card.Description>
+              ) : null}
+            </Card.Body>
+            {!discovery.scanning ? (
+              <Card.Footer>
+                <Button
+                  variant="tertiary"
+                  size="sm"
+                  onPress={discovery.rescan}
+                  isDisabled={busy}
+                >
+                  {t("setup.discoverRescan")}
+                </Button>
+              </Card.Footer>
+            ) : null}
+          </Card>
+        ) : null}
 
         <Card>
           <Card.Body className="gap-5">
@@ -144,51 +210,44 @@ export function ConnectScreen() {
               />
             </TextField>
 
-            <TextField isInvalid={tokenInvalid}>
-              <View className="flex-row items-center justify-between gap-2">
-                <Label>{t("setup.tokenLabel")}</Label>
-                {tokenInvalid ? (
-                  <Chip size="sm" color="danger" variant="soft">
-                    {t("setup.tokenRejected")}
-                  </Chip>
-                ) : null}
-              </View>
-              <Input
-                value={token}
-                onChangeText={(next) => {
-                  setToken(next);
-                  setLocalError(null);
-                }}
-                placeholder={t("setup.tokenPlaceholder")}
-                secureTextEntry={!tokenVisible}
-                autoCapitalize="none"
-                autoCorrect={false}
-                autoComplete="off"
-                editable={!busy}
-              />
-              {/* Pasting is the expected input for a long-lived token, not typing. */}
-              <View className="flex-row justify-end">
-                <LinkButton
-                  size="sm"
-                  onPress={handlePaste}
-                  isDisabled={busy}
-                >
-                  {t("setup.paste")}
-                </LinkButton>
-                <LinkButton
-                  size="sm"
-                  onPress={() => setTokenVisible((visible) => !visible)}
-                  isDisabled={busy || !token}
-                >
-                  {tokenVisible ? t("setup.hideToken") : t("setup.showToken")}
-                </LinkButton>
-              </View>
-            </TextField>
+            {manual ? (
+              <TextField isInvalid={tokenInvalid}>
+                <View className="flex-row items-center justify-between gap-2">
+                  <Label>{t("setup.tokenLabel")}</Label>
+                  {tokenInvalid ? (
+                    <Chip size="sm" color="danger" variant="soft">
+                      {t("setup.tokenRejected")}
+                    </Chip>
+                  ) : null}
+                </View>
+                <Input
+                  value={token}
+                  onChangeText={(next) => {
+                    setToken(next);
+                    setLocalError(null);
+                  }}
+                  placeholder={t("setup.tokenPlaceholder")}
+                  secureTextEntry={!tokenVisible}
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  autoComplete="off"
+                  editable={!busy}
+                />
+                <View className="flex-row justify-end">
+                  <LinkButton size="sm" onPress={handlePaste} isDisabled={busy}>
+                    {t("setup.paste")}
+                  </LinkButton>
+                  <LinkButton
+                    size="sm"
+                    onPress={() => setTokenVisible((visible) => !visible)}
+                    isDisabled={busy || !token}
+                  >
+                    {tokenVisible ? t("setup.hideToken") : t("setup.showToken")}
+                  </LinkButton>
+                </View>
+              </TextField>
+            ) : null}
 
-            {/*
-              One slot for every failure: required, malformed, unreachable, or
-              rejected. Retry only appears when retrying is the right next move.
-            */}
             {messageKey ? (
               <View className="gap-2">
                 <FieldError>{t(messageKey)}</FieldError>
@@ -196,7 +255,9 @@ export function ConnectScreen() {
                   <Button
                     variant="tertiary"
                     size="sm"
-                    onPress={handleConnect}
+                    onPress={() =>
+                      void (manual ? handleTokenConnect() : handleSignIn())
+                    }
                     isDisabled={busy}
                   >
                     {t("setup.retry")}
@@ -205,13 +266,28 @@ export function ConnectScreen() {
               </View>
             ) : null}
           </Card.Body>
-          <Card.Footer>
-            <Button onPress={handleConnect} isDisabled={busy}>
-              {busy ? (
-                <Spinner size="sm" color={accentForeground} />
-              ) : null}
-              {busy ? t("setup.connecting") : t("setup.connect")}
+          <Card.Footer className="gap-3">
+            <Button
+              onPress={() =>
+                void (manual ? handleTokenConnect() : handleSignIn())
+              }
+              isDisabled={busy}
+            >
+              {busy ? <Spinner size="sm" color={accentForeground} /> : null}
+              {busy
+                ? t(manual ? "setup.connecting" : "setup.signingIn")
+                : t(manual ? "setup.connect" : "setup.signIn")}
             </Button>
+            <LinkButton
+              size="sm"
+              onPress={() => {
+                setManual((value) => !value);
+                setLocalError(null);
+              }}
+              isDisabled={busy}
+            >
+              {t(manual ? "setup.useSignIn" : "setup.useToken")}
+            </LinkButton>
           </Card.Footer>
         </Card>
 
@@ -221,11 +297,7 @@ export function ConnectScreen() {
             <Card.Description>{t("setup.demoDescription")}</Card.Description>
           </Card.Body>
           <Card.Footer>
-            <Button
-              variant="secondary"
-              onPress={connectDemo}
-              isDisabled={busy}
-            >
+            <Button variant="secondary" onPress={connectDemo} isDisabled={busy}>
               {t("setup.startDemo")}
             </Button>
           </Card.Footer>

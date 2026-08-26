@@ -11,6 +11,7 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 import { useDashboardStore } from "@/store/dashboard-store";
 import { useHaStore } from "@/store/ha-store";
 import { useLocaleStore } from "@/store/locale-store";
+import { useConnectionWatch } from "@/store/use-connection-watch";
 import { DetailSheetProvider } from "@/widgets/DetailSheet";
 
 void SplashScreen.preventAutoHideAsync();
@@ -20,6 +21,8 @@ export default function RootLayout() {
   const bootstrap = useHaStore((state) => state.bootstrap);
   const hydrateLocale = useLocaleStore((state) => state.hydrate);
   const hydrateDashboard = useDashboardStore((state) => state.hydrate);
+
+  useConnectionWatch();
 
   useEffect(() => {
     // Locale first so the Connect screen never flashes the wrong script.

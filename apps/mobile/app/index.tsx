@@ -1,12 +1,12 @@
 import { Redirect } from "expo-router";
 
 import { ConnectScreen } from "@/screens/ConnectScreen";
-import { useHaStore } from "@/store/ha-store";
+import { hasSession, useHaStore } from "@/store/ha-store";
 
 export default function Index() {
   const status = useHaStore((state) => state.status);
 
-  if (status === "connected") {
+  if (hasSession(status)) {
     return <Redirect href="/home" />;
   }
 

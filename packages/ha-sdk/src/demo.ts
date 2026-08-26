@@ -1326,6 +1326,11 @@ export function connectDemo(): EntityClient {
     sendBinary() {
       throw new Error("Demo client does not support binary messages");
     },
+    onStatusChange() {
+      return () => {};
+    },
+    reconnect() {},
+    async ping() {},
     disconnect() {
       closed = true;
       listeners.clear();

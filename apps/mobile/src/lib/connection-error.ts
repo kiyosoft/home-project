@@ -16,6 +16,11 @@ export type ConnectFailure =
   /** The server answered and refused the token — the address is confirmed good. */
   | { kind: "token-rejected" }
   | { kind: "connection-lost" }
+  /** No address saved yet, so there is nothing to try. */
+  | { kind: "no-address" }
+  /** The saved grant is gone or was revoked; only a fresh login fixes it. */
+  | { kind: "signed-out" }
+  | { kind: "signin-unavailable" }
   | { kind: "unknown"; detail?: string };
 
 export function classifyConnectError(error: unknown): ConnectFailure {
@@ -47,9 +52,19 @@ export function failureMessageKey(failure: ConnectFailure): MessageKey {
       return "setup.errorTokenRejected";
     case "connection-lost":
       return "setup.errorConnectionLost";
+    case "no-address":
+      return "setup.errorNoAddress";
+    case "signed-out":
+      return "setup.errorSignedOut";
+    case "signin-unavailable":
+      return "setup.errorSigninUnavailable";
     case "unknown":
       return "setup.errorGeneric";
   }
+}
+
+export function needsLogin(failure: ConnectFailure | null): boolean {
+  return failure?.kind === "signed-out" || failure?.kind === "token-rejected";
 }
 
 /** Which field the screen should mark as the failing one. */
@@ -58,6 +73,7 @@ export function failureField(
 ): "address" | "token" | null {
   switch (failure?.kind) {
     case "unreachable":
+    case "no-address":
       return "address";
     case "token-rejected":
       return "token";

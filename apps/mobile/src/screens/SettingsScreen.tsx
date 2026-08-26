@@ -1,3 +1,4 @@
+import { router } from "expo-router";
 import { useState } from "react";
 import { ScrollView, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -10,17 +11,17 @@ import {
   Text,
 } from "heroui-native";
 
+import { parseOrigin } from "@/lib/url";
 import { useDashboardStore } from "@/store/dashboard-store";
 import { useHaStore } from "@/store/ha-store";
 import { useT } from "@/store/locale-store";
+import { ConnectionStatusChip } from "@/ui/ConnectionStatusChip";
 import { LanguageSwitcher } from "@/ui/LanguageSwitcher";
 
-function hubHost(baseUrl: string): string {
-  try {
-    return new URL(baseUrl).host;
-  } catch {
-    return baseUrl;
-  }
+function hubHost(url: string): string {
+  const origin = parseOrigin(url);
+  if (!origin) return url;
+  return origin.port ? `${origin.host}:${origin.port}` : origin.host;
 }
 
 export function SettingsScreen() {
@@ -31,7 +32,7 @@ export function SettingsScreen() {
 
   const resetDashboard = useDashboardStore((state) => state.reset);
   const mode = useHaStore((state) => state.mode);
-  const baseUrl = useHaStore((state) => state.baseUrl);
+  const activeUrl = useHaStore((state) => state.activeUrl);
   const entityCount = useHaStore(
     (state) => Object.keys(state.entities).length,
   );
@@ -49,15 +50,34 @@ export function SettingsScreen() {
         <Card.Body className="gap-2">
           <Label>{t("settings.hub")}</Label>
           <Card.Title>
-            {mode === "demo" ? t("home.demoBadge") : hubHost(baseUrl)}
+            {mode === "demo" ? t("home.demoBadge") : hubHost(activeUrl)}
           </Card.Title>
           <Chip size="sm" color="success" variant="soft">
             {mode === "live"
               ? `${t("settings.connected")} · ${t("home.entityCount", { count: entityCount })}`
               : t("home.entityCount", { count: entityCount })}
           </Chip>
+          <ConnectionStatusChip />
         </Card.Body>
       </Card>
+
+      {mode === "live" ? (
+        <Card>
+          <Card.Body className="gap-3">
+            <Label>{t("settings.connection")}</Label>
+            <Card.Description>
+              {t("settings.connectionDescription")}
+            </Card.Description>
+            <Button
+              variant="secondary"
+              className="self-start"
+              onPress={() => router.push("/connection")}
+            >
+              {t("connection.title")}
+            </Button>
+          </Card.Body>
+        </Card>
+      ) : null}
 
       <Card>
         <Card.Body className="gap-3">
