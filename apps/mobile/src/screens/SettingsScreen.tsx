@@ -17,6 +17,7 @@ import { useHaStore } from "@/store/ha-store";
 import { useT } from "@/store/locale-store";
 import { ConnectionStatusChip } from "@/ui/ConnectionStatusChip";
 import { LanguageSwitcher } from "@/ui/LanguageSwitcher";
+import { ThemeChooser } from "@/ui/ThemeChooser";
 
 function hubHost(url: string): string {
   const origin = parseOrigin(url);
@@ -83,6 +84,13 @@ export function SettingsScreen() {
         <Card.Body className="gap-3">
           <Label>{t("setup.language")}</Label>
           <LanguageSwitcher />
+        </Card.Body>
+      </Card>
+
+      <Card>
+        <Card.Body className="gap-3">
+          <Label>{t("settings.theme")}</Label>
+          <ThemeChooser />
         </Card.Body>
       </Card>
 

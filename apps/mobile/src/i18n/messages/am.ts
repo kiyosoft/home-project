@@ -224,4 +224,9 @@ export const am: Record<MessageKey, string> = {
 
   "settings.langEn": "English",
   "settings.langAm": "አማርኛ",
+
+  "settings.theme": "ገጽታ",
+  "settings.themeLight": "ብርሃን",
+  "settings.themeDark": "ገለማ",
+  "settings.themeSystem": "ስርዓት",
 };

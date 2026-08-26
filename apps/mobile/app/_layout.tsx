@@ -11,6 +11,7 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 import { useDashboardStore } from "@/store/dashboard-store";
 import { useHaStore } from "@/store/ha-store";
 import { useLocaleStore } from "@/store/locale-store";
+import { useThemeStore } from "@/store/theme-store";
 import { useConnectionWatch } from "@/store/use-connection-watch";
 import { DetailSheetProvider } from "@/widgets/DetailSheet";
 
@@ -21,20 +22,24 @@ export default function RootLayout() {
   const bootstrap = useHaStore((state) => state.bootstrap);
   const hydrateLocale = useLocaleStore((state) => state.hydrate);
   const hydrateDashboard = useDashboardStore((state) => state.hydrate);
+  const themeHydrated = useThemeStore((state) => state.hydrated);
+  const hydrateTheme = useThemeStore((state) => state.hydrate);
 
   useConnectionWatch();
 
   useEffect(() => {
     // Locale first so the Connect screen never flashes the wrong script.
+    // Theme in parallel so the first frame is already the saved palette.
     void hydrateLocale().then(() => bootstrap());
     void hydrateDashboard();
-  }, [bootstrap, hydrateLocale, hydrateDashboard]);
+    void hydrateTheme();
+  }, [bootstrap, hydrateLocale, hydrateDashboard, hydrateTheme]);
 
   useEffect(() => {
-    if (hydrated) void SplashScreen.hideAsync();
-  }, [hydrated]);
+    if (hydrated && themeHydrated) void SplashScreen.hideAsync();
+  }, [hydrated, themeHydrated]);
 
-  if (!hydrated) return null;
+  if (!hydrated || !themeHydrated) return null;
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>

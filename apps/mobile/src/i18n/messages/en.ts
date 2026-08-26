@@ -226,6 +226,11 @@ export const en = {
 
   "settings.langEn": "English",
   "settings.langAm": "አማርኛ",
+
+  "settings.theme": "Theme",
+  "settings.themeLight": "Light",
+  "settings.themeDark": "Dark",
+  "settings.themeSystem": "System",
 } as const;
 
 export type MessageKey = keyof typeof en;

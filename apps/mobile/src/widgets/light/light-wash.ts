@@ -56,7 +56,7 @@ export function lightWash(
   };
 }
 
-/** The app follows the OS scheme, so that is the whole surface question. */
+/** Uniwind writes the chosen theme into Appearance, so this is the surface. */
 export function useLightWash(
   light: LightLike | null,
   pending: { brightness?: number; color?: Rgb } = {},

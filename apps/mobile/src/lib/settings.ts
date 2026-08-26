@@ -13,6 +13,7 @@ import { isLocale, type Locale } from "@/i18n";
 const CONNECTION_V1_KEY = "ethio-home.connection:v1";
 const CONNECTION_KEY = "ethio-home.connection:v2";
 const LOCALE_KEY = "ethio-home.locale";
+const THEME_KEY = "ethio-home.theme";
 const TOKEN_KEY = "ethio-home.token.v1";
 const TOKENS_KEY = "ethio-home.tokens.v1";
 const DASHBOARD_KEY = "ethio-home.mobile-dashboard:v1";
@@ -226,4 +227,24 @@ export async function loadLocale(): Promise<Locale> {
 
 export async function saveLocale(locale: Locale): Promise<void> {
   await AsyncStorage.setItem(LOCALE_KEY, locale);
+}
+
+export type ThemePreference = "light" | "dark" | "system";
+
+export function isThemePreference(value: unknown): value is ThemePreference {
+  return value === "light" || value === "dark" || value === "system";
+}
+
+export async function loadTheme(): Promise<ThemePreference> {
+  try {
+    const saved = await AsyncStorage.getItem(THEME_KEY);
+    if (isThemePreference(saved)) return saved;
+  } catch {
+    // Same fallback as a missing key: follow the phone until the user picks.
+  }
+  return "system";
+}
+
+export async function saveTheme(theme: ThemePreference): Promise<void> {
+  await AsyncStorage.setItem(THEME_KEY, theme);
 }
