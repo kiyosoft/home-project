@@ -46,6 +46,7 @@ export {
   cameraStillPath,
   cameraSupportsFeature,
   deriveCamera,
+  requestCameraStream,
 } from "./camera";
 export type { CameraView } from "./camera";
 export {

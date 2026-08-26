@@ -51,6 +51,29 @@ export function addWidgetToSection(
   return withWidgets(document, section, [...section.widgets, widget]);
 }
 
+/**
+ * The on-screen section, or the stored one if it is still empty and therefore
+ * omitted from the live layout. The first add on a fresh dashboard hits this.
+ */
+export function sectionForEdit(
+  sections: ResolvedSection[],
+  document: MobileDashboard,
+  sectionId: string,
+): ResolvedSection | null {
+  const resolved = sections.find((entry) => entry.id === sectionId);
+  if (resolved) return resolved;
+
+  const entry = document.sections.find((item) => item.id === sectionId);
+  if (!entry) return null;
+
+  return {
+    id: entry.id,
+    title: entry.title ?? "",
+    collapsed: entry.collapsed ?? false,
+    widgets: entry.source.kind === "explicit" ? entry.source.widgets : [],
+  };
+}
+
 export function removeWidgetFromSection(
   document: MobileDashboard,
   section: ResolvedSection,

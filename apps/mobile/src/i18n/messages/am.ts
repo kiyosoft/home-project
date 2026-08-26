@@ -48,8 +48,7 @@ export const am: Record<MessageKey, string> = {
   "home.demoBadge": "የሙከራ ሁነታ",
   "home.entityCount": "{count} ኤንቲቲዎች በቀጥታ እየመጡ ነው",
   "home.emptyTitle": "እስካሁን የሚታይ ነገር የለም",
-  "home.emptyBody":
-    "እዚህ ያለ ማንኛውም ኤንቲቲ ገና ከታይል ጋር አልተገናኘም። ተጨማሪ የውጅት ዓይነቶች በሚቀጥለው ክፍል ይመጣሉ።",
+  "home.emptyBody": "በዚህ ገጽ ላይ የሚታዩትን ኤንቲቲዎች ይጨምሩ።",
   "home.edit": "አርትዕ",
   "home.done": "ጨርሷል",
   "home.addWidget": "ታይል አክል",
@@ -68,6 +67,7 @@ export const am: Record<MessageKey, string> = {
   "widget.domain.climate": "የአየር ንብረት",
   "widget.domain.cover": "መጋረጃዎች",
   "widget.domain.lock": "ቁልፎች",
+  "widget.domain.camera": "ካሜራዎች",
   "widget.domain.switch": "ማብሪያዎች",
   "widget.domain.media": "ሚዲያ",
   "widget.domain.sensor": "ሴንሰሮች",
@@ -89,6 +89,8 @@ export const am: Record<MessageKey, string> = {
   "widget.state.playing": "እየተጫወተ ነው",
   "widget.state.paused": "ቆሟል",
   "widget.state.idle": "ዝግጁ",
+  "widget.state.streaming": "በቀጥታ",
+  "widget.state.recording": "በመቅዳት ላይ",
 
   "widget.action.power": "ኃይል ቀያይር",
   "widget.action.lock": "ቁልፍ ቆልፍ ወይም ክፈት",
@@ -120,6 +122,12 @@ export const am: Record<MessageKey, string> = {
   "widget.media.volume": "ድምጽ",
   "widget.media.mute": "ድምጽ ዝጋ",
   "widget.media.power": "ኃይል",
+
+  "widget.camera.refresh": "ምስል አድስ",
+  "widget.camera.live": "ቀጥታ",
+  "widget.camera.still": "ምስል አሳይ",
+  "widget.camera.power": "ኃይል",
+  "widget.camera.liveFailed": "ቀጥታ ስርጭቱን ማስጀመር አልተቻለም።",
 
   "widget.detail.state": "ሁኔታ",
   "widget.detail.entityId": "የኤንቲቲ መለያ",
@@ -161,8 +169,8 @@ export const am: Record<MessageKey, string> = {
   "settings.dashboard": "ዳሽቦርድ",
   "settings.resetLayout": "አቀማመጥ ዳግም አስጀምር",
   "settings.resetLayoutDescription":
-    "የጨመሯቸው ወይም ያስወገዷቸው ታይሎች ይሰረዛሉ፣ አቀማመጡም እንደገና ከአካባቢዎችዎ ይፈጠራል።",
-  "settings.resetLayoutConfirm": "ዳሽቦርዱ ወደ በራስ-ሰር ወደተፈጠረው አቀማመጥ ይመለስ?",
+    "የጨመሯቸው ታይሎች ሁሉ ይወገዳሉ፣ ዳሽቦርዱም ባዶ ሆኖ ይጀምራል።",
+  "settings.resetLayoutConfirm": "ሁሉም ታይሎች ከዳሽቦርዱ ይወገዱ?",
 
   "settings.langEn": "English",
   "settings.langAm": "አማርኛ",

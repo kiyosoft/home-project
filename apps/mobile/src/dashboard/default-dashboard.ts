@@ -1,41 +1,19 @@
-import type { AreaRegistryEntry } from "@ethio/ha-sdk";
-import type { MobileDashboard, MobileSection } from "@ethio/mobile-schema";
+import type { MobileDashboard } from "@ethio/mobile-schema";
+
+export const DEFAULT_SECTION_ID = "home";
 
 /**
- * Fallback grouping for entities no area claims. A domain section is titled
- * after its first domain, so the leading entry doubles as the group label.
+ * The document a phone shows before anyone adds a tile. Entities stay off
+ * the screen until the user picks them, same as the web dashboard.
  */
-export const DEFAULT_DOMAIN_GROUPS: { id: string; domains: string[] }[] = [
-  { id: "lights", domains: ["light"] },
-  { id: "climate", domains: ["climate"] },
-  { id: "covers", domains: ["cover"] },
-  { id: "locks", domains: ["lock"] },
-  { id: "switches", domains: ["switch", "input_boolean"] },
-  { id: "media", domains: ["media_player"] },
-  { id: "sensors", domains: ["sensor", "binary_sensor"] },
-];
-
-/**
- * The document a phone shows before anyone edits it: one section per Home
- * Assistant area, then domain sections that sweep up whatever had no area.
- */
-export function buildDefaultDashboard(
-  areas: AreaRegistryEntry[],
-): MobileDashboard {
-  const areaSections: MobileSection[] = areas.map((area) => ({
-    id: `area-${area.area_id}`,
-    source: { kind: "area", areaId: area.area_id },
-  }));
-
-  const domainSections: MobileSection[] = DEFAULT_DOMAIN_GROUPS.map((group) => ({
-    id: `domain-${group.id}`,
-    source: { kind: "domain", domains: group.domains },
-  }));
-
-  return {
-    version: 1,
-    id: "mobile-default",
-    title: "Home",
-    sections: [...areaSections, ...domainSections],
-  };
-}
+export const DEFAULT_DASHBOARD: MobileDashboard = {
+  version: 1,
+  id: "mobile-default",
+  title: "Home",
+  sections: [
+    {
+      id: DEFAULT_SECTION_ID,
+      source: { kind: "explicit", widgets: [] },
+    },
+  ],
+};

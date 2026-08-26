@@ -47,9 +47,8 @@ export const en = {
   "home.title": "Home",
   "home.demoBadge": "Demo mode",
   "home.entityCount": "{count} entities streaming",
-  "home.emptyTitle": "Nothing to show yet",
-  "home.emptyBody":
-    "No entity here maps to a tile yet. More widget types land in the next slice.",
+  "home.emptyTitle": "Nothing here yet",
+  "home.emptyBody": "Add the entities you want on this screen.",
   "home.edit": "Edit",
   "home.done": "Done",
   "home.addWidget": "Add tile",
@@ -68,6 +67,7 @@ export const en = {
   "widget.domain.climate": "Climate",
   "widget.domain.cover": "Covers",
   "widget.domain.lock": "Locks",
+  "widget.domain.camera": "Cameras",
   "widget.domain.switch": "Switches",
   "widget.domain.media": "Media",
   "widget.domain.sensor": "Sensors",
@@ -89,6 +89,8 @@ export const en = {
   "widget.state.playing": "Playing",
   "widget.state.paused": "Paused",
   "widget.state.idle": "Idle",
+  "widget.state.streaming": "Streaming",
+  "widget.state.recording": "Recording",
 
   "widget.action.power": "Toggle power",
   "widget.action.lock": "Lock or unlock",
@@ -120,6 +122,12 @@ export const en = {
   "widget.media.volume": "Volume",
   "widget.media.mute": "Mute",
   "widget.media.power": "Power",
+
+  "widget.camera.refresh": "Refresh still",
+  "widget.camera.live": "Live",
+  "widget.camera.still": "Show still",
+  "widget.camera.power": "Power",
+  "widget.camera.liveFailed": "Could not start the live stream.",
 
   "widget.detail.state": "State",
   "widget.detail.entityId": "Entity ID",
@@ -163,8 +171,8 @@ export const en = {
   "settings.dashboard": "Dashboard",
   "settings.resetLayout": "Reset layout",
   "settings.resetLayoutDescription":
-    "Tiles you added or removed are discarded and the layout is generated from your areas again.",
-  "settings.resetLayoutConfirm": "Reset the dashboard to its generated layout?",
+    "Removes every tile you added and starts from an empty dashboard.",
+  "settings.resetLayoutConfirm": "Clear every tile from the dashboard?",
 
   "settings.langEn": "English",
   "settings.langAm": "አማርኛ",

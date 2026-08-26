@@ -13,7 +13,7 @@ import {
 export type EditorMode = "live" | "edit";
 
 interface DashboardState {
-  /** Null means "no saved document", so the generated default is used instead. */
+  /** Null means "no saved document", so the empty default is used instead. */
   document: MobileDashboard | null;
   hydrated: boolean;
   /** Shared by the Home header and the grid so both agree on the chrome. */

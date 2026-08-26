@@ -26,7 +26,9 @@
             "backgroundColor": "#0c1218"
           }
         }
-      ]
+      ],
+      "expo-video",
+      "./plugins/with-exconstants-script.js"
     ],
     "experiments": {
       "typedRoutes": true

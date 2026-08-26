@@ -34,6 +34,7 @@ const DOMAIN_LABELS: Record<string, MessageKey> = {
   climate: "widget.domain.climate",
   cover: "widget.domain.cover",
   lock: "widget.domain.lock",
+  camera: "widget.domain.camera",
   switch: "widget.domain.switch",
   input_boolean: "widget.domain.switch",
   media_player: "widget.domain.media",

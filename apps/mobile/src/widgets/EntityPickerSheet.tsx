@@ -1,5 +1,10 @@
+import type { HassEntities } from "@ethio/ha-sdk";
 import Ionicons from "@expo/vector-icons/Ionicons";
-import { BottomSheetFlatList } from "@gorhom/bottom-sheet";
+import { useBottomSheetScrollableCreator } from "@gorhom/bottom-sheet";
+import {
+  LegendList,
+  type LegendListRenderItemProps,
+} from "@legendapp/list/react-native";
 import {
   BottomSheet,
   ListGroup,
@@ -7,7 +12,15 @@ import {
   Text,
   useBottomSheetAwareHandlers,
 } from "heroui-native";
-import { useMemo, useState } from "react";
+import {
+  memo,
+  useCallback,
+  useDeferredValue,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { View } from "react-native";
 import { withUniwind } from "uniwind";
 
@@ -18,6 +31,11 @@ import { widgetForEntity } from "@/widgets/registry";
 
 const Icon = withUniwind(Ionicons);
 
+/** One collator for the whole list: `localeCompare` builds one per call. */
+const collator = new Intl.Collator();
+
+const ROW_HEIGHT = 72;
+
 const DOMAIN_ICONS: Record<string, keyof typeof Ionicons.glyphMap> = {
   light: "bulb-outline",
   switch: "toggle-outline",
@@ -26,15 +44,54 @@ const DOMAIN_ICONS: Record<string, keyof typeof Ionicons.glyphMap> = {
   lock: "lock-closed-outline",
   climate: "thermometer-outline",
   cover: "browsers-outline",
+  camera: "videocam-outline",
   sensor: "analytics-outline",
   binary_sensor: "radio-outline",
+};
+
+const WIDGET_ICONS: Record<string, keyof typeof Ionicons.glyphMap> = {
+  "@ethio/sinksar/today": "book-outline",
+  "@ethio/teamtracker/team-card": "football-outline",
 };
 
 interface Candidate {
   entityId: string;
   name: string;
-  domain: string;
-  icon?: keyof typeof Ionicons.glyphMap;
+  /** Name and id lowercased once, so a keystroke does not re-case every row. */
+  search: string;
+  icon: keyof typeof Ionicons.glyphMap;
+}
+
+/** The entity map and the used ids as they were when the sheet opened. */
+interface Snapshot {
+  entities: HassEntities;
+  used: Set<string>;
+}
+
+const EMPTY_SNAPSHOT: Snapshot = { entities: {}, used: new Set() };
+
+function buildCandidates({ entities, used }: Snapshot): Candidate[] {
+  const list: Candidate[] = [];
+
+  for (const entity of Object.values(entities)) {
+    if (used.has(entity.entity_id)) continue;
+    const def = widgetForEntity(entity);
+    if (!def) continue;
+
+    const name = entityName(entity);
+    list.push({
+      entityId: entity.entity_id,
+      name,
+      search: `${name}\n${entity.entity_id}`.toLowerCase(),
+      icon:
+        WIDGET_ICONS[def.id] ??
+        DOMAIN_ICONS[entityDomain(entity.entity_id)] ??
+        "ellipse-outline",
+    });
+  }
+
+  list.sort((a, b) => collator.compare(a.name, b.name));
+  return list;
 }
 
 export interface EntityPickerSheetProps {
@@ -74,6 +131,37 @@ function PickerSearch({
   );
 }
 
+const PickerRow = memo(function PickerRow({
+  item,
+  onSelect,
+}: {
+  item: Candidate;
+  onSelect: (entityId: string) => void;
+}) {
+  return (
+    <View className="pb-2">
+      <ListGroup>
+        <ListGroup.Item onPress={() => onSelect(item.entityId)}>
+          <ListGroup.ItemPrefix>
+            <Icon name={item.icon} size={20} className="text-muted" />
+          </ListGroup.ItemPrefix>
+          <ListGroup.ItemContent>
+            <ListGroup.ItemTitle numberOfLines={1}>
+              {item.name}
+            </ListGroup.ItemTitle>
+            <ListGroup.ItemDescription numberOfLines={1}>
+              {item.entityId}
+            </ListGroup.ItemDescription>
+          </ListGroup.ItemContent>
+          <ListGroup.ItemSuffix>
+            <Icon name="add" size={20} className="text-accent" />
+          </ListGroup.ItemSuffix>
+        </ListGroup.Item>
+      </ListGroup>
+    </View>
+  );
+});
+
 /**
  * Entity chooser for edit mode. The phone has no widget-type picker: the
  * entity's domain decides the tile through the widget registry.
@@ -85,47 +173,56 @@ export function EntityPickerSheet({
   onSelect,
 }: EntityPickerSheetProps) {
   const t = useT();
-  const entities = useHaStore((state) => state.entities);
   const [query, setQuery] = useState("");
+  const deferredQuery = useDeferredValue(query);
+  const renderScrollComponent = useBottomSheetScrollableCreator();
 
-  const candidates = useMemo<Candidate[]>(() => {
-    const list = Object.values(entities)
-      .filter(
-        (entity) =>
-          !used.has(entity.entity_id) && Boolean(widgetForEntity(entity)),
-      )
-      .map((entity): Candidate => {
-        const def = widgetForEntity(entity);
-        return {
-          entityId: entity.entity_id,
-          name: entityName(entity),
-          domain: entityDomain(entity.entity_id),
-          icon:
-            def?.id === "@ethio/sinksar/today"
-              ? "book-outline"
-              : def?.id === "@ethio/teamtracker/team-card"
-                ? "football-outline"
-                : undefined,
-        };
-      });
-    list.sort((a, b) => a.name.localeCompare(b.name));
-    return list;
-  }, [entities, used]);
+  // Read the entities once per open. A Home Assistant update replaces the
+  // entity map and hands down a fresh `used` Set, and sorting every entity that
+  // often is what made the sheet crawl. Rows show a name and an id, so a
+  // snapshot taken on open cannot look stale.
+  const latestUsed = useRef(used);
+  latestUsed.current = used;
+  const [snapshot, setSnapshot] = useState<Snapshot>(EMPTY_SNAPSHOT);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    setSnapshot({
+      entities: useHaStore.getState().entities,
+      used: latestUsed.current,
+    });
+  }, [isOpen]);
+
+  const candidates = useMemo(() => buildCandidates(snapshot), [snapshot]);
 
   const results = useMemo(() => {
-    const needle = query.trim().toLowerCase();
+    const needle = deferredQuery.trim().toLowerCase();
     if (!needle) return candidates;
-    return candidates.filter(
-      (item) =>
-        item.name.toLowerCase().includes(needle) ||
-        item.entityId.includes(needle),
-    );
-  }, [candidates, query]);
+    return candidates.filter((item) => item.search.includes(needle));
+  }, [candidates, deferredQuery]);
 
-  const close = (open: boolean) => {
-    if (!open) setQuery("");
-    onOpenChange(open);
-  };
+  const close = useCallback(
+    (open: boolean) => {
+      if (!open) setQuery("");
+      onOpenChange(open);
+    },
+    [onOpenChange],
+  );
+
+  const handleSelect = useCallback(
+    (entityId: string) => {
+      onSelect(entityId);
+      close(false);
+    },
+    [onSelect, close],
+  );
+
+  const renderItem = useCallback(
+    ({ item }: LegendListRenderItemProps<Candidate>) => (
+      <PickerRow item={item} onSelect={handleSelect} />
+    ),
+    [handleSelect],
+  );
 
   return (
     <BottomSheet isOpen={isOpen} onOpenChange={close}>
@@ -151,45 +248,17 @@ export function EntityPickerSheet({
             />
           </View>
 
-          <BottomSheetFlatList
+          <LegendList
             data={results}
-            keyExtractor={(item: Candidate) => item.entityId}
+            renderItem={renderItem}
+            keyExtractor={(item) => item.entityId}
+            recycleItems
+            estimatedItemSize={ROW_HEIGHT}
+            renderScrollComponent={renderScrollComponent}
+            style={{ flex: 1 }}
             keyboardShouldPersistTaps="handled"
             showsVerticalScrollIndicator={false}
-            contentContainerStyle={{ gap: 8, paddingBottom: 32 }}
-            renderItem={({ item }: { item: Candidate }) => (
-              <ListGroup>
-                <ListGroup.Item
-                  onPress={() => {
-                    onSelect(item.entityId);
-                    close(false);
-                  }}
-                >
-                  <ListGroup.ItemPrefix>
-                    <Icon
-                      name={
-                        item.icon ??
-                        DOMAIN_ICONS[item.domain] ??
-                        "ellipse-outline"
-                      }
-                      size={20}
-                      className="text-muted"
-                    />
-                  </ListGroup.ItemPrefix>
-                  <ListGroup.ItemContent>
-                    <ListGroup.ItemTitle numberOfLines={1}>
-                      {item.name}
-                    </ListGroup.ItemTitle>
-                    <ListGroup.ItemDescription numberOfLines={1}>
-                      {item.entityId}
-                    </ListGroup.ItemDescription>
-                  </ListGroup.ItemContent>
-                  <ListGroup.ItemSuffix>
-                    <Icon name="add" size={20} className="text-accent" />
-                  </ListGroup.ItemSuffix>
-                </ListGroup.Item>
-              </ListGroup>
-            )}
+            contentContainerStyle={{ paddingBottom: 32 }}
             ListEmptyComponent={
               <Text className="text-muted py-8 text-center">
                 {t("picker.empty")}

@@ -5,6 +5,7 @@ import {
 } from "@ethio/ha-sdk";
 
 import { entityDomain } from "@/store/use-entity";
+import { CameraTile } from "@/widgets/tiles/CameraTile";
 import { ClimateTile } from "@/widgets/tiles/ClimateTile";
 import { CoverTile } from "@/widgets/tiles/CoverTile";
 import { EntityStateTile } from "@/widgets/tiles/EntityStateTile";
@@ -51,6 +52,12 @@ export const MOBILE_WIDGETS: MobileWidgetDef[] = [
     component: CoverTile,
     defaultSize: "md",
     domains: ["cover"],
+  },
+  {
+    id: "@ethio/core/camera",
+    component: CameraTile,
+    defaultSize: "md",
+    domains: ["camera"],
   },
   {
     id: "@ethio/core/media",
