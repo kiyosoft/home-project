@@ -13,6 +13,7 @@ import { useHaStore } from "@/store/ha-store";
 import { useLocaleStore } from "@/store/locale-store";
 import { useThemeStore } from "@/store/theme-store";
 import { useConnectionWatch } from "@/store/use-connection-watch";
+import { AssistHost } from "@/widgets/AssistHost";
 import { DetailSheetProvider } from "@/widgets/DetailSheet";
 
 void SplashScreen.preventAutoHideAsync();
@@ -48,6 +49,7 @@ export default function RootLayout() {
           <StatusBar style="auto" />
           <DetailSheetProvider>
             <Stack screenOptions={{ headerShown: false }} />
+            <AssistHost />
           </DetailSheetProvider>
         </HeroUINativeProvider>
       </SafeAreaProvider>

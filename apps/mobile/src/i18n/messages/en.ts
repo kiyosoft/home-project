@@ -55,7 +55,6 @@ export const en = {
   "setup.errorDemo": "Failed to start demo mode.",
 
   "tabs.home": "Home",
-  "tabs.assist": "Assist",
   "tabs.activity": "Activity",
   "tabs.settings": "Settings",
 
@@ -171,8 +170,26 @@ export const en = {
   "widget.unknownType": "Unsupported widget",
   "widget.entityMissing": "This entity is no longer on the hub.",
 
-  "assist.comingBody":
-    "Talk to your home with voice and text. That lands in a later slice.",
+  "assist.open": "Open Assist",
+  "assist.title": "Assist",
+  "assist.close": "Close Assist",
+  "assist.placeholder": "Ask about the house…",
+  "assist.send": "Send message",
+  "assist.micStart": "Start listening",
+  "assist.micStop": "Stop listening and send",
+  "assist.listening": "Listening…",
+  "assist.wake": "Listening for the wake word…",
+  "assist.wakeOn": "Turn off wake word",
+  "assist.wakeOff": "Turn on wake word",
+  "assist.thinking": "Thinking…",
+  "assist.empty": "Ask Assist to control the house or answer a question.",
+  "assist.emptyWake": "Say the wake word, tap the mic, or type a message.",
+  "assist.done": "Done.",
+  "assist.errorMicDenied":
+    "Microphone access is off. Turn it on for Ethio Home in Settings.",
+  "assist.errorMicUnavailable": "No microphone is available on this device.",
+  "assist.errorGeneric": "Assist could not complete that request.",
+
   "activity.comingBody":
     "Notifications and history from the hub. That lands in a later slice.",
 

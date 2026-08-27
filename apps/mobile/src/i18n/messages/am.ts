@@ -55,7 +55,6 @@ export const am: Record<MessageKey, string> = {
   "setup.errorDemo": "የሙከራ ሁነታን መጀመር አልተቻለም።",
 
   "tabs.home": "መነሻ",
-  "tabs.assist": "አሲስት",
   "tabs.activity": "እንቅስቃሴ",
   "tabs.settings": "ቅንብሮች",
 
@@ -171,8 +170,26 @@ export const am: Record<MessageKey, string> = {
   "widget.unknownType": "ያልተደገፈ ውጅት",
   "widget.entityMissing": "ይህ ኤንቲቲ ከሃቡ ላይ የለም።",
 
-  "assist.comingBody":
-    "በድምጽ እና በጽሑፍ ከቤትዎ ጋር ይነጋገሩ። ያ በኋላ በሚመጣው ክፍል ይጨመራል።",
+  "assist.open": "አሲስትን ክፈት",
+  "assist.title": "አሲስት",
+  "assist.close": "አሲስትን ዝጋ",
+  "assist.placeholder": "ስለ ቤቱ ይጠይቁ…",
+  "assist.send": "መልእክት ላክ",
+  "assist.micStart": "ማዳመጥ ጀምር",
+  "assist.micStop": "ማዳመጥ አቁመህ ላክ",
+  "assist.listening": "በማዳመጥ ላይ…",
+  "assist.wake": "የመቀስቀሻ ቃሉን በማዳመጥ ላይ…",
+  "assist.wakeOn": "የመቀስቀሻ ቃል አጥፋ",
+  "assist.wakeOff": "የመቀስቀሻ ቃል አብራ",
+  "assist.thinking": "በማሰብ ላይ…",
+  "assist.empty": "አሲስት ቤቱን እንዲቆጣጠር ወይም ጥያቄ እንዲመልስ ይጠይቁ።",
+  "assist.emptyWake": "የመቀስቀሻ ቃሉን ይናገሩ፣ ማይኩን ይንኩ ወይም መልእክት ይጻፉ።",
+  "assist.done": "ተከናውኗል።",
+  "assist.errorMicDenied":
+    "የማይክሮፎን ፈቃድ ጠፍቷል። በቅንብሮች ውስጥ ለኢትዮ ሆም ያብሩት።",
+  "assist.errorMicUnavailable": "በዚህ መሣሪያ ላይ ማይክሮፎን የለም።",
+  "assist.errorGeneric": "አሲስት ያንን ጥያቄ ማጠናቀቅ አልቻለም።",
+
   "activity.comingBody": "ከሃቡ የሚመጡ ማሳወቂያዎች እና ታሪክ። ያ በኋላ በሚመጣው ክፍል ይጨመራል።",
 
   "status.reconnecting": "እንደገና በመገናኘት ላይ…",
