@@ -190,8 +190,35 @@ export const en = {
   "assist.errorMicUnavailable": "No microphone is available on this device.",
   "assist.errorGeneric": "Assist could not complete that request.",
 
-  "activity.comingBody":
-    "Notifications and history from the hub. That lands in a later slice.",
+  "activity.title": "Activity",
+  "activity.empty": "Nothing yet.",
+  "activity.emptyBody":
+    "Notifications your home sends you land here. Try a notify action from Home Assistant.",
+  "activity.emptyDemo":
+    "Demo mode has no hub to notify you. Connect to Home Assistant to see activity here.",
+  "activity.hubSection": "From Home Assistant",
+  "activity.pushSection": "Notifications",
+  "activity.markAllRead": "Mark all read",
+  "activity.clear": "Clear",
+  "activity.dismiss": "Dismiss",
+  "activity.unread": "{count} unread",
+  "activity.new": "New",
+  "activity.justNow": "Just now",
+  "activity.permissionTitle": "Turn on notifications",
+  "activity.permissionBody":
+    "Ethio Home needs permission to show banners when your home sends a notification.",
+  "activity.permissionAllow": "Allow notifications",
+  "activity.permissionDenied":
+    "Notifications are off for Ethio Home. Turn them on in your phone's settings to see banners.",
+  "activity.permissionOpenSettings": "Open settings",
+  "activity.notRegistered":
+    "This phone is not registered with Home Assistant yet, so it cannot receive notifications.",
+  "activity.registerFailedNotLoaded":
+    "Home Assistant does not have the mobile_app integration loaded. Add default_config to configuration.yaml and restart.",
+  "activity.registerFailedUnauthorized":
+    "Home Assistant refused to register this phone. Sign out and sign in again.",
+  "activity.registerFailedUnreachable":
+    "Could not reach Home Assistant to register this phone. It will retry on the next connection.",
 
   "status.reconnecting": "Reconnecting…",
   "status.offline": "Offline",

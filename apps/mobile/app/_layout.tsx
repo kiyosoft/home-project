@@ -11,8 +11,10 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 import { useDashboardStore } from "@/store/dashboard-store";
 import { useHaStore } from "@/store/ha-store";
 import { useLocaleStore } from "@/store/locale-store";
+import { useNotificationStore } from "@/store/notification-store";
 import { useThemeStore } from "@/store/theme-store";
 import { useConnectionWatch } from "@/store/use-connection-watch";
+import { useNotifySession } from "@/store/use-notify-session";
 import { AssistHost } from "@/widgets/AssistHost";
 import { DetailSheetProvider } from "@/widgets/DetailSheet";
 
@@ -25,8 +27,10 @@ export default function RootLayout() {
   const hydrateDashboard = useDashboardStore((state) => state.hydrate);
   const themeHydrated = useThemeStore((state) => state.hydrated);
   const hydrateTheme = useThemeStore((state) => state.hydrate);
+  const hydrateNotifications = useNotificationStore((state) => state.hydrate);
 
   useConnectionWatch();
+  useNotifySession();
 
   useEffect(() => {
     // Locale first so the Connect screen never flashes the wrong script.
@@ -34,7 +38,14 @@ export default function RootLayout() {
     void hydrateLocale().then(() => bootstrap());
     void hydrateDashboard();
     void hydrateTheme();
-  }, [bootstrap, hydrateLocale, hydrateDashboard, hydrateTheme]);
+    void hydrateNotifications();
+  }, [
+    bootstrap,
+    hydrateLocale,
+    hydrateDashboard,
+    hydrateTheme,
+    hydrateNotifications,
+  ]);
 
   useEffect(() => {
     if (hydrated && themeHydrated) void SplashScreen.hideAsync();

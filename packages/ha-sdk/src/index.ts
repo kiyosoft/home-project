@@ -130,6 +130,34 @@ export {
 } from "./media";
 export type { MediaView } from "./media";
 export { entityImageUrl, withAuthToken } from "./media-auth";
+export {
+  buildAppData,
+  CLEAR_NOTIFICATION,
+  confirmPush,
+  fireWebhookEvent,
+  isMobileAppLoaded,
+  MobileAppError,
+  parsePushNotification,
+  postWebhook,
+  registerMobileApp,
+  subscribePushChannel,
+  updateRegistration,
+  webhookUrl,
+} from "./mobile-app";
+export type {
+  MobileAppData,
+  MobileAppErrorKind,
+  MobileAppNotificationAction,
+  MobileAppPushNotification,
+  MobileAppRegistration,
+  MobileAppRegistrationRequest,
+  MobileAppUpdateRequest,
+} from "./mobile-app";
+export {
+  dismissPersistentNotification,
+  subscribePersistentNotifications,
+} from "./persistent-notification";
+export type { PersistentNotification } from "./persistent-notification";
 export { carriesCredential, signPath } from "./signed-path";
 export { EMPTY_AREA_INDEX, fetchAreaIndex } from "./registry";
 export type {

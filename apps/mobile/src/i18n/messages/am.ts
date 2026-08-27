@@ -190,7 +190,35 @@ export const am: Record<MessageKey, string> = {
   "assist.errorMicUnavailable": "በዚህ መሣሪያ ላይ ማይክሮፎን የለም።",
   "assist.errorGeneric": "አሲስት ያንን ጥያቄ ማጠናቀቅ አልቻለም።",
 
-  "activity.comingBody": "ከሃቡ የሚመጡ ማሳወቂያዎች እና ታሪክ። ያ በኋላ በሚመጣው ክፍል ይጨመራል።",
+  "activity.title": "እንቅስቃሴ",
+  "activity.empty": "እስካሁን ምንም የለም።",
+  "activity.emptyBody":
+    "ቤትዎ የሚልክልዎ ማሳወቂያዎች እዚህ ይታያሉ። ከሆም አሲስታንት የnotify ተግባር ይሞክሩ።",
+  "activity.emptyDemo":
+    "የማሳያ ሁነታ የሚያሳውቅዎ ሃብ የለውም። እንቅስቃሴ እዚህ ለማየት ከሆም አሲስታንት ጋር ይገናኙ።",
+  "activity.hubSection": "ከሆም አሲስታንት",
+  "activity.pushSection": "ማሳወቂያዎች",
+  "activity.markAllRead": "ሁሉንም እንደተነበበ ምልክት አድርግ",
+  "activity.clear": "አጽዳ",
+  "activity.dismiss": "አስወግድ",
+  "activity.unread": "{count} ያልተነበቡ",
+  "activity.new": "አዲስ",
+  "activity.justNow": "አሁን",
+  "activity.permissionTitle": "ማሳወቂያዎችን አብራ",
+  "activity.permissionBody":
+    "ቤትዎ ማሳወቂያ ሲልክ ኢትዮ ሆም ባነሮችን ለማሳየት ፈቃድ ያስፈልገዋል።",
+  "activity.permissionAllow": "ማሳወቂያዎችን ፍቀድ",
+  "activity.permissionDenied":
+    "ለኢትዮ ሆም ማሳወቂያዎች ጠፍተዋል። ባነሮችን ለማየት በስልክዎ ቅንብሮች ውስጥ ያብሯቸው።",
+  "activity.permissionOpenSettings": "ቅንብሮችን ክፈት",
+  "activity.notRegistered":
+    "ይህ ስልክ ገና በሆም አሲስታንት አልተመዘገበም፣ ስለዚህ ማሳወቂያ መቀበል አይችልም።",
+  "activity.registerFailedNotLoaded":
+    "ሆም አሲስታንት የmobile_app ውህደት አልጫነም። default_config ወደ configuration.yaml ጨምረው እንደገና ያስጀምሩ።",
+  "activity.registerFailedUnauthorized":
+    "ሆም አሲስታንት ይህን ስልክ ለመመዝገብ አልተቀበለም። ውጥተው እንደገና ይግቡ።",
+  "activity.registerFailedUnreachable":
+    "ይህን ስልክ ለመመዝገብ ሆም አሲስታንት ላይ መድረስ አልተቻለም። በሚቀጥለው ግንኙነት እንደገና ይሞከራል።",
 
   "status.reconnecting": "እንደገና በመገናኘት ላይ…",
   "status.offline": "ከመስመር ውጪ",

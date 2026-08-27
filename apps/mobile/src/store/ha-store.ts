@@ -18,6 +18,13 @@ import {
   type ConnectFailure,
 } from "@/lib/connection-error";
 import { loginWithHomeAssistant, type LoginFailure } from "@/lib/ha-auth";
+import {
+  clearRegistration,
+  ensureRegistration,
+  loadRegistration,
+  type RegistrationFailure,
+  type StoredRegistration,
+} from "@/lib/registration";
 import { orderedCandidates } from "@/lib/select-url";
 import {
   clearConnectionSettings,
@@ -48,6 +55,10 @@ interface HaState {
   activeUrl: string;
   /** False until saved credentials have been read off disk. */
   hydrated: boolean;
+  /** Our `mobile_app` registration. Null in demo mode and before it lands. */
+  registration: StoredRegistration | null;
+  registrationFailure: RegistrationFailure | null;
+  setRegistration: (registration: StoredRegistration) => void;
   login: (baseUrl: string, slot?: AddressSlot) => Promise<void>;
   connectWithToken: (
     baseUrl: string,
@@ -99,6 +110,7 @@ function cleanupClient() {
 function attachClient(
   next: EntityClient,
   set: (partial: Partial<HaState>) => void,
+  baseUrl: string,
 ) {
   cleanupClient();
   client = next;
@@ -128,6 +140,41 @@ function attachClient(
   });
   set({ status: "connected", failure: null });
   void loadAreas(next, set);
+  if (baseUrl) void registerDevice(next, set, baseUrl);
+}
+
+/**
+ * Registration is what gives Home Assistant a `notify.mobile_app_*` target for
+ * this phone. It is best-effort: an instance without `mobile_app` loaded still
+ * gets a working dashboard, just no notifications.
+ */
+async function registerDevice(
+  target: EntityClient,
+  set: (partial: Partial<HaState>) => void,
+  baseUrl: string,
+) {
+  const settings = saved;
+  if (!settings || settings.mode !== "live") return;
+
+  const accessToken =
+    settings.authMode === "oauth"
+      ? (settings.tokens?.accessToken ?? "")
+      : settings.token;
+  if (!accessToken) return;
+
+  const result = await ensureRegistration({
+    baseUrl,
+    accessToken,
+    sendMessagePromise: (message) => target.sendMessagePromise(message),
+  });
+
+  // A reconnect may have swapped the client while this was in flight.
+  if (client !== target) return;
+  set(
+    result.ok
+      ? { registration: result.registration, registrationFailure: null }
+      : { registration: result.registration, registrationFailure: result.failure },
+  );
 }
 
 /**
@@ -222,6 +269,12 @@ export const useHaStore = create<HaState>((set, get) => ({
   profile: defaultProfile,
   activeUrl: "",
   hydrated: false,
+  registration: null,
+  registrationFailure: null,
+
+  setRegistration(registration) {
+    set({ registration, registrationFailure: null });
+  },
 
   async login(baseUrl, slot = "external") {
     const address = trimTrailingSlash(baseUrl);
@@ -289,7 +342,7 @@ export const useHaStore = create<HaState>((set, get) => ({
       try {
         const next = await openClient(candidate.url, settings);
         set({ activeUrl: candidate.url });
-        attachClient(next, set);
+        attachClient(next, set, candidate.url);
         return;
       } catch (error) {
         failure = toFailure(error);
@@ -327,8 +380,8 @@ export const useHaStore = create<HaState>((set, get) => ({
         tokens: null,
       };
       await saveConnectionSettings(saved);
-      set({ profile: defaultProfile });
-      attachClient(next, set);
+      set({ profile: defaultProfile, registration: null, registrationFailure: null });
+      attachClient(next, set, "");
     } catch (error) {
       cleanupClient();
       set({
@@ -363,6 +416,9 @@ export const useHaStore = create<HaState>((set, get) => ({
         });
       }
       void clearConnectionSettings();
+      // The device stays in Home Assistant so the user can see and remove it
+      // there; we only forget our side of the registration.
+      void clearRegistration();
       saved = null;
     }
     set({
@@ -374,6 +430,8 @@ export const useHaStore = create<HaState>((set, get) => ({
       mode: null,
       activeUrl: "",
       profile: options?.clearSaved ? defaultProfile : get().profile,
+      registration: options?.clearSaved ? null : get().registration,
+      registrationFailure: null,
     });
   },
 
@@ -426,6 +484,11 @@ export const useHaStore = create<HaState>((set, get) => ({
         await get().connectDemo();
         return;
       }
+
+      // Restore the webhook before connecting so the push channel can subscribe
+      // on the first "connected" rather than waiting for the round-trip that
+      // re-verifies it.
+      set({ registration: await loadRegistration() });
       await get().connect();
     } finally {
       set({ hydrated: true });
@@ -465,7 +528,7 @@ async function beginLive(
   saved = settings;
   await saveConnectionSettings(settings);
   set({ activeUrl: address });
-  attachClient(next, set);
+  attachClient(next, set, address);
 
   const patch = await adoptInstanceAddresses(next, settings.profile);
   if (Object.keys(patch).length === 0 || client !== next) return;

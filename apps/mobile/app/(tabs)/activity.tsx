@@ -1,10 +1,5 @@
-import { ComingLaterScreen } from "@/screens/ComingLaterScreen";
+import { ActivityScreen } from "@/screens/ActivityScreen";
 
 export default function ActivityRoute() {
-  return (
-    <ComingLaterScreen
-      titleKey="tabs.activity"
-      bodyKey="activity.comingBody"
-    />
-  );
+  return <ActivityScreen />;
 }

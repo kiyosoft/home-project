@@ -17,6 +17,7 @@ const THEME_KEY = "ethio-home.theme";
 const TOKEN_KEY = "ethio-home.token.v1";
 const TOKENS_KEY = "ethio-home.tokens.v1";
 const DASHBOARD_KEY = "ethio-home.mobile-dashboard:v1";
+const NOTIFICATIONS_KEY = "ethio-home.notifications:v1";
 
 export type ConnectionMode = "live" | "demo";
 
@@ -217,6 +218,24 @@ export async function saveDashboardDocument(document: unknown): Promise<void> {
 
 export async function clearDashboardDocument(): Promise<void> {
   await AsyncStorage.removeItem(DASHBOARD_KEY);
+}
+
+/** Raw JSON; the notification store validates the shape. */
+export async function loadNotificationHistory(): Promise<unknown | null> {
+  try {
+    const raw = await AsyncStorage.getItem(NOTIFICATIONS_KEY);
+    return raw ? (JSON.parse(raw) as unknown) : null;
+  } catch {
+    return null;
+  }
+}
+
+export async function saveNotificationHistory(history: unknown): Promise<void> {
+  await AsyncStorage.setItem(NOTIFICATIONS_KEY, JSON.stringify(history));
+}
+
+export async function clearNotificationHistory(): Promise<void> {
+  await AsyncStorage.removeItem(NOTIFICATIONS_KEY);
 }
 
 export async function loadLocale(): Promise<Locale> {
