@@ -1,4 +1,9 @@
-import { useVideoPlayer, VideoView, type VideoSource } from "expo-video";
+import {
+  useVideoPlayer,
+  VideoView,
+  type BufferOptions,
+  type VideoSource,
+} from "expo-video";
 import { Button, Label, Spinner, Surface, Switch, Text } from "heroui-native";
 import { useCallback, useState } from "react";
 import { View } from "react-native";
@@ -15,10 +20,24 @@ type LiveState =
   | { kind: "playing"; uri: string }
   | { kind: "failed" };
 
+/**
+ * A camera feed is worth more fresh than smooth, so trade rebuffer resistance
+ * for latency. The defaults are tuned for on-demand video: Android stacks up
+ * 20s of lookahead, and iOS holds playback back until it judges a stall
+ * unlikely, which together put the picture several seconds behind the door.
+ */
+const LIVE_BUFFER: BufferOptions = {
+  preferredForwardBufferDuration: 2,
+  minBufferForPlayback: 0.5,
+  prioritizeTimeOverSizeThreshold: true,
+  waitsToMinimizeStalling: false,
+};
+
 function LivePlayer({ uri, label }: { uri: string; label: string }) {
   const source: VideoSource = { uri, contentType: "hls" };
   const player = useVideoPlayer(source, (next) => {
     next.muted = true;
+    next.bufferOptions = LIVE_BUFFER;
     next.play();
   });
 
