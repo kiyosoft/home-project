@@ -18,9 +18,13 @@ Open [http://localhost:5180](http://localhost:5180) (Vite falls back to the next
 
 ## Connect to Home Assistant
 
+Opened from the HA sidebar, the [add-on](./ethio-home/DOCS.md) lets you sign in with your Home Assistant username and password.
+
+On the dev server — or anywhere else Home Assistant is not serving the page itself — HA refuses the login API cross-origin, so use a token:
+
 1. In Home Assistant: **Profile → Security → Long-lived access tokens → Create token**
-2. On the Ethio Home setup screen, enter your HA URL (e.g. `http://homeassistant.local:8123`) and paste the token
-3. Click **Connect**
+2. On the setup screen, pick **Use a long-lived access token instead**
+3. Enter your HA URL (e.g. `http://homeassistant.local:8123`), paste the token, click **Connect**
 
 Connection settings, theme, dashboard JSON, and PIN/kiosk prefs are stored in `localStorage` on this device.
 
@@ -66,7 +70,7 @@ Card UX inspired by [ha-teamtracker-card](https://github.com/vasqued2/ha-teamtra
 
 ## Home Assistant add-on
 
-Serves the production dashboard over HA **ingress** (sidebar panel). You still connect with a HA URL + long-lived access token.
+Serves the production dashboard over HA **ingress** (sidebar panel). Because Home Assistant serves the page, you can sign in with your HA username and password.
 
 1. **Settings → Add-ons → Add-on store → ⋮ → Repositories**
 2. Add:
@@ -76,7 +80,7 @@ Serves the production dashboard over HA **ingress** (sidebar panel). You still c
    ```
 
 3. Install **Ethio Home**, start it, open from the sidebar
-4. Enter your HA URL and long-lived access token on the setup screen
+4. Sign in with your Home Assistant username and password
 
 Maintainers: run `pnpm prepare:addon` after UI changes, then commit `ethio-home/www/` and bump `ethio-home/config.yaml` `version`.
 

@@ -1,3 +1,5 @@
+import type { HaTokens } from "@ethio/ha-sdk";
+
 import {
   safeParseDashboardConfig,
 } from "@/dashboard/schemas";
@@ -10,12 +12,17 @@ import {
 } from "@/lib/themes";
 
 export type ConnectionMode = "live" | "demo";
+export type AuthMode = "oauth" | "token";
 export type { ThemeMode, Locale };
 
 export interface ConnectionSettings {
   mode: ConnectionMode;
+  authMode: AuthMode;
   baseUrl: string;
+  /** Long-lived access token. Empty when `authMode` is `oauth`. */
   token: string;
+  /** Refreshable grant. Null when `authMode` is `token`. */
+  tokens: HaTokens | null;
 }
 
 export interface LockSettings {
@@ -34,8 +41,10 @@ const LOCK_KEY_LEGACY = "ethio-home.lock";
 
 const defaultConnection: ConnectionSettings = {
   mode: "live",
+  authMode: "token",
   baseUrl: "",
   token: "",
+  tokens: null,
 };
 
 function readStorage(key: string, legacyKey: string): string | null {
@@ -54,10 +63,15 @@ export function loadConnectionSettings(): ConnectionSettings | null {
     if (!raw) return null;
     const parsed = JSON.parse(raw) as Partial<ConnectionSettings>;
     if (parsed.mode !== "live" && parsed.mode !== "demo") return null;
+    // Anything saved before sign-in existed is a long-lived token.
+    const authMode: AuthMode = parsed.authMode === "oauth" ? "oauth" : "token";
+    const tokens = authMode === "oauth" ? parseTokens(parsed.tokens) : null;
     return {
       mode: parsed.mode,
+      authMode,
       baseUrl: typeof parsed.baseUrl === "string" ? parsed.baseUrl : "",
-      token: typeof parsed.token === "string" ? parsed.token : "",
+      token: authMode === "token" && typeof parsed.token === "string" ? parsed.token : "",
+      tokens,
     };
   } catch {
     return null;
@@ -69,16 +83,56 @@ export function saveConnectionSettings(settings: ConnectionSettings): void {
     CONNECTION_KEY,
     JSON.stringify({
       mode: settings.mode,
+      authMode: settings.authMode,
       baseUrl: settings.baseUrl,
-      token: settings.token,
+      token: settings.authMode === "token" ? settings.token : "",
+      tokens: settings.authMode === "oauth" ? settings.tokens : null,
     }),
   );
   localStorage.removeItem(CONNECTION_KEY_LEGACY);
 }
 
+function parseTokens(value: unknown): HaTokens | null {
+  if (typeof value !== "object" || value === null) return null;
+  const candidate = value as Record<string, unknown>;
+  if (
+    typeof candidate.accessToken !== "string" ||
+    typeof candidate.refreshToken !== "string" ||
+    typeof candidate.clientId !== "string" ||
+    typeof candidate.expires !== "number"
+  ) {
+    return null;
+  }
+  return {
+    accessToken: candidate.accessToken,
+    refreshToken: candidate.refreshToken,
+    clientId: candidate.clientId,
+    expires: candidate.expires,
+  };
+}
+
 export function clearConnectionSettings(): void {
   localStorage.removeItem(CONNECTION_KEY);
   localStorage.removeItem(CONNECTION_KEY_LEGACY);
+}
+
+/** Persists a rotated grant. Ignored once the connection is gone or not OAuth. */
+export function saveConnectionTokens(tokens: HaTokens): void {
+  const settings = loadConnectionSettings();
+  if (!settings || settings.authMode !== "oauth") return;
+  saveConnectionSettings({ ...settings, tokens });
+}
+
+/**
+ * The bearer token for media and REST URLs. OAuth access tokens rotate, so
+ * this reads storage rather than caching.
+ */
+export function liveAccessToken(): string {
+  const saved = loadConnectionSettings();
+  if (!saved || saved.mode !== "live") return "";
+  return saved.authMode === "oauth"
+    ? (saved.tokens?.accessToken ?? "")
+    : saved.token;
 }
 
 export function loadTheme(): ThemeMode {

@@ -13,7 +13,7 @@ import {
   type AssistMicSession,
 } from "@/lib/assist-audio";
 import { assistTtsPlaybackUrl, playAssistTts, stopAssistTts } from "@/lib/assist-tts";
-import { loadConnectionSettings } from "@/lib/settings";
+import { liveAccessToken } from "@/lib/settings";
 import { useHaStore } from "@/store/ha-store";
 import { useLocaleStore } from "@/store/locale-store";
 
@@ -27,11 +27,6 @@ export type AssistPhase = "idle" | "wake" | "listening" | "thinking";
 function nextId(counter: { current: number }): string {
   counter.current += 1;
   return `assist-${counter.current}`;
-}
-
-function liveToken(): string {
-  const saved = loadConnectionSettings();
-  return saved?.mode === "live" ? saved.token : "";
 }
 
 function isWakeTimeout(code: string): boolean {
@@ -88,7 +83,7 @@ export function useAssistSession() {
 
   const playReply = useCallback(
     (url: string) => {
-      const playback = assistTtsPlaybackUrl(baseUrl, url, liveToken());
+      const playback = assistTtsPlaybackUrl(baseUrl, url, liveAccessToken());
       if (playback) playAssistTts(playback);
     },
     [baseUrl],

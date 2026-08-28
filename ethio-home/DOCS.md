@@ -1,6 +1,6 @@
 # Ethio Home
 
-Plugin-driven dashboard for Home Assistant. This add-on serves the Ethio Home web UI through **ingress** (sidebar panel). Entity traffic stays in your browser: you connect with a Home Assistant URL and a long-lived access token.
+Plugin-driven dashboard for Home Assistant. This add-on serves the Ethio Home web UI through **ingress** (sidebar panel). Entity traffic stays in your browser: you sign in with your Home Assistant account, and the dashboard talks to it directly.
 
 ## Installation (GitHub)
 
@@ -24,9 +24,17 @@ The repository root contains `repository.yaml` and the `ethio-home/` add-on fold
 
 ## First connection
 
+1. Open Ethio Home from the sidebar. The Home Assistant URL is filled in for you.
+2. Enter your Home Assistant username and password, then click **Sign in**.
+
+Your session refreshes itself, so there is nothing to paste and nothing to rotate by hand. Two-factor accounts get a second step asking for the code.
+
+### Long-lived access token instead
+
+Choose **Use a long-lived access token instead** on the setup screen if you would rather not sign in:
+
 1. In Home Assistant: **Profile → Security → Long-lived access tokens → Create token**.
-2. In Ethio Home setup, enter your HA URL (for example `http://homeassistant.local:8123`) and paste the token.
-3. Click **Connect**.
+2. Enter your HA URL, paste the token, and click **Connect**.
 
 Settings and dashboard layout are stored in the browser (`localStorage`) for that device.
 
@@ -52,4 +60,5 @@ Signing in from the Ethio Home mobile app needs a verification page that Home As
 ## Notes
 
 - Ingress only allows traffic from the Supervisor ingress proxy.
+- Home Assistant only accepts its login API from pages it serves itself, which is why signing in works here but not from a dashboard hosted elsewhere. Use a long-lived access token in that case.
 - Rebuild/reinstall after pulling UI updates that change `ethio-home/www/`.

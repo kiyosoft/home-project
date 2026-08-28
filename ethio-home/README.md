@@ -10,7 +10,7 @@ In Home Assistant: **Settings → Add-ons → Add-on store → ⋮ → Repositor
 https://github.com/kiyosoft/home-project
 ```
 
-Install **Ethio Home**, start it, open from the sidebar, then connect with your HA URL and a long-lived access token.
+Install **Ethio Home**, start it, open from the sidebar, then sign in with your Home Assistant username and password.
 
 ## Refresh built UI (maintainers)
 

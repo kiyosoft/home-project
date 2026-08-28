@@ -4,7 +4,7 @@ import {
 } from "@ethio/plugin-sdk";
 
 import { pluginHasCapability } from "@/plugins/manager";
-import { loadConnectionSettings } from "@/lib/settings";
+import { liveAccessToken } from "@/lib/settings";
 import { useHaStore } from "@/store/ha-store";
 
 let wired = false;
@@ -24,10 +24,7 @@ export function wirePlatformBindings(): void {
     subscribeMessage: (message, onMessage) =>
       useHaStore.getState().subscribeMessage(message, onMessage),
     getBaseUrl: () => useHaStore.getState().baseUrl,
-    getAuthToken: () => {
-      const saved = loadConnectionSettings();
-      return saved?.mode === "live" ? saved.token : "";
-    },
+    getAuthToken: liveAccessToken,
     hasCapability: pluginHasCapability,
   });
 

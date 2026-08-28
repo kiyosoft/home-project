@@ -4,16 +4,41 @@ export const en = {
 
   "setup.connectTitle": "Connect Home Assistant",
   "setup.connectDescription":
-    "Use a long-lived access token from your HA profile. Entity data stays on your network.",
+    "Sign in with your Home Assistant account. Entity data stays on your network.",
+  "setup.tokenDescription":
+    "Connect with a long-lived access token from your Home Assistant profile.",
   "setup.urlLabel": "Home Assistant URL",
+  "setup.usernameLabel": "Username",
+  "setup.passwordLabel": "Password",
   "setup.tokenLabel": "Long-lived access token",
   "setup.tokenPlaceholder": "Paste token",
   "setup.connect": "Connect",
   "setup.connecting": "Connecting…",
+  "setup.signIn": "Sign in",
+  "setup.useToken": "Use a long-lived access token instead",
+  "setup.useSignIn": "Sign in with username and password instead",
+  "setup.mfaTitle": "Two-factor authentication",
+  "setup.mfaDescription": "Enter the code from your authenticator app.",
+  "setup.codeLabel": "Verification code",
+  "setup.codePlaceholder": "123456",
+  "setup.verify": "Verify",
+  "setup.cancel": "Cancel",
   "setup.errorRequired":
     "Home Assistant URL and long-lived access token are required.",
+  "setup.errorCredentialsRequired": "Enter your username and password.",
+  "setup.errorUrlRequired": "Enter your Home Assistant URL.",
+  "setup.errorCodeRequired": "Enter the verification code.",
   "setup.errorInvalidUrl":
     "Enter a valid URL, e.g. http://homeassistant.local:8123",
+  "setup.errorInvalidAuth": "Wrong username or password.",
+  "setup.errorInvalidCode": "That code was not accepted. Try the next one.",
+  "setup.errorBlocked":
+    "Home Assistant blocked the sign-in after too many attempts. Wait a moment and try again.",
+  "setup.errorNotSameOrigin":
+    "Signing in only works from the Ethio Home add-on, which Home Assistant serves itself. Use a long-lived access token here.",
+  "setup.errorUnreachable":
+    "Nothing answered at that address. Check the URL and that Home Assistant is reachable.",
+  "setup.errorGeneric": "Could not sign in to Home Assistant.",
   "setup.demoTitle": "Try demo mode",
   "setup.demoDescription":
     "Explore a sample dashboard with simulated lights, switches, and sensors — no Home Assistant required.",
