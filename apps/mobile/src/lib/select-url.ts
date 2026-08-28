@@ -1,6 +1,6 @@
 import { readHomeNetworkVerdict } from "@/lib/home-network";
 import type { ConnectionProfile } from "@/lib/settings";
-import { trimTrailingSlash } from "@/lib/url";
+import { legacyPortUrl, trimTrailingSlash } from "@/lib/url";
 
 /** Unauthenticated; any HTTP response means something is listening. */
 const PROBE_PATH = "/manifest.json";
@@ -20,19 +20,29 @@ export async function orderedCandidates(
   const external = trimTrailingSlash(profile.externalUrl);
 
   if (!internal && !external) return [];
-  if (!internal) return [{ url: external, kind: "external" }];
-  if (!external) return [{ url: internal, kind: "internal" }];
+  if (!internal) return withPortFallback(external, "external");
+  if (!external) return withPortFallback(internal, "internal");
 
   const internalFirst = await preferInternal(profile, internal);
   return internalFirst
     ? [
-        { url: internal, kind: "internal" },
-        { url: external, kind: "external" },
+        ...withPortFallback(internal, "internal"),
+        ...withPortFallback(external, "external"),
       ]
     : [
-        { url: external, kind: "external" },
-        { url: internal, kind: "internal" },
+        ...withPortFallback(external, "external"),
+        ...withPortFallback(internal, "internal"),
       ];
+}
+
+/**
+ * A local address with no port could be either of Home Assistant's two
+ * defaults, so try the modern one and fall through to the old one rather than
+ * asking somebody to know which kind of install they are running.
+ */
+function withPortFallback(url: string, kind: UrlKind): UrlCandidate[] {
+  const legacy = legacyPortUrl(url);
+  return legacy ? [{ url, kind }, { url: legacy, kind }] : [{ url, kind }];
 }
 
 async function preferInternal(

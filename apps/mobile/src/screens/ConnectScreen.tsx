@@ -25,7 +25,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useDiscovery, type DiscoveredInstance } from "@/lib/discovery";
 import type { MessageKey } from "@/i18n";
 import { failureField, failureMessageKey } from "@/lib/connection-error";
-import { isHttpUrl } from "@/lib/url";
+import { normalizeBaseUrl } from "@/lib/url";
 import { useHaStore } from "@/store/ha-store";
 import { useT } from "@/store/locale-store";
 import { LanguageSwitcher } from "@/ui/LanguageSwitcher";
@@ -67,34 +67,41 @@ export function ConnectScreen() {
   const addressConfirmed =
     failure?.kind === "token-rejected" || failure?.kind === "signed-out";
 
-  function validate(url: string): boolean {
+  /**
+   * Returns the address to connect to, filling in the scheme and port that
+   * nobody types, or null when the field cannot be read as an address.
+   */
+  function resolve(url: string): string | null {
     if (!url) {
       setLocalError("required");
-      return false;
+      return null;
     }
-    if (!isHttpUrl(url)) {
+    const normalized = normalizeBaseUrl(url);
+    if (!normalized) {
       setLocalError("invalid-url");
-      return false;
+      return null;
     }
     setLocalError(null);
-    return true;
+    // Show what we settled on, so a failure is about an address they can see.
+    setBaseUrl(normalized);
+    return normalized;
   }
 
   async function handleSignIn() {
-    const trimmedUrl = baseUrl.trim();
-    if (!validate(trimmedUrl)) return;
-    await login(trimmedUrl);
+    const url = resolve(baseUrl.trim());
+    if (!url) return;
+    await login(url);
   }
 
   async function handleTokenConnect() {
-    const trimmedUrl = baseUrl.trim();
     const trimmedToken = token.trim();
-    if (!trimmedUrl || !trimmedToken) {
+    if (!baseUrl.trim() || !trimmedToken) {
       setLocalError("required");
       return;
     }
-    if (!validate(trimmedUrl)) return;
-    await connectWithToken(trimmedUrl, trimmedToken);
+    const url = resolve(baseUrl.trim());
+    if (!url) return;
+    await connectWithToken(url, trimmedToken);
   }
 
   async function handlePaste() {

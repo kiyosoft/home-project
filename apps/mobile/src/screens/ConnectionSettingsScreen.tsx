@@ -22,7 +22,7 @@ import {
   ensureSsidPermission,
   hasSsidPermission,
 } from "@/lib/home-network";
-import { isHttpUrl } from "@/lib/url";
+import { normalizeBaseUrl } from "@/lib/url";
 import { useHaStore } from "@/store/ha-store";
 import { useT } from "@/store/locale-store";
 
@@ -47,13 +47,18 @@ export function ConnectionSettingsScreen() {
 
   function commitUrl(slot: "internal" | "external", value: string) {
     const trimmed = value.trim();
-    if (trimmed && !isHttpUrl(trimmed)) {
+    const normalized = trimmed ? normalizeBaseUrl(trimmed) : "";
+    if (normalized === null) {
       setUrlError(slot);
       return;
     }
     setUrlError(null);
+    if (slot === "internal") setInternalUrl(normalized);
+    else setExternalUrl(normalized);
     void saveProfile(
-      slot === "internal" ? { internalUrl: trimmed } : { externalUrl: trimmed },
+      slot === "internal"
+        ? { internalUrl: normalized }
+        : { externalUrl: normalized },
     );
   }
 

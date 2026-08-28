@@ -29,6 +29,63 @@ export function isHttpUrl(url: string): boolean {
   return parseOrigin(url) !== null;
 }
 
+/** What Home Assistant listened on before 2026.8, and still does on upgrades. */
+const LEGACY_PORT = 8123;
+
+/**
+ * Turns what somebody typed into an address we can actually connect to.
+ *
+ * People type `homeassistant.local`, not `http://homeassistant.local`, and
+ * rejecting that outright reads as "cannot reach your home" when nothing was
+ * ever tried. A hub on the local network is plain HTTP; anything that looks
+ * like a public name is far likelier to be a reverse proxy, so that gets HTTPS.
+ *
+ * No port is filled in. Home Assistant 2026.8 moved fresh Home Assistant OS
+ * installs to port 80, while upgraded and container installs stayed on 8123, so
+ * a typed address genuinely could be either and {@link legacyPortUrl} supplies
+ * the other one to try.
+ *
+ * Returns null only when the input cannot be read as an address at all.
+ */
+export function normalizeBaseUrl(input: string): string | null {
+  const trimmed = trimTrailingSlash(input);
+  if (!trimmed) return null;
+
+  const hasScheme = /^https?:\/\//i.test(trimmed);
+  // Parse behind a provisional scheme so the host can be inspected either way.
+  const origin = parseOrigin(hasScheme ? trimmed : `http://${trimmed}`);
+  if (!origin) return null;
+
+  const scheme = hasScheme
+    ? origin.scheme
+    : isLocalHost(origin.host)
+      ? "http"
+      : "https";
+  const port = origin.port === null ? "" : `:${origin.port}`;
+
+  return `${scheme}://${origin.host}${port}`;
+}
+
+/**
+ * The same local address on Home Assistant's pre-2026.8 port, or null when the
+ * question does not arise: a stated port is a decision, and a public HTTPS name
+ * is a reverse proxy that answers on 443.
+ */
+export function legacyPortUrl(url: string): string | null {
+  const origin = parseOrigin(url);
+  if (!origin || origin.port !== null || origin.scheme !== "http") return null;
+  if (!isLocalHost(origin.host)) return null;
+  return `http://${origin.host}:${LEGACY_PORT}`;
+}
+
+/** Whether this name can only resolve on the network the phone is sitting on. */
+export function isLocalHost(host: string): boolean {
+  const lower = host.toLowerCase();
+  if (lower === "localhost" || !lower.includes(".")) return true;
+  if (/\.(local|lan|home|internal|home\.arpa)$/.test(lower)) return true;
+  return /^(?:10\.|127\.|192\.168\.|172\.(?:1[6-9]|2\d|3[01])\.)/.test(lower);
+}
+
 export function trimTrailingSlash(url: string): string {
   return url.trim().replace(/\/+$/, "");
 }

@@ -15,6 +15,7 @@ import { useNotificationStore } from "@/store/notification-store";
 import { useThemeStore } from "@/store/theme-store";
 import { useConnectionWatch } from "@/store/use-connection-watch";
 import { useNotifySession } from "@/store/use-notify-session";
+import { usePushToken } from "@/store/use-push-token";
 import { AssistHost } from "@/widgets/AssistHost";
 import { DetailSheetProvider } from "@/widgets/DetailSheet";
 
@@ -31,6 +32,7 @@ export default function RootLayout() {
 
   useConnectionWatch();
   useNotifySession();
+  usePushToken();
 
   useEffect(() => {
     // Locale first so the Connect screen never flashes the wrong script.

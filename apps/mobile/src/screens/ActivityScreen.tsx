@@ -16,6 +16,7 @@ import {
   requestNotificationPermission,
   type PermissionState,
 } from "@/lib/notifications";
+import type { PushTokenFailure } from "@/lib/push-token";
 import { useHaStore } from "@/store/ha-store";
 import { useLocaleStore, useT } from "@/store/locale-store";
 import {
@@ -24,6 +25,7 @@ import {
   type NotificationRecord,
 } from "@/store/notification-store";
 import { usePersistentNotifications } from "@/store/use-persistent-notifications";
+import { usePushSyncStore, type PushSync } from "@/store/use-push-token";
 import { Screen } from "@/ui/Screen";
 
 const ESTIMATED_ROW_HEIGHT = 96;
@@ -49,9 +51,14 @@ export function ActivityScreen() {
   const registrationFailure = useHaStore((state) => state.registrationFailure);
   const callService = useHaStore((state) => state.callService);
 
+  const pushSync = usePushSyncStore((state) => state.sync);
+  const pushRejected = usePushSyncStore((state) => state.tokenRejected);
+  const pushDetail = "detail" in pushSync ? pushSync.detail : null;
+
   const intlLocale = toIntlLocale(locale);
   const unread = unreadCount(records);
   const permission = useNotificationPermission(registration !== null);
+  const push = pushSummary(pushSync, pushRejected);
 
   const rows = useMemo<Row[]>(() => {
     const next: Row[] = [];
@@ -223,6 +230,25 @@ export function ActivityScreen() {
         </Card>
       ) : null}
 
+      {registration && push ? (
+        <Card>
+          <Card.Body className="gap-2">
+            <View className="flex-row items-center justify-between gap-3">
+              <Card.Title>{t("activity.pushTitle")}</Card.Title>
+              <Chip size="sm" variant="soft" color={push.color}>
+                {t(push.state)}
+              </Chip>
+            </View>
+            <Card.Description>{t(push.detail)}</Card.Description>
+            {pushDetail ? (
+              <Card.Description className="mt-1 opacity-60">
+                {pushDetail}
+              </Card.Description>
+            ) : null}
+          </Card.Body>
+        </Card>
+      ) : null}
+
       {records.length > 0 ? (
         <View className="flex-row flex-wrap gap-2">
           <Button
@@ -297,6 +323,70 @@ function useNotificationPermission(registered: boolean) {
   return { state, ask };
 }
 
+/**
+ * Whether a notification will reach this phone with the app closed, which is a
+ * different question from whether notifications work at all: the socket channel
+ * covers the running app on its own. Silent while the permission cards are up,
+ * since those are the more useful thing to read first.
+ */
+function pushSummary(sync: PushSync, rejected: boolean) {
+  if (sync.status === "idle" || sync.status === "no-permission") return null;
+
+  if (sync.status === "syncing") {
+    return {
+      color: "default",
+      state: "activity.pushStatePending",
+      detail: "activity.pushSyncing",
+    } as const;
+  }
+
+  if (sync.status === "synced") {
+    // A token Home Assistant accepted that the relay still cannot deliver to.
+    // Sent successfully and useless, so this reads as off rather than on.
+    return rejected
+      ? ({
+          color: "warning",
+          state: "activity.pushStateOff",
+          detail: "activity.pushRejected",
+        } as const)
+      : ({
+          color: "success",
+          state: "activity.pushStateOn",
+          detail: "activity.pushSynced",
+        } as const);
+  }
+
+  // Blocked and failed both carry the reason, which is what the union is for.
+  if (sync.status === "blocked" || sync.status === "failed") {
+    return {
+      color: "warning",
+      state: "activity.pushStateOff",
+      detail: PUSH_FAILURE_DETAIL[sync.failure],
+    } as const;
+  }
+
+  // Nothing left but a relay we cannot see, so there is no URL to register.
+  return {
+    color: "warning",
+    state: "activity.pushStateOff",
+    detail: "activity.pushNoRelay",
+  } as const;
+}
+
+/**
+ * `satisfies` rather than an annotation: the annotation would widen these to
+ * `string` and lose the message keys, while this still fails to compile if a
+ * new failure arrives without something to say about it.
+ */
+const PUSH_FAILURE_DETAIL = {
+  simulator: "activity.pushSimulator",
+  "no-project": "activity.pushNoProject",
+  timeout: "activity.pushTimeout",
+  unavailable: "activity.pushFailed",
+  "ha-rejected": "activity.pushHaRejected",
+  "no-registration": "activity.pushNoRegistration",
+} as const satisfies Record<PushTokenFailure, string>;
+
 function registrationNotice(state: {
   mode: string | null;
   registered: boolean;
@@ -308,6 +398,8 @@ function registrationNotice(state: {
       return "activity.registerFailedNotLoaded" as const;
     case "unauthorized":
       return "activity.registerFailedUnauthorized" as const;
+    case "rejected":
+      return "activity.registerFailedRejected" as const;
     case "unreachable":
     case "unknown":
       return "activity.registerFailedUnreachable" as const;

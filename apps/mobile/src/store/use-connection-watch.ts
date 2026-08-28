@@ -87,7 +87,14 @@ export function useConnectionWatch() {
 async function sameAddressStillWins(): Promise<boolean> {
   const { activeUrl, profile } = useHaStore.getState();
   const candidates = await orderedCandidates(profile);
-  return candidates[0]?.url === activeUrl;
+  const winner = candidates[0];
+  if (!winner) return false;
+  // One address can appear twice, once per Home Assistant port default. Being
+  // connected on either of them means the winning address is already in use,
+  // and reconnecting would only drop a working socket.
+  return candidates.some(
+    (entry) => entry.kind === winner.kind && entry.url === activeUrl,
+  );
 }
 
 async function decideOnNetwork(state: NetInfoState) {

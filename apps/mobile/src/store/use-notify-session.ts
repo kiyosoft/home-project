@@ -7,13 +7,14 @@ import {
 import * as Notifications from "expo-notifications";
 import { router } from "expo-router";
 import { useEffect, useRef } from "react";
-import { Linking } from "react-native";
+import { AppState, Linking } from "react-native";
 
 import {
   configureNotifications,
   DEFAULT_ACTION,
   dismissByTag,
-  isLocallyPresented,
+  fromOsNotification,
+  presentedNotifications,
   presentNotification,
 } from "@/lib/notifications";
 import { fireNotificationAction } from "@/lib/webhook";
@@ -84,6 +85,7 @@ export function useNotifySession() {
 
   useNotificationResponses();
   useRemoteNotifications();
+  useTrayBackfill();
 }
 
 /**
@@ -95,6 +97,7 @@ export function useNotifySession() {
  */
 function useNotificationResponses() {
   const response = Notifications.useLastNotificationResponse();
+  const record = useNotificationStore((state) => state.record);
   const handled = useRef<Notifications.NotificationResponse | null>(null);
 
   useEffect(() => {
@@ -104,17 +107,41 @@ function useNotificationResponses() {
     const data = (response.notification.request.content.data ??
       {}) as Record<string, unknown>;
 
+    // Filed here as well as by the tray scan, because a tap is the one path
+    // where the scan cannot see it: opening a notification removes it from the
+    // tray, so on a cold start from a tap there is nothing left to find. Ones
+    // we presented ourselves are already filed and `fromOsNotification`
+    // declines them.
+    const entry = fromOsNotification(response.notification);
+    if (entry) {
+      record(entry.notification, {
+        id: entry.identifier,
+        receivedAt: entry.receivedAt,
+      });
+    }
+
     if (response.actionIdentifier !== DEFAULT_ACTION) {
       void fireNotificationAction({
         action: response.actionIdentifier,
-        tag: typeof data.haTag === "string" ? data.haTag : null,
+        tag: readTag(data),
         replyText: response.userText,
         actionData: readActionData(data),
       });
     }
 
     openTarget(data);
-  }, [response]);
+  }, [response, record]);
+}
+
+/**
+ * `haTag` is ours, stamped on the notifications we present from the socket.
+ * `tag` is Home Assistant's own field, which survives untouched on anything the
+ * relay delivered, and is all there is to go on for those.
+ */
+function readTag(data: Record<string, unknown>): string | null {
+  if (typeof data.haTag === "string" && data.haTag) return data.haTag;
+  if (typeof data.tag === "string" && data.tag) return data.tag;
+  return null;
 }
 
 /**
@@ -127,18 +154,11 @@ function useRemoteNotifications() {
   useEffect(() => {
     const subscription = Notifications.addNotificationReceivedListener(
       (notification) => {
-        const content = notification.request.content;
-        const data = (content.data ?? {}) as Record<string, unknown>;
-        if (isLocallyPresented(data)) return;
-        if (!content.body) return;
-
-        record({
-          message: content.body,
-          title: content.title ?? null,
-          confirmId: null,
-          tag: typeof data.tag === "string" ? data.tag : null,
-          actions: [],
-          data,
+        const entry = fromOsNotification(notification);
+        if (!entry) return;
+        record(entry.notification, {
+          id: entry.identifier,
+          receivedAt: entry.receivedAt,
         });
       },
     );
@@ -147,6 +167,40 @@ function useRemoteNotifications() {
       subscription.remove();
     };
   }, [record]);
+}
+
+/**
+ * A push that lands while the app is not running in the foreground is drawn by
+ * the OS and seen by nobody else, so the tray is the only place left to read it
+ * from. Waits for the stored history first, so nothing already filed is
+ * reopened.
+ *
+ * Rescanned every time the app comes back rather than once per launch: the
+ * received listener only fires while we are foregrounded, and handling a push
+ * any earlier than this would mean a background task and a data-only payload.
+ * Anything that arrived while we were away is still sitting in the tray, and
+ * `backfill` ignores what it has already filed.
+ */
+function useTrayBackfill() {
+  const hydrated = useNotificationStore((state) => state.hydrated);
+  const backfill = useNotificationStore((state) => state.backfill);
+
+  useEffect(() => {
+    if (!hydrated) return;
+
+    const scan = () => {
+      void presentedNotifications().then(backfill);
+    };
+
+    scan();
+    const subscription = AppState.addEventListener("change", (next) => {
+      if (next === "active") scan();
+    });
+
+    return () => {
+      subscription.remove();
+    };
+  }, [hydrated, backfill]);
 }
 
 function readActionData(

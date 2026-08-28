@@ -1,4 +1,7 @@
-import type { MobileAppPushNotification } from "@ethio/ha-sdk";
+import {
+  parsePushNotification,
+  type MobileAppPushNotification,
+} from "@ethio/ha-sdk";
 import * as Notifications from "expo-notifications";
 import { Platform } from "react-native";
 
@@ -108,13 +111,20 @@ export async function presentNotification(
   }
 }
 
-/** HA's `clear_notification` command removes an already-delivered notification. */
+/**
+ * HA's `clear_notification` command removes an already-delivered notification.
+ *
+ * Matches either tag field. `haTag` is on the ones we presented from the
+ * socket; anything the relay delivered was drawn by the OS from Home
+ * Assistant's own payload and carries only `tag`, so checking one field would
+ * clear the Activity entry and leave the banner on screen.
+ */
 export async function dismissByTag(tag: string): Promise<void> {
   try {
     const presented = await Notifications.getPresentedNotificationsAsync();
     for (const item of presented) {
       const data = item.request.content.data as Record<string, unknown> | null;
-      if (data?.haTag === tag) {
+      if (data?.haTag === tag || data?.tag === tag) {
         await Notifications.dismissNotificationAsync(item.request.identifier);
       }
     }
@@ -129,6 +139,68 @@ export function isLocallyPresented(data: unknown): boolean {
     data !== null &&
     (data as Record<string, unknown>)[LOCAL_MARKER] === true
   );
+}
+
+export interface PresentedNotification {
+  notification: MobileAppPushNotification;
+  /** The OS's own id, stable for as long as it sits in the tray. */
+  identifier: string;
+  receivedAt: number;
+}
+
+/**
+ * Rebuilds the Home Assistant payload from a notification the OS drew for us.
+ * The relay forwards HA's `data` untouched, so tag and actions are still in
+ * there and the socket path's parser can read it back out. Returns null for
+ * notifications we scheduled ourselves, which are already filed.
+ */
+export function fromOsNotification(
+  notification: Notifications.Notification,
+): PresentedNotification | null {
+  const content = notification.request.content;
+  const data = (content.data ?? {}) as Record<string, unknown>;
+  if (isLocallyPresented(data)) return null;
+
+  const parsed = parsePushNotification({
+    message: content.body,
+    title: content.title,
+    data,
+  });
+  if (!parsed) return null;
+
+  return {
+    notification: parsed,
+    identifier: notification.request.identifier,
+    receivedAt: normalizeReceivedAt(notification.date),
+  };
+}
+
+/**
+ * What is in the notification tray right now. On a cold start this is the only
+ * trace of pushes that APNs or FCM drew while the app was dead: no listener of
+ * ours was alive to see them, so without this Activity would never show them.
+ */
+export async function presentedNotifications(): Promise<
+  PresentedNotification[]
+> {
+  try {
+    const presented = await Notifications.getPresentedNotificationsAsync();
+    const entries: PresentedNotification[] = [];
+    for (const item of presented) {
+      const entry = fromOsNotification(item);
+      if (entry) entries.push(entry);
+    }
+    return entries;
+  } catch {
+    // Android below 6.0 will not list the tray, and live delivery still works.
+    return [];
+  }
+}
+
+function normalizeReceivedAt(date: number): number {
+  if (!Number.isFinite(date) || date <= 0) return Date.now();
+  // Anything this small is seconds rather than the documented milliseconds.
+  return date < 1e11 ? date * 1000 : date;
 }
 
 export const DEFAULT_ACTION = Notifications.DEFAULT_ACTION_IDENTIFIER;

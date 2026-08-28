@@ -15,14 +15,21 @@ async function webhookTargets(): Promise<string[]> {
   return [...new Set(urls.filter(Boolean))];
 }
 
+/**
+ * Whether the tap reached Home Assistant. A silent failure here means an
+ * automation the user believes they triggered never ran, so the caller gets to
+ * decide whether that is worth surfacing.
+ */
+export type ActionDelivery = "sent" | "no-registration" | "unreachable";
+
 export async function fireNotificationAction(options: {
   action: string;
   tag: string | null;
   replyText?: string;
   actionData?: Record<string, unknown>;
-}): Promise<void> {
+}): Promise<ActionDelivery> {
   const { registration } = useHaStore.getState();
-  if (!registration) return;
+  if (!registration) return "no-registration";
 
   const eventData: Record<string, unknown> = { action: options.action };
   if (options.tag) eventData.tag = options.tag;
@@ -37,9 +44,10 @@ export async function fireNotificationAction(options: {
         eventType: "mobile_app_notification_action",
         eventData,
       });
-      return;
+      return "sent";
     } catch {
       // Try the next address; the phone may have moved between networks.
     }
   }
+  return "unreachable";
 }

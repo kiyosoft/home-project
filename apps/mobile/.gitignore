@@ -25,3 +25,12 @@ yarn-error.*
 
 # Local env
 .env*.local
+
+# Firebase config for Android push. Download it from the Firebase console; it is
+# per-project and its sender id must match the FCM key uploaded to EAS.
+google-services.json
+
+# Google service account key for FCM V1. A real private key: it belongs in EAS,
+# never in the repo. Only ever sits here long enough for `eas credentials` to
+# find it.
+*-firebase-adminsdk-*.json

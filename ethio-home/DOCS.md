@@ -57,6 +57,12 @@ Bump `version` in `ethio-home/config.yaml`, commit, push, then update the add-on
 
 Signing in from the Ethio Home mobile app needs a verification page that Home Assistant fetches to confirm the app may receive your login. That page is published by the **Et Remote Access** add-on, not this one. Install it and sign-in works on the local network and over the public URL.
 
+## Mobile app notifications
+
+Notifications reach the app over the connection it already holds, so they work as soon as the phone is registered with Home Assistant and you have allowed notifications. Nothing here needs configuring.
+
+Reaching the phone once the app has been closed is a separate path: Home Assistant hands the notification to a push relay, which sends it through Apple's and Google's push services. That relay is part of the **Et Remote Access** add-on, and the app discovers it on its own — the Activity tab says whether it found one. Setup and its limitations are in [docs/mobile-push.md](https://github.com/kiyosoft/home-project/blob/main/docs/mobile-push.md).
+
 ## Notes
 
 - Ingress only allows traffic from the Supervisor ingress proxy.

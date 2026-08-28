@@ -6,6 +6,7 @@ import {
 import * as Crypto from "expo-crypto";
 import { create } from "zustand";
 
+import type { PresentedNotification } from "@/lib/notifications";
 import {
   clearNotificationHistory,
   loadNotificationHistory,
@@ -34,16 +35,44 @@ interface NotificationState {
    * Files an incoming push. Returns the stored record, or null when the payload
    * was a dismissal rather than something to show.
    */
-  record: (notification: MobileAppPushNotification) => NotificationRecord | null;
+  record: (
+    notification: MobileAppPushNotification,
+    origin?: RecordOrigin,
+  ) => NotificationRecord | null;
+  /**
+   * Files pushes found in the notification tray on a cold start, leaving any we
+   * already hold untouched so an old notification does not come back unread.
+   */
+  backfill: (entries: PresentedNotification[]) => void;
   markAllRead: () => void;
   remove: (id: string) => void;
   clear: () => Promise<void>;
 }
 
+/**
+ * Where an untagged notification came from. Reusing the OS's own id keeps a
+ * remote push from being filed twice: once by the listener now, and again by the
+ * cold-start backfill while it is still sitting in the tray.
+ */
+export interface RecordOrigin {
+  id?: string;
+  receivedAt?: number;
+}
+
+/**
+ * Writes are queued rather than fired off in parallel. Two overlapping saves
+ * finish in whatever order the disk decides, and the last one to land wins, so
+ * an older snapshot could overwrite a newer one and silently drop whatever
+ * arrived in between.
+ */
+let writes: Promise<unknown> = Promise.resolve();
+
 function persist(records: NotificationRecord[]) {
-  void saveNotificationHistory(records).catch(() => {
-    // History is a convenience; losing a write must not surface as an error.
-  });
+  writes = writes
+    .then(() => saveNotificationHistory(records))
+    .catch(() => {
+      // History is a convenience; losing a write must not surface as an error.
+    });
 }
 
 export const useNotificationStore = create<NotificationState>((set, get) => ({
@@ -54,10 +83,17 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
     const raw = await loadNotificationHistory();
     // Hydration races the socket: a push can land before disk comes back, and
     // replacing the list outright would drop it.
-    set({ records: merge(get().records, parseRecords(raw)), hydrated: true });
+    const live = get().records;
+    const records = merge(live, parseRecords(raw));
+    set({ records, hydrated: true });
+
+    // Whatever beat the disk read exists only in memory, and this merge is the
+    // first moment both halves are in one list. Without writing it back, the
+    // next save to run would be working from a list that never had it.
+    if (live.length > 0) persist(records);
   },
 
-  record(notification) {
+  record(notification, origin) {
     // HA reuses the notify path to dismiss: same tag, magic message.
     if (notification.message === CLEAR_NOTIFICATION) {
       if (!notification.tag) return null;
@@ -69,16 +105,7 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
       return null;
     }
 
-    const entry: NotificationRecord = {
-      id: notification.tag ?? Crypto.randomUUID(),
-      title: notification.title,
-      message: notification.message,
-      receivedAt: Date.now(),
-      tag: notification.tag,
-      actions: notification.actions,
-      data: notification.data,
-      read: false,
-    };
+    const entry = toRecord(notification, origin);
 
     // A tagged notification replaces the earlier one rather than stacking.
     const others = get().records.filter((existing) => existing.id !== entry.id);
@@ -86,6 +113,28 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
     set({ records });
     persist(records);
     return entry;
+  },
+
+  backfill(entries) {
+    if (entries.length === 0) return;
+
+    const known = new Set(get().records.map((entry) => entry.id));
+    const added: NotificationRecord[] = [];
+
+    for (const { notification, identifier, receivedAt } of entries) {
+      if (notification.message === CLEAR_NOTIFICATION) continue;
+      const entry = toRecord(notification, { id: identifier, receivedAt });
+      if (known.has(entry.id)) continue;
+      known.add(entry.id);
+      added.push(entry);
+    }
+
+    if (added.length === 0) return;
+    const records = [...added, ...get().records]
+      .sort((a, b) => b.receivedAt - a.receivedAt)
+      .slice(0, HISTORY_LIMIT);
+    set({ records });
+    persist(records);
   },
 
   markAllRead() {
@@ -104,9 +153,42 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
 
   async clear() {
     set({ records: [] });
-    await clearNotificationHistory();
+    // Behind the same queue as the saves. A write still in flight would
+    // otherwise land after the file was removed and bring the history back.
+    writes = writes.then(clearNotificationHistory).catch(() => {
+      // Nothing to report: the list is already empty on screen.
+    });
+    await writes;
   },
 }));
+
+function toRecord(
+  notification: MobileAppPushNotification,
+  origin?: RecordOrigin,
+): NotificationRecord {
+  return {
+    // Ordered by how widely each id is shared. A tag is Home Assistant's own
+    // identity for a notification and replaces the previous one. Failing that,
+    // the confirm id is the same on both delivery routes, because Core stamps
+    // it into the payload before sending and hands that same payload to the
+    // `push_url` fallback: it is what collapses the socket copy and the relay
+    // copy of one notification that was sent twice because our confirm did not
+    // arrive in time. The OS id only identifies one delivery, and a random one
+    // is a last resort that dedupes nothing.
+    id:
+      notification.tag ??
+      notification.confirmId ??
+      origin?.id ??
+      Crypto.randomUUID(),
+    title: notification.title,
+    message: notification.message,
+    receivedAt: origin?.receivedAt ?? Date.now(),
+    tag: notification.tag,
+    actions: notification.actions,
+    data: notification.data,
+    read: false,
+  };
+}
 
 /** Live entries win over stored ones with the same id, which is the same tag. */
 function merge(

@@ -118,6 +118,11 @@ export type RegistrationFailure =
   | "not-loaded"
   | "unauthorized"
   | "unreachable"
+  /**
+   * Core threw the payload away. Re-registering cannot help, so this
+   * deliberately does not take the `not-loaded` recovery path below.
+   */
+  | "rejected"
   | "unknown";
 
 export type RegistrationResult =
@@ -249,11 +254,18 @@ export async function syncPushToken(options: {
   registration: StoredRegistration;
   pushToken: string | null;
   pushUrl: string | null;
+  /**
+   * Resend even when nothing looks changed. Used when the relay reports that
+   * Expo rejected the token, where our copy and Home Assistant's can agree with
+   * each other and still both be wrong.
+   */
+  force?: boolean;
 }): Promise<StoredRegistration> {
   const { registration } = options;
   const pushToken = options.pushToken;
   const pushUrl = options.pushUrl;
   if (
+    !options.force &&
     registration.pushToken === pushToken &&
     registration.pushUrl === pushUrl
   ) {

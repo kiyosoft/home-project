@@ -94,8 +94,10 @@ packages/plugin-sdk      Plugin contracts + HA hooks
 packages/core            Official core widgets
 packages/teamtracker     Team Tracker plugin
 packages/ha-sdk          HA client + demo entities
+apps/mobile              Expo app (React Native)
 ethio-home               Home Assistant add-on (nginx + ingress)
 docs/plugins.md          Plugin authoring guide
+docs/mobile-push.md      Mobile notifications + push credential setup
 ```
 
 ## Scripts

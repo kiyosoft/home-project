@@ -59,6 +59,12 @@ interface HaState {
   registration: StoredRegistration | null;
   registrationFailure: RegistrationFailure | null;
   setRegistration: (registration: StoredRegistration) => void;
+  /**
+   * Home Assistant forgot this device while the session was up. Only a fresh
+   * registration fixes that, and nothing else triggers one until the next
+   * reconnect, so callers who discover a dead webhook come here.
+   */
+  recoverRegistration: () => Promise<StoredRegistration | null>;
   login: (baseUrl: string, slot?: AddressSlot) => Promise<void>;
   connectWithToken: (
     baseUrl: string,
@@ -152,15 +158,15 @@ async function registerDevice(
   target: EntityClient,
   set: (partial: Partial<HaState>) => void,
   baseUrl: string,
-) {
+): Promise<StoredRegistration | null> {
   const settings = saved;
-  if (!settings || settings.mode !== "live") return;
+  if (!settings || settings.mode !== "live") return null;
 
   const accessToken =
     settings.authMode === "oauth"
       ? (settings.tokens?.accessToken ?? "")
       : settings.token;
-  if (!accessToken) return;
+  if (!accessToken) return null;
 
   const result = await ensureRegistration({
     baseUrl,
@@ -169,13 +175,21 @@ async function registerDevice(
   });
 
   // A reconnect may have swapped the client while this was in flight.
-  if (client !== target) return;
+  if (client !== target) return null;
   set(
     result.ok
       ? { registration: result.registration, registrationFailure: null }
       : { registration: result.registration, registrationFailure: result.failure },
   );
+  return result.ok ? result.registration : null;
 }
+
+/**
+ * Shared so that two callers noticing the same dead webhook do not race each
+ * other into two registrations, which is how a phone ends up listed in Home
+ * Assistant several times over.
+ */
+let recovery: Promise<StoredRegistration | null> | null = null;
 
 /**
  * Registry reads need an admin token. A non-admin still gets a working dashboard,
@@ -274,6 +288,27 @@ export const useHaStore = create<HaState>((set, get) => ({
 
   setRegistration(registration) {
     set({ registration, registrationFailure: null });
+  },
+
+  recoverRegistration() {
+    if (recovery) return recovery;
+    const target = client;
+    const baseUrl = get().activeUrl;
+    if (!target || !baseUrl) return Promise.resolve(null);
+
+    recovery = (async () => {
+      try {
+        // Dropping the local copy first: we already know the webhook is dead,
+        // so the update `ensureRegistration` would try is a wasted round trip,
+        // and leaving it on disk risks another caller using it meanwhile.
+        await clearRegistration();
+        set({ registration: null });
+        return await registerDevice(target, set, baseUrl);
+      } finally {
+        recovery = null;
+      }
+    })();
+    return recovery;
   },
 
   async login(baseUrl, slot = "external") {

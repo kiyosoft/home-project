@@ -22,6 +22,11 @@ export type MobileAppErrorKind =
   | "not-loaded"
   | "unauthorized"
   | "unreachable"
+  /**
+   * Core validated the payload and threw it away. Retrying it unchanged and
+   * registering again are both pointless; the payload itself is wrong.
+   */
+  | "rejected"
   | "unknown";
 
 export class MobileAppError extends Error {
@@ -294,23 +299,46 @@ export async function updateRegistration(options: {
     data,
   });
 
-  // A live registration always echoes itself back. Silence means it is gone.
+  // A live registration always echoes itself back. Silence means it is gone:
+  // the webhook endpoint answers 200 to unknown ids so callers cannot probe
+  // for them, so an empty body is the only signal we get.
   if (!isRecord(result)) {
     throw new MobileAppError(
       "not-loaded",
       "Home Assistant no longer knows this registration",
     );
   }
+
+  // `{}` with a 200 is what Core's schema decorator returns when a payload
+  // fails validation: it logs server-side and discards the update. A real
+  // update echoes back `safe_registration`, which always carries the
+  // `app_version` the update schema requires. Taking `{}` for success is how a
+  // `push_url` that fails `cv.url` becomes a phone reporting push is on while
+  // Home Assistant kept none of it.
+  if (typeof result.app_version !== "string") {
+    throw new MobileAppError(
+      "rejected",
+      "Home Assistant rejected the registration update",
+    );
+  }
 }
 
-/** Fire an event on the HA bus, e.g. a notification action the user tapped. */
+/**
+ * Fire an event on the HA bus, e.g. a notification action the user tapped.
+ *
+ * Note the asymmetry with `updateRegistration`: `fire_event` answers `{}` on
+ * success, so an empty object cannot mean failure here and a discarded payload
+ * is indistinguishable from a delivered one. A body that is empty rather than
+ * `{}` is different — that is the webhook component answering for an id Home
+ * Assistant has no handler for, which no retry will fix.
+ */
 export async function fireWebhookEvent(options: {
   baseUrl: string;
   webhookId: string;
   eventType: string;
   eventData?: Record<string, unknown>;
 }): Promise<void> {
-  await postWebhook({
+  const result = await postWebhook({
     baseUrl: options.baseUrl,
     webhookId: options.webhookId,
     type: "fire_event",
@@ -319,6 +347,13 @@ export async function fireWebhookEvent(options: {
       event_data: options.eventData ?? {},
     },
   });
+
+  if (result === null) {
+    throw new MobileAppError(
+      "not-loaded",
+      "Home Assistant has no handler for this registration",
+    );
+  }
 }
 
 export function parsePushNotification(
