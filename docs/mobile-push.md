@@ -109,6 +109,50 @@ device throw away a working one, and registering a fresh token clears the warnin
 on its own. A relay older than 0.3.3 does not send the attribute at all, and a
 phone talking to one falls back to treating the warning as its own.
 
+## Priority
+
+The app honours the same fields the official companion uses. Send them on
+`notify.mobile_app_<device>`:
+
+**Android** — heads-up / delivery urgency:
+
+```yaml
+action: notify.mobile_app_<device>
+data:
+  title: "Smoke alarm"
+  message: "Kitchen detector is on."
+  data:
+    ttl: 0
+    priority: high
+    importance: max
+    channel: Alarm
+```
+
+`importance` is `min`, `low`, `default`, `high`, or `max`. If it is omitted,
+`priority: high` still maps to a heads-up. A named `channel` is created the
+first time it is used (while the app is open). Unnamed high-priority
+notifications use the default channel the closed-app relay already pins to.
+
+**iOS** — interruption level:
+
+```yaml
+action: notify.mobile_app_<device>
+data:
+  title: "Leak"
+  message: "Water under the sink."
+  data:
+    push:
+      interruption-level: time-sensitive
+```
+
+Values are `passive`, `active` (default), `time-sensitive`, and `critical`.
+Time-sensitive can break through Focus. Critical alerts also need Apple's
+entitlement; without it iOS treats them as a normal alert. The older
+`push.sound.critical: 1` form is accepted as critical too.
+
+`ttl: 0` only affects the closed-app FCM path (the phone is woken immediately).
+It does nothing on the WebSocket path, because the app is already running.
+
 ## Known limitations
 
 - **`clear_notification` and `command_*` messages need the app running.** They
@@ -130,13 +174,13 @@ phone talking to one falls back to treating the warning as its own.
   whenever it returns to the foreground. Anything the user swiped away before
   that is gone, apart from one they swiped by opening it, which is filed on the
   way in.
-- **`data.channel` is ignored on notifications drawn while the app was closed.**
+- **`data.channel` on closed-app Android still uses the default channel.**
   Android needs the channel to already exist on the device, and only the app can
-  create one, which it cannot do while it is not running. Expo returns a
-  successful ticket for a channel that does not exist and then Android draws
-  nothing, so honouring the requested name would silently lose the
-  notification — the relay pins every push to the one channel the app creates
-  instead. Per-channel importance and sound therefore do not apply to these.
+  create one, which it cannot do while it is not running. Named channels and
+  per-channel importance apply to notifications presented while the app is
+  open. The relay still pins killed-app pushes to the default high-importance
+  channel so a missing custom channel cannot silently drop the notification.
+  `priority: high` / `ttl: 0` still affect FCM delivery urgency on that path.
 - **The daily limit is per device token and resets at UTC midnight**, not at
   local midnight. It exists to stop a runaway automation from flooding a phone.
 - **iOS critical alerts need Apple's entitlement.** Sending

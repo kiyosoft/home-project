@@ -229,4 +229,53 @@ describe("parsePushNotification", () => {
   ])("declines a payload with %s", (_label, raw) => {
     expect(parsePushNotification(raw)).toBeNull();
   });
+
+  it("reads Android importance and a named channel", () => {
+    const parsed = parsePushNotification({
+      message: "Motion",
+      data: { channel: "Motion", importance: "max" },
+    });
+    expect(parsed).toMatchObject({
+      channel: "Motion",
+      importance: "max",
+      interruption: "active",
+    });
+  });
+
+  it("maps FCM priority when importance is omitted", () => {
+    expect(
+      parsePushNotification({
+        message: "Ping",
+        data: { priority: "low" },
+      })?.importance,
+    ).toBe("low");
+  });
+
+  it("reads an iOS interruption level from the push block", () => {
+    const parsed = parsePushNotification({
+      message: "Leak",
+      data: { push: { "interruption-level": "time-sensitive" } },
+    });
+    expect(parsed?.interruption).toBe("time-sensitive");
+  });
+
+  it("treats the legacy critical sound flag as a critical interruption", () => {
+    const parsed = parsePushNotification({
+      message: "Smoke",
+      data: { push: { sound: { name: "default", critical: 1, volume: 1 } } },
+    });
+    expect(parsed?.interruption).toBe("critical");
+  });
+
+  it("honours presentation_options when the app is in the foreground", () => {
+    const parsed = parsePushNotification({
+      message: "Quiet",
+      data: { presentation_options: ["alert"] },
+    });
+    expect(parsed?.presentation).toEqual({
+      alert: true,
+      sound: false,
+      badge: false,
+    });
+  });
 });

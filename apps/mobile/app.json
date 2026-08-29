@@ -10,7 +10,8 @@
       "bundleIdentifier": "app.ethiohome.companion",
       "supportsTablet": false,
       "entitlements": {
-        "com.apple.developer.networking.wifi-info": true
+        "com.apple.developer.networking.wifi-info": true,
+        "com.apple.developer.usernotifications.time-sensitive": true
       },
       "infoPlist": {
         "NSBonjourServices": [

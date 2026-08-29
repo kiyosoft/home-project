@@ -152,6 +152,9 @@ export type {
   MobileAppRegistration,
   MobileAppRegistrationRequest,
   MobileAppUpdateRequest,
+  NotificationImportance,
+  NotificationInterruption,
+  NotificationPresentation,
 } from "./mobile-app";
 export {
   dismissPersistentNotification,

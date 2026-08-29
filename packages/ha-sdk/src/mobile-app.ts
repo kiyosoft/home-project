@@ -92,6 +92,30 @@ export interface MobileAppNotificationAction {
   uri?: string;
 }
 
+export const NOTIFICATION_IMPORTANCE = [
+  "min",
+  "low",
+  "default",
+  "high",
+  "max",
+] as const;
+export type NotificationImportance = (typeof NOTIFICATION_IMPORTANCE)[number];
+
+export const NOTIFICATION_INTERRUPTIONS = [
+  "passive",
+  "active",
+  "time-sensitive",
+  "critical",
+] as const;
+export type NotificationInterruption =
+  (typeof NOTIFICATION_INTERRUPTIONS)[number];
+
+export interface NotificationPresentation {
+  alert: boolean;
+  sound: boolean;
+  badge: boolean;
+}
+
 export interface MobileAppPushNotification {
   message: string;
   title: string | null;
@@ -99,6 +123,18 @@ export interface MobileAppPushNotification {
   confirmId: string | null;
   /** Replaces an existing notification with the same tag. */
   tag: string | null;
+  /** Android channel name from `data.channel`. */
+  channel: string | null;
+  /**
+   * How loudly Android should treat this. Unspecified payloads stay `high` so
+   * existing automations still heads-up the way they did before we honoured
+   * the field.
+   */
+  importance: NotificationImportance;
+  /** iOS interruption level from `data.push.interruption-level`. */
+  interruption: NotificationInterruption;
+  /** Foreground presentation; omitted `presentation_options` means show + sound. */
+  presentation: NotificationPresentation;
   actions: MobileAppNotificationAction[];
   data: Record<string, unknown>;
 }
@@ -370,8 +406,76 @@ export function parsePushNotification(
     title: asString(raw.title) ?? null,
     confirmId: asString(raw.hass_confirm_id) ?? null,
     tag: asString(data.tag) ?? null,
+    channel: asString(data.channel) ?? null,
+    importance: parseImportance(data),
+    interruption: parseInterruption(data),
+    presentation: parsePresentation(data),
     actions: parseActions(data.actions),
     data,
+  };
+}
+
+function pickLiteral<T extends string>(
+  value: string | undefined,
+  allowed: readonly T[],
+): T | undefined {
+  if (!value) return undefined;
+  const lower = value.toLowerCase();
+  for (const item of allowed) {
+    if (item === lower) return item;
+  }
+  return undefined;
+}
+
+function parseImportance(data: Record<string, unknown>): NotificationImportance {
+  const named = pickLiteral(asString(data.importance), NOTIFICATION_IMPORTANCE);
+  if (named) return named;
+
+  const priority = asString(data.priority)?.toLowerCase();
+  if (priority === "max" || priority === "high") return "high";
+  if (priority === "low" || priority === "min") return priority;
+  return "high";
+}
+
+function parseInterruption(
+  data: Record<string, unknown>,
+): NotificationInterruption {
+  const push = isRecord(data.push) ? data.push : null;
+  if (!push) return "active";
+
+  const level = pickLiteral(
+    asString(push["interruption-level"]),
+    NOTIFICATION_INTERRUPTIONS,
+  );
+  if (level) return level;
+  if (isCriticalSound(push.sound)) return "critical";
+  return "active";
+}
+
+function isCriticalSound(value: unknown): boolean {
+  if (!isRecord(value)) return false;
+  const critical = value.critical;
+  return critical === 1 || critical === true || critical === "1";
+}
+
+function parsePresentation(
+  data: Record<string, unknown>,
+): NotificationPresentation {
+  const raw = data.presentation_options;
+  if (!Array.isArray(raw)) {
+    return { alert: true, sound: true, badge: false };
+  }
+
+  const options = new Set<string>();
+  for (const entry of raw) {
+    if (typeof entry === "string" && entry.trim()) {
+      options.add(entry.trim().toLowerCase());
+    }
+  }
+  return {
+    alert: options.has("alert"),
+    sound: options.has("sound"),
+    badge: options.has("badge"),
   };
 }
 

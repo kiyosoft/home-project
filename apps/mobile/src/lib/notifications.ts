@@ -1,6 +1,9 @@
 import {
   parsePushNotification,
   type MobileAppPushNotification,
+  type NotificationImportance,
+  type NotificationInterruption,
+  type NotificationPresentation,
 } from "@ethio/ha-sdk";
 import * as Notifications from "expo-notifications";
 import { Platform } from "react-native";
@@ -12,10 +15,53 @@ import { Platform } from "react-native";
  * ones that arrive through APNs or FCM are drawn by the OS before our code runs.
  */
 
-const ANDROID_CHANNEL_ID = "default";
+/** The channel the closed-app relay pins to. Keep HIGH so those still heads-up. */
+const ANDROID_DEFAULT_CHANNEL = "default";
 
 /** Marks a notification we scheduled ourselves, so we do not re-file it. */
 const LOCAL_MARKER = "ethioHomeLocal";
+
+const ANDROID_IMPORTANCE = {
+  min: Notifications.AndroidImportance.MIN,
+  low: Notifications.AndroidImportance.LOW,
+  default: Notifications.AndroidImportance.DEFAULT,
+  high: Notifications.AndroidImportance.HIGH,
+  max: Notifications.AndroidImportance.MAX,
+} as const satisfies Record<
+  NotificationImportance,
+  Notifications.AndroidImportance
+>;
+
+const ANDROID_PRIORITY = {
+  min: Notifications.AndroidNotificationPriority.MIN,
+  low: Notifications.AndroidNotificationPriority.LOW,
+  default: Notifications.AndroidNotificationPriority.DEFAULT,
+  high: Notifications.AndroidNotificationPriority.HIGH,
+  max: Notifications.AndroidNotificationPriority.MAX,
+} as const satisfies Record<
+  NotificationImportance,
+  Notifications.AndroidNotificationPriority
+>;
+
+const IOS_INTERRUPTION = {
+  passive: "passive",
+  active: "active",
+  "time-sensitive": "timeSensitive",
+  critical: "critical",
+} as const satisfies Record<
+  NotificationInterruption,
+  NonNullable<Notifications.NotificationContentInput["interruptionLevel"]>
+>;
+
+const IMPORTANCE_CHANNELS: Record<
+  Exclude<NotificationImportance, "high">,
+  { id: string; name: string }
+> = {
+  min: { id: "ha-min", name: "Minimal" },
+  low: { id: "ha-low", name: "Low" },
+  default: { id: "ha-default", name: "Default" },
+  max: { id: "ha-max", name: "Urgent" },
+};
 
 let handlerConfigured = false;
 
@@ -24,22 +70,58 @@ export function configureNotifications(): void {
   handlerConfigured = true;
 
   Notifications.setNotificationHandler({
-    handleNotification: async () => ({
-      shouldShowBanner: true,
-      shouldShowList: true,
-      shouldPlaySound: true,
-      shouldSetBadge: false,
-    }),
+    handleNotification: async (notification) => {
+      const data = notification.request.content.data;
+      if (isLocallyPresented(data)) {
+        return {
+          shouldShowBanner: true,
+          shouldShowList: true,
+          shouldPlaySound: true,
+          shouldSetBadge: false,
+        };
+      }
+
+      const parsed = parsePushNotification({
+        message: notification.request.content.body,
+        title: notification.request.content.title,
+        data,
+      });
+      return presentationBehavior(
+        parsed?.presentation ?? { alert: true, sound: true, badge: false },
+      );
+    },
   });
 
   if (Platform.OS === "android") {
-    void Notifications.setNotificationChannelAsync(ANDROID_CHANNEL_ID, {
-      name: "Home Assistant",
-      importance: Notifications.AndroidImportance.HIGH,
-    }).catch(() => {
+    void ensureAndroidChannels().catch(() => {
       // A missing channel downgrades the banner; it does not break delivery.
     });
   }
+}
+
+function presentationBehavior(presentation: NotificationPresentation) {
+  return {
+    shouldShowBanner: presentation.alert,
+    shouldShowList: presentation.alert,
+    shouldPlaySound: presentation.sound,
+    shouldSetBadge: presentation.badge,
+  };
+}
+
+async function ensureAndroidChannels(): Promise<void> {
+  await Promise.all([
+    Notifications.setNotificationChannelAsync(ANDROID_DEFAULT_CHANNEL, {
+      name: "Home Assistant",
+      importance: Notifications.AndroidImportance.HIGH,
+    }),
+    ...(["min", "low", "default", "max"] as const).map((importance) => {
+      const channel = IMPORTANCE_CHANNELS[importance];
+      return Notifications.setNotificationChannelAsync(channel.id, {
+        name: channel.name,
+        importance: ANDROID_IMPORTANCE[importance],
+      });
+    }),
+  ]);
 }
 
 export type PermissionState = "granted" | "denied" | "undetermined";
@@ -52,7 +134,15 @@ export async function notificationPermission(): Promise<PermissionState> {
 }
 
 export async function requestNotificationPermission(): Promise<PermissionState> {
-  const { status } = await Notifications.requestPermissionsAsync();
+  const { status } = await Notifications.requestPermissionsAsync({
+    ios: {
+      allowAlert: true,
+      allowBadge: true,
+      allowSound: true,
+      // Granted only if Apple issued the entitlement; otherwise iOS ignores it.
+      allowCriticalAlerts: true,
+    },
+  });
   return status === "granted" ? "granted" : "denied";
 }
 
@@ -86,10 +176,45 @@ async function ensureCategory(
   }
 }
 
+async function androidChannelId(
+  notification: MobileAppPushNotification,
+): Promise<string | undefined> {
+  if (Platform.OS !== "android") return undefined;
+
+  if (notification.channel) {
+    const id = sanitizeChannelId(notification.channel);
+    try {
+      await Notifications.setNotificationChannelAsync(id, {
+        name: notification.channel,
+        importance: ANDROID_IMPORTANCE[notification.importance],
+      });
+    } catch {
+      return ANDROID_DEFAULT_CHANNEL;
+    }
+    return id;
+  }
+
+  if (notification.importance === "high") return ANDROID_DEFAULT_CHANNEL;
+  return IMPORTANCE_CHANNELS[notification.importance].id;
+}
+
+function sanitizeChannelId(name: string): string {
+  const slug = name
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9._-]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 64);
+  return slug || ANDROID_DEFAULT_CHANNEL;
+}
+
 export async function presentNotification(
   notification: MobileAppPushNotification,
 ): Promise<void> {
-  const categoryIdentifier = await ensureCategory(notification);
+  const [categoryIdentifier, channelId] = await Promise.all([
+    ensureCategory(notification),
+    androidChannelId(notification),
+  ]);
 
   try {
     await Notifications.scheduleNotificationAsync({
@@ -101,7 +226,11 @@ export async function presentNotification(
           [LOCAL_MARKER]: true,
           haTag: notification.tag,
         },
+        sound: notification.interruption !== "passive",
+        interruptionLevel: IOS_INTERRUPTION[notification.interruption],
+        priority: ANDROID_PRIORITY[notification.importance],
         ...(categoryIdentifier ? { categoryIdentifier } : {}),
+        ...(channelId ? { channelId } : {}),
       },
       // Immediately, rather than on a schedule.
       trigger: null,
@@ -122,12 +251,13 @@ export async function presentNotification(
 export async function dismissByTag(tag: string): Promise<void> {
   try {
     const presented = await Notifications.getPresentedNotificationsAsync();
-    for (const item of presented) {
-      const data = item.request.content.data as Record<string, unknown> | null;
-      if (data?.haTag === tag || data?.tag === tag) {
-        await Notifications.dismissNotificationAsync(item.request.identifier);
-      }
-    }
+    await Promise.all(
+      presented.map((item) => {
+        const data = item.request.content.data as Record<string, unknown> | null;
+        if (data?.haTag !== tag && data?.tag !== tag) return Promise.resolve();
+        return Notifications.dismissNotificationAsync(item.request.identifier);
+      }),
+    );
   } catch {
     // Nothing to do if the OS will not tell us what is on screen.
   }
