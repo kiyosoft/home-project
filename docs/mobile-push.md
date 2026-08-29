@@ -27,7 +27,9 @@ app killed      HA Core ──push_url──> relay ──> exp.host ──> APN
 ## What you need
 
 - The **Et Remote Access** add-on, with `enable_push_relay` on (the default).
-  Its own docs cover the options; the app finds it by itself.
+  The add-on publishes its address as `sensor.ethio_home_push_relay`; the app
+  reads that entity and puts the URL on the device registration. There is no
+  relay code in the app.
 - A build made with **EAS**, carrying FCM credentials for Android and an APNs
   key for iOS. A build without them installs and runs fine, and closed-app
   notifications silently never arrive.
@@ -93,36 +95,19 @@ wrong in a way that looks like a code problem:
 
 ## Checking it works
 
-The Activity tab has a **Notifications when the app is closed** card that says
-which of these is true, so you do not have to guess:
+The Activity tab is a feed, not a status panel. Token registration happens in
+the background once notification permission is granted and the push relay is
+reachable. To confirm the closed-app path, fully swipe the app away, then call
+`notify` on the device from **Developer tools → Actions** in Home Assistant. A
+notification that arrives with the app open proves only the WebSocket path.
 
-| Card says | Meaning |
-| --- | --- |
-| On | Home Assistant has a live push token and the relay's URL |
-| Setting up | Fetching the token, or handing it to Home Assistant |
-| Off — only while open | No relay found, so there is no `push_url` to register |
-| Off — simulator | Simulators and emulators cannot get a push token |
-| Off — no EAS project id | The build was not made with EAS |
-| Off — token rejected | The relay reached Expo and Expo refused the token |
-| Off — timed out | Registering with APNs or FCM never came back, usually no route out |
-| Off — Home Assistant refused it | We have a token and the registration update failed |
-| Off — not registered | Home Assistant has forgotten the device and re-registering failed |
-
-Anything below the card in smaller text is the underlying error, printed
-verbatim because a release build has no console to read it from.
-
-**Off — token rejected** is reported per device. The relay names the tokens Expo
-refused in the `invalid_push_tokens` attribute on
+The relay names tokens Expo refused in the `invalid_push_tokens` attribute on
 `sensor.ethio_home_push_relay`, as the last eight characters of each so a token
 nobody should have does not sit on an entity every Home Assistant user can read.
 Each phone looks for the token it holds, so one dead token does not make every
 device throw away a working one, and registering a fresh token clears the warning
 on its own. A relay older than 0.3.3 does not send the attribute at all, and a
 phone talking to one falls back to treating the warning as its own.
-
-Then test the real thing: fully swipe the app away, and call `notify` on the
-device from **Developer tools → Actions** in Home Assistant. A notification that
-arrives with the app open proves only the WebSocket path.
 
 ## Known limitations
 

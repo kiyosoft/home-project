@@ -32,7 +32,7 @@ export interface StoredRegistration {
   deviceId: string;
   appVersion: string;
   deviceName: string;
-  /** Null until the user grants notification permission and Phase 3 is wired. */
+  /** Null until the user grants notification permission. */
   pushToken: string | null;
   pushUrl: string | null;
 }

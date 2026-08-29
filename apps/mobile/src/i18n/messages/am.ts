@@ -205,45 +205,10 @@ export const am: Record<MessageKey, string> = {
   "activity.new": "አዲስ",
   "activity.justNow": "አሁን",
   "activity.permissionTitle": "ማሳወቂያዎችን አብራ",
-  "activity.permissionBody":
-    "ቤትዎ ማሳወቂያ ሲልክ ኢትዮ ሆም ባነሮችን ለማሳየት ፈቃድ ያስፈልገዋል።",
   "activity.permissionAllow": "ማሳወቂያዎችን ፍቀድ",
   "activity.permissionDenied":
-    "ለኢትዮ ሆም ማሳወቂያዎች ጠፍተዋል። ባነሮችን ለማየት በስልክዎ ቅንብሮች ውስጥ ያብሯቸው።",
+    "ማሳወቂያዎች ጠፍተዋል። ባነሮችን ለማየት በቅንብሮች ውስጥ ያብሯቸው።",
   "activity.permissionOpenSettings": "ቅንብሮችን ክፈት",
-  "activity.notRegistered":
-    "ይህ ስልክ ገና በሆም አሲስታንት አልተመዘገበም፣ ስለዚህ ማሳወቂያ መቀበል አይችልም።",
-  "activity.registerFailedNotLoaded":
-    "ሆም አሲስታንት የmobile_app ውህደት አልጫነም። default_config ወደ configuration.yaml ጨምረው እንደገና ያስጀምሩ።",
-  "activity.registerFailedUnauthorized":
-    "ሆም አሲስታንት ይህን ስልክ ለመመዝገብ አልተቀበለም። ውጥተው እንደገና ይግቡ።",
-  "activity.registerFailedUnreachable":
-    "ይህን ስልክ ለመመዝገብ ሆም አሲስታንት ላይ መድረስ አልተቻለም። በሚቀጥለው ግንኙነት እንደገና ይሞከራል።",
-  "activity.registerFailedRejected":
-    "ሆም አሲስታንት የዚህን ስልክ የምዝገባ መረጃ ጥሎታል። በሆም አሲስታንት ሎግ ውስጥ ልክ ያልሆነ webhook payload ይፈትሹ።",
-  "activity.pushTitle": "መተግበሪያው ተዘግቶ ሲኖር ማሳወቂያዎች",
-  "activity.pushStateOn": "በርቷል",
-  "activity.pushStateOff": "ጠፍቷል",
-  "activity.pushStatePending": "በመዘጋጀት ላይ",
-  "activity.pushSynced":
-    "ኢትዮ ሆም ተዘግቶ ቢሆንም ሆም አሲስታንት በpush ማስተላለፊያው በኩል ይህን ስልክ ማግኘት ይችላል።",
-  "activity.pushSyncing": "ይህ ስልክ ለpush ማሳወቂያዎች በመመዝገብ ላይ…",
-  "activity.pushNoRelay":
-    "ማሳወቂያዎች የሚደርሱት ኢትዮ ሆም ክፍት ሲሆን ብቻ ነው። መተግበሪያው ተዘግቶ ሲኖርም ለመቀበል በEt Remote Access አክል-ኦን ውስጥ የpush ማስተላለፊያውን ያብሩ።",
-  "activity.pushSimulator":
-    "ሲሙሌተሮችና ኢሙሌተሮች push ማሳወቂያ መቀበል አይችሉም። በእውነተኛ ስልክ ላይ የልማት ግንባታ ይጠቀሙ።",
-  "activity.pushNoProject":
-    "ይህ ግንባታ የEAS ፕሮጀክት መለያ የለውም፣ ስለዚህ የpush ቶከን ማግኘት አይችልም። በEAS እንደገና ይገንቡት።",
-  "activity.pushFailed":
-    "ለዚህ ስልክ የpush ቶከን ከExpo ማግኘት አልተቻለም። እንደገና ይሞከራል።",
-  "activity.pushHaRejected":
-    "ይህ ስልክ የpush ቶከን አለው፣ ነገር ግን ሆም አሲስታንት አልተቀበለውም። በሚቀጥለው ግንኙነት እንደገና ይሞከራል።",
-  "activity.pushNoRegistration":
-    "ሆም አሲስታንት ይህን ስልክ ከምዝገባ አጥቶታል፣ እንደገና መመዝገብም አልተሳካም። ለመድገም እንደገና ይገናኙ።",
-  "activity.pushTimeout":
-    "አፕል ወይም ጉግል ለዚህ ስልክ የpush ቶከን አልላኩም። ብዙውን ጊዜ ይህ ማለት ይህ አውታረ መረብ ኢንተርኔት የለውም፣ ወይም መተግበሪያው ያለ push ማረጋገጫዎች ተገንብቷል ማለት ነው። መተግበሪያውን በከፈቱ ቁጥር እንደገና ይሞክራል።",
-  "activity.pushRejected":
-    "የpush አገልግሎቱ የዚህን ስልክ ቶከን አልተቀበለም፣ ስለዚህ የመጨረሻው ማሳወቂያ አልደረሰም። አዲስ ቶከን ተልኳል፤ ይህ ከቀጠለ መተግበሪያውን በአዲስ የpush ማረጋገጫዎች እንደገና ይገንቡ።",
 
   "status.reconnecting": "እንደገና በመገናኘት ላይ…",
   "status.offline": "ከመስመር ውጪ",

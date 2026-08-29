@@ -1,16 +1,15 @@
 import { MobileAppError } from "@ethio/ha-sdk";
 import * as Notifications from "expo-notifications";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import { AppState } from "react-native";
 import { create } from "zustand";
 
 import { notificationPermission } from "@/lib/notifications";
-import { isTokenRejected, readPushRelay } from "@/lib/push-relay";
 import {
   fetchPushToken,
-  reasonOf,
-  type PushTokenFailure,
-} from "@/lib/push-token";
+  isPushTokenRejected,
+  pushRelayUrl,
+} from "@/lib/push";
 import { syncPushToken, type StoredRegistration } from "@/lib/registration";
 import { hasSession, useHaStore } from "@/store/ha-store";
 
@@ -24,37 +23,11 @@ import { hasSession, useHaStore } from "@/store/ha-store";
  * No relay means no URL to register, so we stay quiet rather than pretending.
  */
 
-/**
- * A reason is only meaningful alongside the failure it explains, so the two
- * travel together and a `synced` state has no room to carry a stale one.
- */
-export type PushSync =
-  | { status: "idle" | "no-relay" | "no-permission" | "syncing" | "synced" }
-  | {
-      status: "blocked" | "failed";
-      failure: PushTokenFailure;
-      /** The underlying error, verbatim, when there is one worth reading. */
-      detail: string | null;
-    };
+const usePushTick = create<{ tick: number }>(() => ({ tick: 0 }));
 
-interface PushSyncState {
-  sync: PushSync;
-  /**
-   * The relay could not deliver with the token we gave it. Separate from `sync`
-   * because it is the relay's verdict on a past send rather than the state of
-   * our own attempt: both can be true at once, and that combination is exactly
-   * what says "we sent a token successfully and it still does not work".
-   */
-  tokenRejected: boolean;
-}
-
-export const usePushSyncStore = create<PushSyncState>(() => ({
-  sync: { status: "idle" },
-  tokenRejected: false,
-}));
-
-function report(sync: PushSync): void {
-  usePushSyncStore.setState({ sync });
+/** Token rotation, returning from Settings, or a just-granted permission. */
+export function retryPushSync(): void {
+  usePushTick.setState((state) => ({ tick: state.tick + 1 }));
 }
 
 /**
@@ -87,28 +60,16 @@ export function usePushToken(): void {
 
   // Selecting the fields rather than the object keeps this from re-rendering on
   // every unrelated entity update.
-  const relayUrl = useHaStore(
-    (state) => readPushRelay(state.entities)?.url ?? "",
-  );
+  const relayUrl = useHaStore((state) => pushRelayUrl(state.entities) ?? "");
   // Asked about the token we actually hold, so another phone's dead token does
   // not make this one throw away a working one.
   const relayRejected = useHaStore((state) =>
-    isTokenRejected(readPushRelay(state.entities), registration?.pushToken),
+    isPushTokenRejected(state.entities, registration?.pushToken),
   );
 
+  const tick = usePushTick((state) => state.tick);
   /**
-   * Bumped whenever something outside this effect's inputs could change the
-   * answer: the device token rotated, or permission may have been granted from
-   * the system settings app.
-   *
-   * A counter rather than a flag, because the same reason can come round twice
-   * — returning from the settings app after a failure, say — and setting a flag
-   * that is already set changes nothing, so React would skip the render and the
-   * retry would never run.
-   */
-  const [nonce, setNonce] = useState(0);
-  /**
-   * The nonce as of the last token Home Assistant accepted. Anything newer
+   * The tick as of the last token Home Assistant accepted. Anything newer
    * means its copy cannot be trusted even where it still looks current. Starts
    * matching so a fresh mount trusts what is already registered instead of
    * asking Expo for a token it does not need.
@@ -118,10 +79,11 @@ export function usePushToken(): void {
   const deviceToken = useRef<string | null>(null);
   // Whether we have already spent our one re-registration on this mount.
   const recovered = useRef(false);
+  // Retry when the app comes back: permission may have been granted in Settings,
+  // or a transient Expo / Home Assistant failure may have cleared.
+  const retryOnForeground = useRef(false);
 
   useEffect(() => {
-    const bump = () => setNonce((current) => current + 1);
-
     // Asking for a token is itself what makes this fire, so bumping on every
     // event would re-enter the fetch that caused it and never stop. Expo's own
     // docs are blunt about it: do not call a token getter from this listener.
@@ -130,16 +92,11 @@ export function usePushToken(): void {
         typeof token.data === "string" ? token.data : JSON.stringify(token.data);
       const previous = deviceToken.current;
       deviceToken.current = value;
-      if (previous !== null && previous !== value) bump();
+      if (previous !== null && previous !== value) retryPushSync();
     });
 
     const foreground = AppState.addEventListener("change", (next) => {
-      if (next !== "active") return;
-      // Coming back from the system settings app is the case worth re-checking.
-      // Interrupting a sync that is working, or redoing one that already
-      // worked, only costs a round trip to Expo.
-      const { status: current } = usePushSyncStore.getState().sync;
-      if (current === "no-permission" || current === "failed") bump();
+      if (next === "active" && retryOnForeground.current) retryPushSync();
     });
 
     return () => {
@@ -149,26 +106,16 @@ export function usePushToken(): void {
   }, []);
 
   useEffect(() => {
-    usePushSyncStore.setState({ tokenRejected: relayRejected });
-  }, [relayRejected]);
-
-  useEffect(() => {
-    if (!hasSession(status) || !registration || !activeUrl) {
-      report({ status: "idle" });
-      return;
-    }
+    if (!hasSession(status) || !registration || !activeUrl) return;
     // A momentarily missing entity is not a reason to forget a working token;
     // Home Assistant keeps the one it has and we leave it alone.
-    if (!relayUrl) {
-      report({ status: "no-relay" });
-      return;
-    }
+    if (!relayUrl) return;
 
     let cancelled = false;
 
     void (async () => {
       if ((await notificationPermission()) !== "granted") {
-        if (!cancelled) report({ status: "no-permission" });
+        if (!cancelled) retryOnForeground.current = true;
         return;
       }
       if (cancelled) return;
@@ -177,26 +124,21 @@ export function usePushToken(): void {
         !needsSync({
           registration,
           relayUrl,
-          rotated: synced.current !== nonce,
+          rotated: synced.current !== tick,
           rejected: relayRejected,
         })
       ) {
-        report({ status: "synced" });
+        retryOnForeground.current = false;
         return;
       }
 
-      report({ status: "syncing" });
       const result = await fetchPushToken();
       if (cancelled) return;
 
       if (!result.ok) {
         const blocked =
           result.failure === "simulator" || result.failure === "no-project";
-        report({
-          status: blocked ? "blocked" : "failed",
-          failure: result.failure,
-          detail: result.detail ?? null,
-        });
+        retryOnForeground.current = !blocked;
         return;
       }
 
@@ -219,8 +161,8 @@ export function usePushToken(): void {
         }
         // Only now, so an attempt cut short by a reconnect is retried rather
         // than mistaken for a token Home Assistant already has.
-        synced.current = nonce;
-        report({ status: "synced" });
+        synced.current = tick;
+        retryOnForeground.current = false;
       } catch (error) {
         if (cancelled) return;
 
@@ -239,13 +181,7 @@ export function usePushToken(): void {
           if (next) return;
         }
 
-        report({
-          status: "failed",
-          // Distinct from a token we never got: we have one, and Home Assistant
-          // would not take it. Same card otherwise, entirely different fix.
-          failure: gone ? "no-registration" : "ha-rejected",
-          detail: reasonOf(error),
-        });
+        retryOnForeground.current = true;
       }
     })();
 
@@ -260,6 +196,6 @@ export function usePushToken(): void {
     recoverRegistration,
     relayUrl,
     relayRejected,
-    nonce,
+    tick,
   ]);
 }

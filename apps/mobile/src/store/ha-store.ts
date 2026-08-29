@@ -22,7 +22,6 @@ import {
   clearRegistration,
   ensureRegistration,
   loadRegistration,
-  type RegistrationFailure,
   type StoredRegistration,
 } from "@/lib/registration";
 import { orderedCandidates } from "@/lib/select-url";
@@ -57,7 +56,6 @@ interface HaState {
   hydrated: boolean;
   /** Our `mobile_app` registration. Null in demo mode and before it lands. */
   registration: StoredRegistration | null;
-  registrationFailure: RegistrationFailure | null;
   setRegistration: (registration: StoredRegistration) => void;
   /**
    * Home Assistant forgot this device while the session was up. Only a fresh
@@ -176,11 +174,7 @@ async function registerDevice(
 
   // A reconnect may have swapped the client while this was in flight.
   if (client !== target) return null;
-  set(
-    result.ok
-      ? { registration: result.registration, registrationFailure: null }
-      : { registration: result.registration, registrationFailure: result.failure },
-  );
+  set({ registration: result.registration });
   return result.ok ? result.registration : null;
 }
 
@@ -284,10 +278,9 @@ export const useHaStore = create<HaState>((set, get) => ({
   activeUrl: "",
   hydrated: false,
   registration: null,
-  registrationFailure: null,
 
   setRegistration(registration) {
-    set({ registration, registrationFailure: null });
+    set({ registration });
   },
 
   recoverRegistration() {
@@ -415,7 +408,7 @@ export const useHaStore = create<HaState>((set, get) => ({
         tokens: null,
       };
       await saveConnectionSettings(saved);
-      set({ profile: defaultProfile, registration: null, registrationFailure: null });
+      set({ profile: defaultProfile, registration: null });
       attachClient(next, set, "");
     } catch (error) {
       cleanupClient();
@@ -466,7 +459,6 @@ export const useHaStore = create<HaState>((set, get) => ({
       activeUrl: "",
       profile: options?.clearSaved ? defaultProfile : get().profile,
       registration: options?.clearSaved ? null : get().registration,
-      registrationFailure: null,
     });
   },
 

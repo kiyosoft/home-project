@@ -205,45 +205,10 @@ export const en = {
   "activity.new": "New",
   "activity.justNow": "Just now",
   "activity.permissionTitle": "Turn on notifications",
-  "activity.permissionBody":
-    "Ethio Home needs permission to show banners when your home sends a notification.",
   "activity.permissionAllow": "Allow notifications",
   "activity.permissionDenied":
-    "Notifications are off for Ethio Home. Turn them on in your phone's settings to see banners.",
+    "Notifications are off. Turn them on in Settings to see banners.",
   "activity.permissionOpenSettings": "Open settings",
-  "activity.notRegistered":
-    "This phone is not registered with Home Assistant yet, so it cannot receive notifications.",
-  "activity.registerFailedNotLoaded":
-    "Home Assistant does not have the mobile_app integration loaded. Add default_config to configuration.yaml and restart.",
-  "activity.registerFailedUnauthorized":
-    "Home Assistant refused to register this phone. Sign out and sign in again.",
-  "activity.registerFailedUnreachable":
-    "Could not reach Home Assistant to register this phone. It will retry on the next connection.",
-  "activity.registerFailedRejected":
-    "Home Assistant discarded this phone's registration details. Check the Home Assistant log for an invalid webhook payload.",
-  "activity.pushTitle": "Notifications when the app is closed",
-  "activity.pushStateOn": "On",
-  "activity.pushStateOff": "Off",
-  "activity.pushStatePending": "Setting up",
-  "activity.pushSynced":
-    "Home Assistant can reach this phone through the push relay even when Ethio Home is closed.",
-  "activity.pushSyncing": "Registering this phone for push notifications…",
-  "activity.pushNoRelay":
-    "Notifications only arrive while Ethio Home is open. Turn on the push relay in the Et Remote Access add-on to get them when the app is closed.",
-  "activity.pushSimulator":
-    "Simulators and emulators cannot receive push notifications. Use a development build on a real phone.",
-  "activity.pushNoProject":
-    "This build has no EAS project id, so it cannot get a push token. Rebuild it with EAS.",
-  "activity.pushFailed":
-    "Could not get a push token for this phone from Expo. It will retry.",
-  "activity.pushHaRejected":
-    "This phone has a push token, but Home Assistant would not accept it. It will retry on the next connection.",
-  "activity.pushNoRegistration":
-    "Home Assistant no longer has this phone registered, and registering it again did not work. Reconnect to try once more.",
-  "activity.pushTimeout":
-    "Apple or Google never sent this phone a push token. That usually means this network has no internet, or the app was built without push credentials. It tries again each time you open the app.",
-  "activity.pushRejected":
-    "The push service rejected this phone's token, so the last notification did not arrive. A fresh token was sent; if this stays, rebuild the app with new push credentials.",
 
   "status.reconnecting": "Reconnecting…",
   "status.offline": "Offline",
