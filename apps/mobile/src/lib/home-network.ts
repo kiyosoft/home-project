@@ -1,6 +1,7 @@
 import * as Location from "expo-location";
 
 import NetInfo from "@/lib/netinfo";
+import type { ConnectionProfile } from "@/lib/settings";
 
 /**
  * SSID matching, the way the Home Assistant companion app chooses between
@@ -12,20 +13,34 @@ export type HomeNetworkVerdict = "home" | "away" | "unknown";
 
 const BSSID_PREFIX = "bssid:";
 
+type HomeNetworkSettings = Pick<
+  ConnectionProfile,
+  "homeNetworks" | "ethernetIsHome" | "vpnIsHome"
+>;
+
 export async function readHomeNetworkVerdict(
-  homeNetworks: string[],
+  settings: HomeNetworkSettings,
 ): Promise<HomeNetworkVerdict> {
-  if (homeNetworks.length === 0) return "unknown";
+  const active = await NetInfo.fetch();
+  if (!active.isConnected) return "away";
 
-  const state = await NetInfo.fetch("wifi");
-  if (!state.isConnected) return "away";
-  if (state.type !== "wifi") return "unknown";
+  if (settings.ethernetIsHome && active.type === "ethernet") return "home";
+  if (settings.vpnIsHome && active.type === "vpn") return "home";
 
-  const ssid = normalize(state.details?.ssid);
-  const bssid = normalize(state.details?.bssid);
+  if (settings.homeNetworks.length === 0) return "unknown";
+
+  // Being associated with home Wi-Fi is not enough: a phone that routes data
+  // over cellular anyway cannot reach the internal address.
+  if (active.type !== "wifi") return "away";
+
+  const wifi = await NetInfo.fetch("wifi");
+  if (wifi.type !== "wifi") return "unknown";
+
+  const ssid = normalize(wifi.details?.ssid);
+  const bssid = normalize(wifi.details?.bssid);
   if (!ssid && !bssid) return "unknown";
 
-  for (const entry of homeNetworks) {
+  for (const entry of settings.homeNetworks) {
     const wanted = normalize(entry);
     if (!wanted) continue;
 

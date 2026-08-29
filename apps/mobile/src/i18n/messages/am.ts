@@ -10,7 +10,7 @@ export const am: Record<MessageKey, string> = {
   "setup.connectDescription":
     "በሆም አሲስታንት በኩል ይግቡ። የኤንቲቲ ውሂብ በኔትዎርክዎ ውስጥ ይቆያል።",
   "setup.urlLabel": "የሃብ URL",
-  "setup.urlPlaceholder": "http://192.168.1.1:8123",
+  "setup.urlPlaceholder": "http://192.168.1.1",
   "setup.tokenLabel": "የረጅም ጊዜ የመዳረሻ ቶከን",
   "setup.tokenPlaceholder": "ቶከን ይለጥፉ",
   "setup.connect": "ተገናኙ",
@@ -36,7 +36,7 @@ export const am: Record<MessageKey, string> = {
   "setup.tokenRejected": "ተቀባይነት አላገኘም",
 
   "setup.errorRequired": "የሃብ URL እና የረጅም ጊዜ ቶከን ያስፈልጋሉ።",
-  "setup.errorInvalidUrl": "ትክክለኛ URL ያስገቡ፣ ለምሳሌ http://192.168.1.1:8123",
+  "setup.errorInvalidUrl": "ትክክለኛ URL ያስገቡ፣ ለምሳሌ http://192.168.1.1",
   "setup.errorUnreachable":
     "በዚያ አድራሻ ምንም ምላሽ አልሰጠም። ሃቡ መብራቱን እና በዚህ ኔትዎርክ ላይ መሆኑን ያረጋግጡ።",
   "setup.errorTokenRejected":
@@ -210,16 +210,20 @@ export const am: Record<MessageKey, string> = {
     "ማሳወቂያዎች ጠፍተዋል። ባነሮችን ለማየት በቅንብሮች ውስጥ ያብሯቸው።",
   "activity.permissionOpenSettings": "ቅንብሮችን ክፈት",
 
+  "status.connecting": "በመገናኘት ላይ…",
   "status.reconnecting": "እንደገና በመገናኘት ላይ…",
   "status.offline": "ከመስመር ውጪ",
   "status.retry": "እንደገና ሞክር",
+  "status.setUpAddress": "አድራሻ ጨምር",
+  "status.offlineTitle": "ቤትዎ ላይ መድረስ አልተቻለም",
+  "status.offlineBody": "አሁንም በመሞከር ላይ። ሃብዎ ምላሽ እንደሰጠ ይህ ገጽ ይሞላል።",
 
   "connection.title": "ግንኙነት",
   "connection.description":
     "ለአንድ ቤት ሁለት አድራሻዎች፦ በዋይ-ፋይዎ ላይ የሚሠራው፣ እና በሌላ ቦታ ሁሉ የሚሠራው።",
   "connection.internalUrl": "የቤት ውስጥ አድራሻ",
   "connection.internalUrlHelp":
-    "ከታች ካሉት የቤት ኔትዎርኮች በአንዱ ላይ ሲሆኑ ይጠቀማል። አብዛኛውን ጊዜ እንደ http://homeassistant.local:8123 ያለ የአካባቢ አድራሻ ነው።",
+    "ከታች ካሉት የቤት ኔትዎርኮች በአንዱ ላይ ሲሆኑ ይጠቀማል። አብዛኛውን ጊዜ እንደ http://homeassistant.local ያለ የአካባቢ አድራሻ ነው።",
   "connection.externalUrl": "የውጪ አድራሻ",
   "connection.externalUrlHelp":
     "ከቤት ውጪ ሲሆኑ ይጠቀማል። የተነልዎ ወይም የይፋዊ ሆስት ስምዎ።",
@@ -235,6 +239,13 @@ export const am: Record<MessageKey, string> = {
   "connection.removeNetwork": "{name}ን አስወግድ",
   "connection.noNetworks":
     "እስካሁን አንድም የለም፤ ስለዚህ የቤት ውስጥ አድራሻ ቅድሚያ ካልተሰጠው በስተቀር የውጪው ይጠቀማል።",
+  "connection.ethernetIsHome": "ገመድ እንደ ቤት ይቆጠር",
+  "connection.ethernetIsHomeHelp":
+    "ይህ መሣሪያ በገመድ ግንኙነት ላይ በሚሆንበት ጊዜ ሁሉ የቤት ውስጥ አድራሻውን ይጠቀም።",
+  "connection.vpnIsHome": "VPN እንደ ቤት ይቆጠር",
+  "connection.vpnIsHomeHelp":
+    "ግንኙነቱን VPN በሚሸከምበት ጊዜ ሁሉ የቤት ውስጥ አድራሻውን ይጠቀም።",
+  "connection.openSettings": "የግንኙነት ቅንብሮች",
   "connection.permissionTitle": "የአካባቢ ፈቃድ ያስፈልጋል",
   "connection.permissionBody":
     "iOS እና አንድሮይድ የዋይ-ፋይ ኔትዎርክ ስምን የሚያሳዩት የአካባቢ ፈቃድ ላላቸው መተግበሪያዎች ብቻ ነው። ስለ አካባቢዎ ምንም አይቀመጥም ወይም አይላክም።",

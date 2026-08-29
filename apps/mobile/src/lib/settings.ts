@@ -29,6 +29,9 @@ export interface ConnectionProfile {
   prioritizeInternal: boolean;
   /** SSIDs, or `BSSID:1a:2b:..` entries as the companion app spells them. */
   homeNetworks: string[];
+  /** Treat a wired or tunnelled connection as being at home, SSID unread. */
+  ethernetIsHome: boolean;
+  vpnIsHome: boolean;
   instanceName: string;
   instanceId: string;
 }
@@ -46,6 +49,8 @@ export const defaultProfile: ConnectionProfile = {
   externalUrl: "",
   prioritizeInternal: false,
   homeNetworks: [],
+  ethernetIsHome: false,
+  vpnIsHome: false,
   instanceName: "",
   instanceId: "",
 };
@@ -192,6 +197,8 @@ function parseStored(value: unknown): StoredConnection | null {
             (entry): entry is string => typeof entry === "string",
           )
         : [],
+      ethernetIsHome: fields.ethernetIsHome === true,
+      vpnIsHome: fields.vpnIsHome === true,
       instanceName: asString(fields.instanceName),
       instanceId: asString(fields.instanceId),
     },

@@ -40,6 +40,13 @@ import { trimTrailingSlash } from "@/lib/url";
 
 export type AddressSlot = "internal" | "external";
 
+/**
+ * Whether there are credentials to connect with, which is a separate question
+ * from whether the socket is up. Only this decides between the dashboard and
+ * the sign-in screen, so a hub that is merely unreachable never costs a login.
+ */
+export type SessionState = "unknown" | "active" | "signed-out";
+
 interface HaState {
   entities: HassEntities;
   /** Empty until the area registry resolves. */
@@ -47,6 +54,7 @@ interface HaState {
   areaByEntity: Record<string, string>;
   status: ConnectionStatus;
   failure: ConnectFailure | null;
+  session: SessionState;
   mode: ConnectionMode | null;
   authMode: AuthMode;
   profile: ConnectionProfile;
@@ -92,7 +100,7 @@ interface HaState {
   bootstrap: () => Promise<void>;
 }
 
-/** Connected, or dropped and already retrying — stay on the dashboard. */
+/** The socket is usable, so live subscriptions and registration can run. */
 export function hasSession(status: ConnectionStatus): boolean {
   return status === "connected" || status === "reconnecting";
 }
@@ -101,6 +109,19 @@ let client: EntityClient | null = null;
 let unsubscribe: (() => void) | null = null;
 let unsubscribeStatus: (() => void) | null = null;
 let saved: ConnectionSettings | null = null;
+
+/**
+ * Home Assistant refused the grant itself, or there was never one to refuse.
+ * Set by {@link openClient} and reset per attempt, because `auth_invalid` from a
+ * reverse proxy or a captive portal arrives as the same error and must not end
+ * a session that a later retry would recover.
+ */
+let grantRefused = false;
+
+/** Long enough for a slow tunnel, short enough to fail over while the user waits. */
+const CANDIDATE_TIMEOUT_MS = 10000;
+
+class TimeoutError extends Error {}
 
 function cleanupClient() {
   unsubscribe?.();
@@ -129,22 +150,51 @@ function attachClient(
       set({ status, failure: null });
       return;
     }
+    // The library only reports this for a rejected auth, so the address is
+    // fine. The last known entities stay on screen while the retry runs.
     cleanupClient();
-    set({
-      status: "error",
-      failure:
-        saved?.authMode === "oauth"
-          ? { kind: "signed-out" }
-          : { kind: "token-rejected" },
-      entities: {},
-      areas: [],
-      areaByEntity: {},
-      activeUrl: "",
-    });
+    const authMode = saved?.authMode ?? "oauth";
+    const failure: ConnectFailure =
+      authMode === "oauth"
+        ? { kind: "signed-out" }
+        : { kind: "token-rejected" };
+    set({ status: "error", failure });
+    if (endsSession(authMode, failure)) set({ session: "signed-out" });
   });
+  // Scoped to "since the last good connection", so the status handler above
+  // cannot act on a refusal from some earlier address that has since worked.
+  grantRefused = false;
   set({ status: "connected", failure: null });
   void loadAreas(next, set);
+  void adoptAddresses(next, set);
   if (baseUrl) void registerDevice(next, set, baseUrl);
+}
+
+/**
+ * Only Home Assistant refusing the grant ends a session. Anything else leaves
+ * the credentials in place so the backoff retry can recover on its own.
+ */
+function endsSession(authMode: AuthMode, failure: ConnectFailure): boolean {
+  if (authMode === "token") return failure.kind === "token-rejected";
+  return failure.kind === "signed-out" && grantRefused;
+}
+
+/**
+ * Something rejected our access token without the refresh token being tried, so
+ * whether the grant is dead is still an open question. Expiring the access token
+ * forces the next attempt through the refresh, which answers it outright instead
+ * of leaving the session in limbo until the token lapses on its own.
+ */
+async function settleAmbiguousAuth(
+  failure: ConnectFailure,
+  settings: ConnectionSettings,
+) {
+  if (failure.kind !== "signed-out" || grantRefused) return;
+  if (!settings.tokens || settings.tokens.expires === 0) return;
+
+  const tokens = { ...settings.tokens, expires: 0 };
+  if (saved) saved.tokens = tokens;
+  await saveTokens(tokens);
 }
 
 /**
@@ -212,6 +262,7 @@ function openClient(
     return connectLive({ baseUrl: url, token: settings.token });
   }
   if (!settings.tokens) {
+    grantRefused = true;
     return Promise.reject(new SignedOutError());
   }
   return connectLiveWithTokens({
@@ -221,15 +272,61 @@ function openClient(
       if (saved) saved.tokens = next;
       void saveTokens(next);
     },
+    onInvalidGrant: () => {
+      grantRefused = true;
+    },
   });
+}
+
+/**
+ * Neither the websocket nor the token request carries a timeout of its own, so
+ * an unroutable address would otherwise hold the whole attempt until the OS
+ * gives up on the handshake — a minute or more on iOS.
+ */
+async function openWithTimeout(
+  url: string,
+  settings: ConnectionSettings,
+): Promise<EntityClient> {
+  const attempt = openClient(url, settings);
+  let timedOut = false;
+  let timer: ReturnType<typeof setTimeout> | undefined;
+
+  // A socket that lands after we gave up would otherwise stay open forever.
+  void attempt.then(
+    (late) => {
+      if (timedOut) late.disconnect();
+    },
+    () => {},
+  );
+
+  try {
+    return await Promise.race([
+      attempt,
+      new Promise<never>((_, reject) => {
+        timer = setTimeout(() => {
+          timedOut = true;
+          reject(new TimeoutError(`No answer from ${url}`));
+        }, CANDIDATE_TIMEOUT_MS);
+      }),
+    ]);
+  } finally {
+    clearTimeout(timer);
+  }
 }
 
 /** Distinguished from a rejected token: there is nothing to reject. */
 class SignedOutError extends Error {}
 
-function toFailure(error: unknown): ConnectFailure {
+function toFailure(error: unknown, authMode: AuthMode): ConnectFailure {
   if (error instanceof SignedOutError) return { kind: "signed-out" };
-  return classifyConnectError(error);
+  if (error instanceof TimeoutError) return { kind: "unreachable" };
+
+  const failure = classifyConnectError(error);
+  // An OAuth session has no token field to blame; the grant is the suspect.
+  if (failure.kind === "token-rejected" && authMode === "oauth") {
+    return { kind: "signed-out" };
+  }
+  return failure;
 }
 
 const LOGIN_FAILURES: Record<
@@ -266,12 +363,35 @@ async function adoptInstanceAddresses(
   }
 }
 
+/**
+ * Runs on every connect, not just the first: an instance that gains an
+ * `external_url` later is how a phone that only ever connected at home learns
+ * the address to use once it leaves.
+ */
+async function adoptAddresses(
+  target: EntityClient,
+  set: (partial: Partial<HaState>) => void,
+) {
+  const settings = saved;
+  if (!settings || settings.mode !== "live") return;
+
+  const patch = await adoptInstanceAddresses(target, settings.profile);
+  if (Object.keys(patch).length === 0) return;
+  if (client !== target || saved !== settings) return;
+
+  const profile = { ...settings.profile, ...patch };
+  saved = { ...settings, profile };
+  await saveConnectionSettings(saved);
+  set({ profile });
+}
+
 export const useHaStore = create<HaState>((set, get) => ({
   entities: {},
   areas: [],
   areaByEntity: {},
   status: "idle",
   failure: null,
+  session: "unknown",
   mode: null,
   authMode: "oauth",
   profile: defaultProfile,
@@ -350,6 +470,7 @@ export const useHaStore = create<HaState>((set, get) => ({
     const settings = saved;
     if (!settings || settings.mode !== "live") return;
 
+    grantRefused = false;
     set({
       status: "connecting",
       failure: null,
@@ -361,32 +482,36 @@ export const useHaStore = create<HaState>((set, get) => ({
     const candidates = await orderedCandidates(settings.profile);
     if (candidates.length === 0) {
       cleanupClient();
-      set({ status: "error", failure: { kind: "no-address" }, activeUrl: "" });
+      set({ status: "error", failure: { kind: "no-address" } });
       return;
     }
 
-    let failure: ConnectFailure = { kind: "unreachable" };
+    const failures: ConnectFailure[] = [];
     for (const candidate of candidates) {
       try {
-        const next = await openClient(candidate.url, settings);
+        const next = await openWithTimeout(candidate.url, settings);
         set({ activeUrl: candidate.url });
         attachClient(next, set, candidate.url);
         return;
       } catch (error) {
-        failure = toFailure(error);
-        if (failure.kind !== "unreachable") break;
+        failures.push(toFailure(error, settings.authMode));
       }
     }
 
+    // A hub that answered and turned us away says more than one that never
+    // answered, so it wins the message even if it was not the last to fail.
+    const failure =
+      failures.find((entry) => entry.kind !== "unreachable") ?? failures[0]!;
+
+    // Entities and the last good address are left alone: the dashboard keeps
+    // showing what it last knew instead of emptying out.
     cleanupClient();
-    set({
-      status: "error",
-      failure,
-      entities: {},
-      areas: [],
-      areaByEntity: {},
-      activeUrl: "",
-    });
+    set({ status: "error", failure });
+    if (endsSession(settings.authMode, failure)) {
+      set({ session: "signed-out" });
+      return;
+    }
+    await settleAmbiguousAuth(failure, settings);
   },
 
   forceReconnect() {
@@ -408,13 +533,13 @@ export const useHaStore = create<HaState>((set, get) => ({
         tokens: null,
       };
       await saveConnectionSettings(saved);
-      set({ profile: defaultProfile, registration: null });
+      set({ profile: defaultProfile, registration: null, session: "active" });
       attachClient(next, set, "");
     } catch (error) {
       cleanupClient();
       set({
         status: "error",
-        failure: toFailure(error),
+        failure: toFailure(error, "token"),
         entities: {},
         areas: [],
         areaByEntity: {},
@@ -457,6 +582,7 @@ export const useHaStore = create<HaState>((set, get) => ({
       failure: null,
       mode: null,
       activeUrl: "",
+      session: options?.clearSaved ? "signed-out" : get().session,
       profile: options?.clearSaved ? defaultProfile : get().profile,
       registration: options?.clearSaved ? null : get().registration,
     });
@@ -501,25 +627,37 @@ export const useHaStore = create<HaState>((set, get) => ({
   },
 
   async bootstrap() {
+    let settings: ConnectionSettings | null = null;
     try {
-      const settings = await loadConnectionSettings();
-      if (!settings) return;
-      saved = settings;
-      set({ profile: settings.profile, authMode: settings.authMode });
-
-      if (settings.mode === "demo") {
-        await get().connectDemo();
+      settings = await loadConnectionSettings();
+      if (!settings) {
+        set({ session: "signed-out" });
         return;
       }
 
-      // Restore the webhook before connecting so the push channel can subscribe
-      // on the first "connected" rather than waiting for the round-trip that
-      // re-verifies it.
-      set({ registration: await loadRegistration() });
-      await get().connect();
+      saved = settings;
+      set({
+        profile: settings.profile,
+        authMode: settings.authMode,
+        session: "active",
+      });
     } finally {
       set({ hydrated: true });
     }
+
+    // Everything past here runs with the shell already painted, so a slow or
+    // unreachable hub costs the user a spinner rather than a blank window.
+    if (!settings) return;
+    if (settings.mode === "demo") {
+      await get().connectDemo();
+      return;
+    }
+
+    // Restore the webhook before connecting so the push channel can subscribe
+    // on the first "connected" rather than waiting for the round-trip that
+    // re-verifies it.
+    set({ registration: await loadRegistration() });
+    await get().connect();
   },
 }));
 
@@ -528,6 +666,7 @@ async function beginLive(
   address: string,
   set: (partial: Partial<HaState>) => void,
 ) {
+  grantRefused = false;
   set({
     status: "connecting",
     failure: null,
@@ -538,12 +677,12 @@ async function beginLive(
 
   let next: EntityClient;
   try {
-    next = await openClient(address, settings);
+    next = await openWithTimeout(address, settings);
   } catch (error) {
     cleanupClient();
     set({
       status: "error",
-      failure: toFailure(error),
+      failure: toFailure(error, settings.authMode),
       entities: {},
       areas: [],
       areaByEntity: {},
@@ -554,15 +693,8 @@ async function beginLive(
 
   saved = settings;
   await saveConnectionSettings(settings);
-  set({ activeUrl: address });
+  set({ activeUrl: address, session: "active" });
   attachClient(next, set, address);
-
-  const patch = await adoptInstanceAddresses(next, settings.profile);
-  if (Object.keys(patch).length === 0 || client !== next) return;
-  const profile = { ...settings.profile, ...patch };
-  saved = { ...settings, profile };
-  await saveConnectionSettings(saved);
-  set({ profile });
 }
 
 function withAddress(

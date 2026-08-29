@@ -8,7 +8,7 @@ export const en = {
   "setup.connectDescription":
     "Sign in through Home Assistant. Entity data stays on your network.",
   "setup.urlLabel": "Hub URL",
-  "setup.urlPlaceholder": "http://192.168.1.1:8123",
+  "setup.urlPlaceholder": "http://192.168.1.1",
   "setup.tokenLabel": "Long-lived access token",
   "setup.tokenPlaceholder": "Paste token",
   "setup.connect": "Connect",
@@ -36,7 +36,7 @@ export const en = {
   "setup.tokenRejected": "Rejected",
 
   "setup.errorRequired": "Hub URL and long-lived access token are required.",
-  "setup.errorInvalidUrl": "Enter a valid URL, e.g. http://192.168.1.1:8123",
+  "setup.errorInvalidUrl": "Enter a valid URL, e.g. http://192.168.1.1",
   "setup.errorUnreachable":
     "Nothing answered at that address. Check the hub is on and on this network.",
   "setup.errorTokenRejected":
@@ -210,16 +210,21 @@ export const en = {
     "Notifications are off. Turn them on in Settings to see banners.",
   "activity.permissionOpenSettings": "Open settings",
 
+  "status.connecting": "Connecting…",
   "status.reconnecting": "Reconnecting…",
   "status.offline": "Offline",
   "status.retry": "Retry",
+  "status.setUpAddress": "Add an address",
+  "status.offlineTitle": "Cannot reach your home",
+  "status.offlineBody":
+    "Still trying. This screen fills in as soon as your hub answers.",
 
   "connection.title": "Connection",
   "connection.description":
     "Two addresses for one home: the one that works on your Wi-Fi, and the one that works everywhere else.",
   "connection.internalUrl": "Internal address",
   "connection.internalUrlHelp":
-    "Used when you are on one of the home networks below. Usually a local address like http://homeassistant.local:8123",
+    "Used when you are on one of the home networks below. Usually a local address like http://homeassistant.local",
   "connection.externalUrl": "External address",
   "connection.externalUrlHelp":
     "Used when you are away. Your tunnel or public hostname.",
@@ -235,6 +240,13 @@ export const en = {
   "connection.removeNetwork": "Remove {name}",
   "connection.noNetworks":
     "None yet, so the external address is used unless the internal one is preferred.",
+  "connection.ethernetIsHome": "Treat wired as home",
+  "connection.ethernetIsHomeHelp":
+    "Use the internal address whenever this device is on a wired connection.",
+  "connection.vpnIsHome": "Treat VPN as home",
+  "connection.vpnIsHomeHelp":
+    "Use the internal address whenever a VPN is carrying the connection.",
+  "connection.openSettings": "Connection settings",
   "connection.permissionTitle": "Location permission needed",
   "connection.permissionBody":
     "iOS and Android only reveal the Wi-Fi network name to apps with location permission. Nothing about your location is stored or sent anywhere.",

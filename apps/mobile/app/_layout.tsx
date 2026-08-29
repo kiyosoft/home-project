@@ -3,8 +3,9 @@ import "../src/global.css";
 import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
-import { HeroUINativeProvider } from "heroui-native";
+import { HeroUINativeProvider, Spinner } from "heroui-native";
 import { useEffect } from "react";
+import { View } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
@@ -49,21 +50,29 @@ export default function RootLayout() {
     hydrateNotifications,
   ]);
 
+  const ready = hydrated && themeHydrated;
+
   useEffect(() => {
-    if (hydrated && themeHydrated) void SplashScreen.hideAsync();
-  }, [hydrated, themeHydrated]);
+    if (ready) void SplashScreen.hideAsync();
+  }, [ready]);
 
-  if (!hydrated || !themeHydrated) return null;
-
+  // The providers mount either way, so the wait has somewhere themed to render
+  // rather than the empty frame a bare `null` leaves if the splash goes early.
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
         <HeroUINativeProvider>
           <StatusBar style="auto" />
-          <DetailSheetProvider>
-            <Stack screenOptions={{ headerShown: false }} />
-            <AssistHost />
-          </DetailSheetProvider>
+          {ready ? (
+            <DetailSheetProvider>
+              <Stack screenOptions={{ headerShown: false }} />
+              <AssistHost />
+            </DetailSheetProvider>
+          ) : (
+            <View className="bg-background flex-1 items-center justify-center">
+              <Spinner />
+            </View>
+          )}
         </HeroUINativeProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>

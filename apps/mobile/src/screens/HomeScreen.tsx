@@ -23,6 +23,7 @@ import { resolveSections, widgetForId } from "@/dashboard/resolve-sections";
 import { useDashboardStore } from "@/store/dashboard-store";
 import { useHaStore } from "@/store/ha-store";
 import { useT } from "@/store/locale-store";
+import { ConnectionNotice } from "@/ui/ConnectionNotice";
 import { ConnectionStatusChip } from "@/ui/ConnectionStatusChip";
 import { Screen } from "@/ui/Screen";
 import { EntityPickerSheet } from "@/widgets/EntityPickerSheet";
@@ -45,6 +46,7 @@ const ESTIMATED_ROW_HEIGHT = 148;
 export function HomeScreen() {
   const t = useT();
   const mode = useHaStore((state) => state.mode);
+  const status = useHaStore((state) => state.status);
   const entities = useHaStore((state) => state.entities);
   const areas = useHaStore((state) => state.areas);
   const areaByEntity = useHaStore((state) => state.areaByEntity);
@@ -151,6 +153,23 @@ export function HomeScreen() {
     },
     [width, editing, removeWidget, resizeWidget],
   );
+
+  // Only when there is nothing cached to show. A reconnect that fails later
+  // keeps the last known tiles on screen with the status chip explaining why.
+  // Demo mode is excluded; a null mode is not, because that is the tick between
+  // restoring the session and the first connect.
+  if (
+    mode !== "demo" &&
+    status !== "connected" &&
+    Object.keys(entities).length === 0
+  ) {
+    return (
+      <Screen>
+        <Text.Heading type="h1">{t("home.title")}</Text.Heading>
+        <ConnectionNotice />
+      </Screen>
+    );
+  }
 
   const header = (
     <View className="flex-row items-start justify-between gap-3">

@@ -1,6 +1,6 @@
 import { readHomeNetworkVerdict } from "@/lib/home-network";
 import type { ConnectionProfile } from "@/lib/settings";
-import { legacyPortUrl, trimTrailingSlash } from "@/lib/url";
+import { trimTrailingSlash } from "@/lib/url";
 
 /** Unauthenticated; any HTTP response means something is listening. */
 const PROBE_PATH = "/manifest.json";
@@ -20,29 +20,18 @@ export async function orderedCandidates(
   const external = trimTrailingSlash(profile.externalUrl);
 
   if (!internal && !external) return [];
-  if (!internal) return withPortFallback(external, "external");
-  if (!external) return withPortFallback(internal, "internal");
+  if (!internal) return [{ url: external, kind: "external" }];
+  if (!external) return [{ url: internal, kind: "internal" }];
 
-  const internalFirst = await preferInternal(profile, internal);
-  return internalFirst
+  return (await preferInternal(profile, internal))
     ? [
-        ...withPortFallback(internal, "internal"),
-        ...withPortFallback(external, "external"),
+        { url: internal, kind: "internal" },
+        { url: external, kind: "external" },
       ]
     : [
-        ...withPortFallback(external, "external"),
-        ...withPortFallback(internal, "internal"),
+        { url: external, kind: "external" },
+        { url: internal, kind: "internal" },
       ];
-}
-
-/**
- * A local address with no port could be either of Home Assistant's two
- * defaults, so try the modern one and fall through to the old one rather than
- * asking somebody to know which kind of install they are running.
- */
-function withPortFallback(url: string, kind: UrlKind): UrlCandidate[] {
-  const legacy = legacyPortUrl(url);
-  return legacy ? [{ url, kind }, { url: legacy, kind }] : [{ url, kind }];
 }
 
 async function preferInternal(
@@ -51,10 +40,12 @@ async function preferInternal(
 ): Promise<boolean> {
   if (profile.prioritizeInternal) return true;
 
-  const verdict = await readHomeNetworkVerdict(profile.homeNetworks);
+  const verdict = await readHomeNetworkVerdict(profile);
   if (verdict === "home") return true;
   if (verdict === "away") return false;
 
+  // Only reached when the OS would not name the network, so this probe is a
+  // tiebreaker rather than something every launch pays for.
   return reachable(internal);
 }
 

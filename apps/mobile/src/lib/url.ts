@@ -29,9 +29,6 @@ export function isHttpUrl(url: string): boolean {
   return parseOrigin(url) !== null;
 }
 
-/** What Home Assistant listened on before 2026.8, and still does on upgrades. */
-const LEGACY_PORT = 8123;
-
 /**
  * Turns what somebody typed into an address we can actually connect to.
  *
@@ -40,10 +37,8 @@ const LEGACY_PORT = 8123;
  * ever tried. A hub on the local network is plain HTTP; anything that looks
  * like a public name is far likelier to be a reverse proxy, so that gets HTTPS.
  *
- * No port is filled in. Home Assistant 2026.8 moved fresh Home Assistant OS
- * installs to port 80, while upgraded and container installs stayed on 8123, so
- * a typed address genuinely could be either and {@link legacyPortUrl} supplies
- * the other one to try.
+ * No port is filled in, so a bare host means the default for its scheme. An
+ * install still listening on Home Assistant's old 8123 has to say so.
  *
  * Returns null only when the input cannot be read as an address at all.
  */
@@ -64,18 +59,6 @@ export function normalizeBaseUrl(input: string): string | null {
   const port = origin.port === null ? "" : `:${origin.port}`;
 
   return `${scheme}://${origin.host}${port}`;
-}
-
-/**
- * The same local address on Home Assistant's pre-2026.8 port, or null when the
- * question does not arise: a stated port is a decision, and a public HTTPS name
- * is a reverse proxy that answers on 443.
- */
-export function legacyPortUrl(url: string): string | null {
-  const origin = parseOrigin(url);
-  if (!origin || origin.port !== null || origin.scheme !== "http") return null;
-  if (!isLocalHost(origin.host)) return null;
-  return `http://${origin.host}:${LEGACY_PORT}`;
 }
 
 /** Whether this name can only resolve on the network the phone is sitting on. */

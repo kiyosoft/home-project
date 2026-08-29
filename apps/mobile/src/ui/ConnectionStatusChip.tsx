@@ -1,6 +1,6 @@
+import { router } from "expo-router";
 import { Chip, Spinner } from "heroui-native";
 
-import { needsLogin } from "@/lib/connection-error";
 import { useHaStore } from "@/store/ha-store";
 import { useT } from "@/store/locale-store";
 
@@ -13,25 +13,35 @@ export function ConnectionStatusChip() {
 
   if (mode !== "live") return null;
 
-  if (status === "reconnecting" || status === "connecting") {
+  if (status === "connecting" || status === "reconnecting") {
     return (
       <Chip size="sm" color="warning" variant="soft" className="self-start">
         <Spinner size="sm" />
-        <Chip.Label>{t("status.reconnecting")}</Chip.Label>
+        <Chip.Label>
+          {t(status === "connecting" ? "status.connecting" : "status.reconnecting")}
+        </Chip.Label>
       </Chip>
     );
   }
 
   if (status !== "error") return null;
 
-  if (needsLogin(failure)) {
+  if (failure?.kind === "no-address") {
     return (
-      <Chip size="sm" color="danger" variant="soft" className="self-start">
-        {t("status.offline")}
+      <Chip
+        size="sm"
+        color="danger"
+        variant="soft"
+        className="self-start"
+        onPress={() => router.push("/connection")}
+      >
+        {t("status.setUpAddress")}
       </Chip>
     );
   }
 
+  // Always actionable: the backoff is already retrying, and a tap just skips
+  // the wait rather than being the only thing that would ever try again.
   return (
     <Chip
       size="sm"

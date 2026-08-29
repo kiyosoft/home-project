@@ -1,12 +1,14 @@
 import { Redirect } from "expo-router";
 
 import { ConnectScreen } from "@/screens/ConnectScreen";
-import { hasSession, useHaStore } from "@/store/ha-store";
+import { useHaStore } from "@/store/ha-store";
 
 export default function Index() {
-  const status = useHaStore((state) => state.status);
+  const session = useHaStore((state) => state.session);
 
-  if (hasSession(status)) {
+  // Deliberately not the socket status: an unreachable hub is the dashboard's
+  // problem to report, not a reason to ask for credentials again.
+  if (session === "active") {
     return <Redirect href="/home" />;
   }
 

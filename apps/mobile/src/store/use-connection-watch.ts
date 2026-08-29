@@ -10,7 +10,13 @@ import { useHaStore } from "@/store/ha-store";
 const PING_TIMEOUT_MS = 4000;
 const NETWORK_SETTLE_MS = 800;
 
+/** Climbs so a hub that is off for the evening is not polled every second. */
+const BACKOFF_MS = [1000, 2000, 4000, 8000, 15000, 30000];
+
 let inFlight: Promise<void> | null = null;
+let attempt = 0;
+let retryTimer: ReturnType<typeof setTimeout> | undefined;
+let foreground = true;
 
 function reconnect(): Promise<void> {
   if (inFlight) return inFlight;
@@ -21,6 +27,34 @@ function reconnect(): Promise<void> {
       inFlight = null;
     });
   return inFlight;
+}
+
+/**
+ * Keyed off the session rather than the failure: a grant Home Assistant has
+ * refused clears the session and stops the loop, while everything else is
+ * treated as temporary and worth another go.
+ */
+function shouldRetry(): boolean {
+  const { mode, session, status, failure } = useHaStore.getState();
+  if (mode !== "live" || session !== "active") return false;
+  if (status !== "error") return false;
+  return failure?.kind !== "no-address";
+}
+
+function scheduleRetry() {
+  if (retryTimer || !foreground || !shouldRetry()) return;
+
+  const delay = BACKOFF_MS[Math.min(attempt, BACKOFF_MS.length - 1)]!;
+  attempt += 1;
+  retryTimer = setTimeout(() => {
+    retryTimer = undefined;
+    if (shouldRetry()) void reconnect();
+  }, delay);
+}
+
+function cancelRetry() {
+  if (retryTimer) clearTimeout(retryTimer);
+  retryTimer = undefined;
 }
 
 async function socketAnswers(): Promise<boolean> {
@@ -42,8 +76,7 @@ export function useConnectionWatch() {
     let networkKey = "";
     let settleTimer: ReturnType<typeof setTimeout> | undefined;
 
-    const onForeground = async (next: string) => {
-      if (next !== "active") return;
+    const onForeground = async () => {
       const { mode, status } = useHaStore.getState();
       if (mode !== "live") return;
       if (status === "connecting") return;
@@ -64,6 +97,10 @@ export function useConnectionWatch() {
       }`;
       if (key === networkKey) return;
       networkKey = key;
+      // A different network deserves a first-class attempt, not the tail of the
+      // backoff the previous one earned.
+      attempt = 0;
+      cancelRetry();
 
       if (settleTimer) clearTimeout(settleTimer);
       settleTimer = setTimeout(() => {
@@ -72,29 +109,45 @@ export function useConnectionWatch() {
     };
 
     const appState = AppState.addEventListener("change", (next) => {
-      void onForeground(next);
+      if (next === "active") {
+        foreground = true;
+        attempt = 0;
+        void onForeground();
+        return;
+      }
+      foreground = false;
+      cancelRetry();
     });
+
+    const unsubscribeStore = useHaStore.subscribe((state, previous) => {
+      if (state.status === previous.status) return;
+      if (state.status === "connected") {
+        attempt = 0;
+        cancelRetry();
+        return;
+      }
+      if (state.status === "error") scheduleRetry();
+    });
+
     const unsubscribeNet = NetInfo.addEventListener(onNetwork);
+
+    // Bootstrap may have already failed before this effect ran.
+    scheduleRetry();
 
     return () => {
       if (settleTimer) clearTimeout(settleTimer);
+      cancelRetry();
       appState.remove();
       unsubscribeNet();
+      unsubscribeStore();
     };
   }, []);
 }
 
 async function sameAddressStillWins(): Promise<boolean> {
   const { activeUrl, profile } = useHaStore.getState();
-  const candidates = await orderedCandidates(profile);
-  const winner = candidates[0];
-  if (!winner) return false;
-  // One address can appear twice, once per Home Assistant port default. Being
-  // connected on either of them means the winning address is already in use,
-  // and reconnecting would only drop a working socket.
-  return candidates.some(
-    (entry) => entry.kind === winner.kind && entry.url === activeUrl,
-  );
+  const [winner] = await orderedCandidates(profile);
+  return winner !== undefined && winner.url === activeUrl;
 }
 
 async function decideOnNetwork(state: NetInfoState) {

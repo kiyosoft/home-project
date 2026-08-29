@@ -23,6 +23,12 @@ export interface TokenConnectOptions {
   baseUrl: string;
   tokens: HaTokens;
   onTokens?: (tokens: HaTokens) => void;
+  /**
+   * The refresh token itself was refused, so only a fresh login recovers. The
+   * `auth_invalid` a proxy or captive portal can produce raises the same
+   * `ERR_INVALID_AUTH` and must not be mistaken for it.
+   */
+  onInvalidGrant?: () => void;
 }
 
 function toEntities(entities: HaHassEntities): HassEntities {
@@ -36,8 +42,14 @@ function toEntities(entities: HaHassEntities): HassEntities {
  */
 class RefreshTokenAuth extends Auth {
   private readonly onTokens?: (tokens: HaTokens) => void;
+  private readonly onInvalidGrant?: () => void;
 
-  constructor(baseUrl: string, tokens: HaTokens, onTokens?: (tokens: HaTokens) => void) {
+  constructor(
+    baseUrl: string,
+    tokens: HaTokens,
+    onTokens?: (tokens: HaTokens) => void,
+    onInvalidGrant?: () => void,
+  ) {
     super({
       hassUrl: baseUrl,
       clientId: tokens.clientId,
@@ -50,6 +62,7 @@ class RefreshTokenAuth extends Auth {
       ),
     });
     this.onTokens = onTokens;
+    this.onInvalidGrant = onInvalidGrant;
   }
 
   override async refreshAccessToken(): Promise<void> {
@@ -64,6 +77,7 @@ class RefreshTokenAuth extends Auth {
       // createSocket compares the thrown value against this exact constant to
       // decide between "log in again" and "retry later".
       if (error instanceof HaOAuthError && error.kind === "invalid-grant") {
+        this.onInvalidGrant?.();
         throw ERR_INVALID_AUTH;
       }
       throw error;
@@ -92,7 +106,12 @@ export async function connectLiveWithTokens(
   options: TokenConnectOptions,
 ): Promise<EntityClient> {
   const baseUrl = normalizeBaseUrl(options.baseUrl);
-  const auth = new RefreshTokenAuth(baseUrl, options.tokens, options.onTokens);
+  const auth = new RefreshTokenAuth(
+    baseUrl,
+    options.tokens,
+    options.onTokens,
+    options.onInvalidGrant,
+  );
   return wrapConnection(await createConnection({ auth }));
 }
 

@@ -9,6 +9,13 @@ const AUTHORIZE_PATH = "/auth/authorize";
 const TOKEN_PATH = "/auth/token";
 const REVOKE_PATH = "/auth/revoke";
 
+/**
+ * Without this a token request against an unroutable address waits out the
+ * platform default — a minute on iOS — with the app unable to move on to the
+ * next address.
+ */
+const TOKEN_TIMEOUT_MS = 8000;
+
 export interface HaTokens {
   accessToken: string;
   refreshToken: string;
@@ -116,18 +123,24 @@ async function postToken(
   baseUrl: string,
   fields: Record<string, string>,
 ): Promise<TokenResponse> {
+  const abort = new AbortController();
+  const timer = setTimeout(() => abort.abort(), TOKEN_TIMEOUT_MS);
+
   let response: Response;
   try {
     response = await fetch(`${normalizeBaseUrl(baseUrl)}${TOKEN_PATH}`, {
       method: "POST",
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
       body: formBody(fields),
+      signal: abort.signal,
     });
   } catch (error) {
     throw new HaOAuthError(
       "unreachable",
       error instanceof Error ? error.message : "Token request failed",
     );
+  } finally {
+    clearTimeout(timer);
   }
 
   if (response.status === 400 || response.status === 403) {

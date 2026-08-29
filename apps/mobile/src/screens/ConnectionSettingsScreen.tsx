@@ -129,7 +129,7 @@ export function ConnectionSettingsScreen() {
               value={internalUrl}
               onChangeText={setInternalUrl}
               onBlur={() => commitUrl("internal", internalUrl)}
-              placeholder="http://homeassistant.local:8123"
+              placeholder="http://homeassistant.local"
               autoCapitalize="none"
               autoCorrect={false}
               keyboardType="url"
@@ -158,21 +158,51 @@ export function ConnectionSettingsScreen() {
       </Card>
 
       <Card>
-        <Card.Body className="gap-3">
-          <View className="flex-row items-center justify-between gap-3">
-            <Label className="flex-1">
-              {t("connection.prioritizeInternal")}
-            </Label>
-            <Switch
-              isSelected={profile.prioritizeInternal}
-              onSelectedChange={(next) =>
-                void saveProfile({ prioritizeInternal: next })
-              }
-            />
+        <Card.Body className="gap-5">
+          <View className="gap-3">
+            <View className="flex-row items-center justify-between gap-3">
+              <Label className="flex-1">
+                {t("connection.prioritizeInternal")}
+              </Label>
+              <Switch
+                isSelected={profile.prioritizeInternal}
+                onSelectedChange={(next) =>
+                  void saveProfile({ prioritizeInternal: next })
+                }
+              />
+            </View>
+            <Card.Description>
+              {t("connection.prioritizeInternalHelp")}
+            </Card.Description>
           </View>
-          <Card.Description>
-            {t("connection.prioritizeInternalHelp")}
-          </Card.Description>
+
+          <View className="gap-3">
+            <View className="flex-row items-center justify-between gap-3">
+              <Label className="flex-1">
+                {t("connection.ethernetIsHome")}
+              </Label>
+              <Switch
+                isSelected={profile.ethernetIsHome}
+                onSelectedChange={(next) =>
+                  void saveProfile({ ethernetIsHome: next })
+                }
+              />
+            </View>
+            <Card.Description>
+              {t("connection.ethernetIsHomeHelp")}
+            </Card.Description>
+          </View>
+
+          <View className="gap-3">
+            <View className="flex-row items-center justify-between gap-3">
+              <Label className="flex-1">{t("connection.vpnIsHome")}</Label>
+              <Switch
+                isSelected={profile.vpnIsHome}
+                onSelectedChange={(next) => void saveProfile({ vpnIsHome: next })}
+              />
+            </View>
+            <Card.Description>{t("connection.vpnIsHomeHelp")}</Card.Description>
+          </View>
         </Card.Body>
       </Card>
 
