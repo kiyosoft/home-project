@@ -14,6 +14,8 @@ export interface DashboardHeaderRow {
   kind: "header";
   id: string;
   title: string;
+  /** Everything under this heading, so it can count what is currently on. */
+  entityIds: string[];
 }
 
 export interface DashboardTilesRow {
@@ -49,10 +51,16 @@ export function buildDashboardRows({
     const start = rows.length;
 
     if (section.title) {
+      const entityIds: string[] = [];
+      for (const widget of section.widgets) {
+        const entityId = widget.config.entity_id;
+        if (typeof entityId === "string") entityIds.push(entityId);
+      }
       rows.push({
         kind: "header",
         id: `${section.id}:header`,
         title: section.title,
+        entityIds,
       });
     }
 

@@ -3,9 +3,16 @@ import { tileSpan } from "@ethio/mobile-schema";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { PressableFeedback } from "heroui-native";
 import { View } from "react-native";
+import Animated, {
+  FadeIn,
+  FadeOut,
+  LinearTransition,
+} from "react-native-reanimated";
 import { withUniwind } from "uniwind";
 
 import { useT } from "@/store/locale-store";
+import { FADE_MS, SETTLE_MS } from "@/ui/motion";
+import { TileColumnProvider } from "@/widgets/tile-metrics";
 import { WidgetRenderer } from "@/widgets/WidgetRenderer";
 import { WidgetTile } from "@/widgets/WidgetTile";
 
@@ -79,47 +86,63 @@ export function TileRow({
   const column = tileColumn(width);
 
   return (
-    <View className="flex-row items-stretch" style={{ gap: TILE_GAP }}>
-      {widgets.map((widget) => {
-        const size: TileSize = widget.size ?? "sm";
-        return (
-          <View
-            key={widget.id}
-            style={{ width: tileSpan(size) === COLUMNS ? width : column }}
-          >
-            {/* Editing swallows taps so a resize never toggles the device. */}
-            <View className="flex-1" pointerEvents={editing ? "none" : "auto"}>
-              <WidgetRenderer widget={widget} />
-            </View>
-            {editing ? (
-              <View className="absolute right-2 top-2 flex-row gap-2">
-                <Badge
-                  icon={size === "sm" ? "expand" : "contract"}
-                  label={t(size === "sm" ? "home.widthFull" : "home.widthHalf")}
-                  onPress={() => onResize?.(widget.id)}
-                />
-                <Badge
-                  icon="close"
-                  label={t("home.removeWidget")}
-                  tone="danger"
-                  onPress={() => onRemove?.(widget.id)}
-                />
+    <TileColumnProvider column={column}>
+      <View className="flex-row items-stretch" style={{ gap: TILE_GAP }}>
+        {widgets.map((widget) => {
+          const size: TileSize = widget.size ?? "sm";
+          return (
+            <Animated.View
+              key={widget.id}
+              // A resize changes this width; without it the tile jumps size.
+              layout={LinearTransition.duration(SETTLE_MS)}
+              style={{ width: tileSpan(size) === COLUMNS ? width : column }}
+            >
+              {/* Editing swallows taps so a resize never toggles the device. */}
+              <View className="flex-1" pointerEvents={editing ? "none" : "auto"}>
+                <WidgetRenderer widget={widget} />
               </View>
-            ) : null}
-          </View>
-        );
-      })}
+              {editing ? (
+                <Animated.View
+                  entering={FadeIn.duration(FADE_MS)}
+                  exiting={FadeOut.duration(FADE_MS)}
+                  style={{
+                    position: "absolute",
+                    right: 8,
+                    top: 8,
+                    flexDirection: "row",
+                    gap: 8,
+                  }}
+                >
+                  <Badge
+                    icon={size === "sm" ? "expand" : "contract"}
+                    label={t(
+                      size === "sm" ? "home.widthFull" : "home.widthHalf",
+                    )}
+                    onPress={() => onResize?.(widget.id)}
+                  />
+                  <Badge
+                    icon="close"
+                    label={t("home.removeWidget")}
+                    tone="danger"
+                    onPress={() => onRemove?.(widget.id)}
+                  />
+                </Animated.View>
+              ) : null}
+            </Animated.View>
+          );
+        })}
 
-      {withAdd ? (
-        <View style={{ width: column }}>
-          <WidgetTile
-            title={t("home.addWidget")}
-            icon="add"
-            size="sm"
-            onPress={onAdd}
-          />
-        </View>
-      ) : null}
-    </View>
+        {withAdd ? (
+          <View style={{ width: column }}>
+            <WidgetTile
+              title={t("home.addWidget")}
+              icon="add"
+              size="sm"
+              onPress={onAdd}
+            />
+          </View>
+        ) : null}
+      </View>
+    </TileColumnProvider>
   );
 }

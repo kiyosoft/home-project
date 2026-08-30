@@ -1,30 +1,38 @@
+import { hexToRgb, rgbaCss } from "@ethio/ha-sdk";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import type { TileSize } from "@ethio/mobile-schema";
-import { PressableFeedback, Text } from "heroui-native";
-import type { ReactNode } from "react";
-import { View } from "react-native";
+import { PressableFeedback, Text, useThemeColor } from "heroui-native";
+import { useEffect, useRef, type ReactNode } from "react";
+import { StyleSheet, View } from "react-native";
+import Animated, {
+  FadeIn,
+  FadeOut,
+  useAnimatedStyle,
+  withSpring,
+  withTiming,
+} from "react-native-reanimated";
 import { withUniwind } from "uniwind";
 
 import { cn } from "@/ui/cn";
-import { GlassSurface } from "@/ui/GlassSurface";
+import { GlassSurface, GLASS_RADIUS } from "@/ui/GlassSurface";
+import { FADE_MS, PRESS_SCALE, SPRING, WASH } from "@/ui/motion";
+import { useTileMinHeight } from "@/widgets/tile-metrics";
 
 const Icon = withUniwind(Ionicons);
 
-/**
- * A floor, not a height: a tile grows to fit its controls, because content that
- * overflows a fixed box lands on top of the icon rather than being clipped.
- * Half tiles stay level with each other because the grid stretches a row.
- */
-export const TILE_MIN_HEIGHT: Record<TileSize, number> = {
-  sm: 132,
-  md: 148,
-};
+/** How much of the tile's own colour an unlit-but-active tile takes. */
+const ACCENT_WASH_ALPHA = 0.15;
+
+/** The disc behind the glyph. Wide enough to be the tile's icon-press target. */
+const WELL_SIZE = 40;
 
 /** A tile lit by its own device, e.g. a light painting the card its color. */
 export interface TileTint {
   overlay: string;
   border: string;
-  /** Icon and other accents, when the plain accent would clash with the tint. */
+  /** Solid device colour for the icon well, e.g. the lamp at full power. */
+  fill?: string;
+  /** Drawn on top of `fill`, when the plain accent would clash with the tint. */
   ink?: string;
 }
 
@@ -71,16 +79,92 @@ export function WidgetTile({
   accessory,
   children,
 }: WidgetTileProps) {
-  // The glyph sits flush left with the title below it, inside a box wide
-  // enough to press, so every tile heads its content the same way.
-  const iconBox = "size-10 items-start justify-center";
+  const [accent, accentForeground, muted, well] = useThemeColor([
+    "accent",
+    "accent-foreground",
+    "muted",
+    "surface-tertiary",
+  ]);
+  const minHeight = useTileMinHeight(size);
+
+  const accentRgb = hexToRgb(accent);
+  const accentWash = accentRgb
+    ? rgbaCss(accentRgb, ACCENT_WASH_ALPHA)
+    : accent;
+
+  const lit = tint ? tint.overlay : active ? accentWash : null;
+  const rim = tint ? tint.border : "transparent";
+
+  // The well is the tile's loudest signal: off it is a quiet disc, on it fills
+  // with the accent or with the device's own colour.
+  const on = active && !disabled;
+  const wellColor = on ? (tint?.fill ?? accent) : well;
+  const glyphColor = on ? (tint?.ink ?? accentForeground) : muted;
+
+  // An unlit tile fades its own last colour out. Animating straight to
+  // transparent would cross through black on the way.
+  const held = useRef({ color: accentWash, rim });
+  if (lit) held.current = { color: lit, rim };
+
+  const color = lit ?? held.current.color;
+  const border = lit ? rim : held.current.rim;
+  const visible = lit !== null;
+
+  const washStyle = useAnimatedStyle(
+    () => ({
+      backgroundColor: withTiming(color, WASH),
+      borderColor: withTiming(border, WASH),
+      opacity: withTiming(visible ? 1 : 0, WASH),
+    }),
+    [color, border, visible],
+  );
+
+  const wellStyle = useAnimatedStyle(
+    () => ({
+      backgroundColor: withTiming(wellColor, WASH),
+      // The well swells as the device comes on, which reads at a glance from
+      // across a scrolling grid where a colour change alone does not.
+      transform: [{ scale: withSpring(on ? 1.06 : 1, SPRING) }],
+    }),
+    [wellColor, on],
+  );
+
+  // A tile scrolling into view is a mount, not a state change. Without this
+  // every glyph in the grid fades in as you scroll, which reads as a stutter.
+  const mounted = useRef(false);
+  useEffect(() => {
+    mounted.current = true;
+  }, []);
+
+  // The well sits flush left with the title below it, sized to be pressed, so
+  // every tile heads its content the same way.
   const glyph = icon ? (
-    <Icon
-      name={icon}
-      size={22}
-      className={active && !tint?.ink ? "text-accent" : "text-muted"}
-      style={tint?.ink ? { color: tint.ink } : undefined}
-    />
+    <Animated.View
+      style={[
+        {
+          width: WELL_SIZE,
+          height: WELL_SIZE,
+          borderRadius: WELL_SIZE / 2,
+          alignItems: "center",
+          justifyContent: "center",
+        },
+        wellStyle,
+      ]}
+    >
+      {/* Keyed on both so swapping outline for filled, or off ink for on ink,
+          cross-fades rather than snapping. */}
+      <Animated.View
+        key={`${icon}:${glyphColor}`}
+        style={[
+          StyleSheet.absoluteFill,
+          { alignItems: "center", justifyContent: "center" },
+        ]}
+        entering={mounted.current ? FadeIn.duration(FADE_MS) : undefined}
+        exiting={mounted.current ? FadeOut.duration(FADE_MS) : undefined}
+      >
+        <Icon name={icon} size={20} style={{ color: glyphColor }} />
+      </Animated.View>
+    </Animated.View>
   ) : null;
 
   return (
@@ -89,43 +173,43 @@ export function WidgetTile({
       onLongPress={onLongPress}
       isDisabled={disabled || (!onPress && !onLongPress)}
       accessibilityLabel={status ? `${title}, ${status}` : title}
+      animation={PRESS_SCALE}
       className="flex-1"
     >
       <GlassSurface
         level="tile"
         interactive
         className="flex-1 p-4"
-        style={[
-          { minHeight: TILE_MIN_HEIGHT[size] },
-          tint ? { borderWidth: 1, borderColor: tint.border } : null,
-        ]}
+        style={{ minHeight }}
       >
-        {tint ? (
-          <View
-            className="absolute inset-0"
-            style={{ backgroundColor: tint.overlay }}
-            pointerEvents="none"
-          />
-        ) : active ? (
-          <View className="bg-accent/15 absolute inset-0" pointerEvents="none" />
-        ) : null}
+        <Animated.View
+          style={[
+            StyleSheet.absoluteFill,
+            {
+              borderRadius: GLASS_RADIUS.tile,
+              borderCurve: "continuous",
+              borderWidth: 1,
+            },
+            washStyle,
+          ]}
+          pointerEvents="none"
+        />
 
         <View className={cn("flex-1", disabled && "opacity-50")}>
-          <View className="min-h-10 flex-row items-center justify-between gap-2">
+          <View className="flex-row items-center justify-between gap-2">
             {!icon ? (
-              <View className="size-10" />
+              <View style={{ width: WELL_SIZE, height: WELL_SIZE }} />
             ) : onIconPress ? (
               <PressableFeedback
                 onPress={onIconPress}
                 isDisabled={disabled}
                 accessibilityLabel={iconLabel}
                 accessibilityRole="button"
-                className={iconBox}
               >
                 {glyph}
               </PressableFeedback>
             ) : (
-              <View className={iconBox}>{glyph}</View>
+              glyph
             )}
             {accessory}
           </View>
@@ -135,12 +219,12 @@ export function WidgetTile({
             <View className="gap-0.5">
               <Text
                 numberOfLines={1}
-                className="text-foreground text-base font-medium"
+                className="text-foreground text-base font-semibold"
               >
                 {title}
               </Text>
               {status ? (
-                <Text numberOfLines={1} className="text-muted text-sm">
+                <Text numberOfLines={1} className="text-muted text-[13px]">
                   {status}
                 </Text>
               ) : null}

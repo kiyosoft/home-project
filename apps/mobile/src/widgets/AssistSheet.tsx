@@ -1,6 +1,13 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { BottomSheetScrollView } from "@gorhom/bottom-sheet";
-import { BottomSheet, Button, Input, Text, TextField, useThemeColor } from "heroui-native";
+import {
+  BottomSheet,
+  Button,
+  Input,
+  Text,
+  TextField,
+  useThemeColor,
+} from "heroui-native";
 import { useEffect, useRef, type ComponentRef } from "react";
 import { View } from "react-native";
 
@@ -193,7 +200,7 @@ export function AssistSheet({ isOpen, onOpenChange }: AssistSheetProps) {
       <BottomSheet.Portal>
         <BottomSheet.Overlay />
         <BottomSheet.Content
-          snapPoints={["70%", "92%"]}
+          snapPoints={["100%"]}
           enableOverDrag={false}
           enableDynamicSizing={false}
           keyboardBehavior="interactive"

@@ -34,3 +34,25 @@ export function entityDomain(entityId: string): string {
 export function isUnavailable(entity: HassEntity | undefined): boolean {
   return !entity || entity.state === "unavailable" || entity.state === "unknown";
 }
+
+/**
+ * The states a section header counts as "doing something", across every domain
+ * a tile can show. Climate lists its modes because a thermostat is never `on`.
+ */
+const ACTIVE_STATES = new Set([
+  "on",
+  "open",
+  "opening",
+  "unlocked",
+  "playing",
+  "heat",
+  "cool",
+  "heat_cool",
+  "auto",
+  "dry",
+  "fan_only",
+]);
+
+export function isActiveState(entity: HassEntity | undefined): boolean {
+  return entity ? ACTIVE_STATES.has(entity.state) : false;
+}

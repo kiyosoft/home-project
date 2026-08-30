@@ -14,6 +14,22 @@
 }
 
 /*
+ * HeroUI resolves every text style through these four family tokens and ships
+ * them undefined, so setting them here restyles the component library rather
+ * than only our own screens. Weight is a separate face rather than a numeric
+ * font-weight because React Native matches exactly one file per family, with
+ * no fallback list to fall through. Names are the font filenames, which is
+ * also the PostScript name each file carries for iOS.
+ */
+@theme {
+  --font-sans: 'Montserrat-Regular';
+  --font-normal: 'Montserrat-Regular';
+  --font-medium: 'Montserrat-Medium';
+  --font-semibold: 'Montserrat-SemiBold';
+  --font-bold: 'Montserrat-Bold';
+}
+
+/*
  * Ethio Home palette, ported from apps/dashboard/src/index.css. HeroUI derives
  * every --color-* utility from these base tokens, so overriding them here
  * rebrands the component library rather than sitting alongside it.

@@ -52,6 +52,8 @@ interface HaState {
   /** Empty until the area registry resolves. */
   areas: AreaRegistryEntry[];
   areaByEntity: Record<string, string>;
+  /** Signed-in person's name. Empty in demo mode and until it resolves. */
+  userName: string;
   status: ConnectionStatus;
   failure: ConnectFailure | null;
   session: SessionState;
@@ -166,6 +168,7 @@ function attachClient(
   grantRefused = false;
   set({ status: "connected", failure: null });
   void loadAreas(next, set);
+  void loadUser(next, set);
   void adoptAddresses(next, set);
   if (baseUrl) void registerDevice(next, set, baseUrl);
 }
@@ -234,6 +237,31 @@ async function registerDevice(
  * Assistant several times over.
  */
 let recovery: Promise<StoredRegistration | null> | null = null;
+
+interface CurrentUser {
+  name?: string | null;
+}
+
+/**
+ * Only the greeting depends on this, so a hub that will not answer (the demo
+ * client, an older core) just leaves the header impersonal.
+ */
+async function loadUser(
+  target: EntityClient,
+  set: (partial: Partial<HaState>) => void,
+) {
+  try {
+    const user = await target.sendMessagePromise<CurrentUser>({
+      type: "auth/current_user",
+    });
+    // A reconnect may have swapped the client while this was in flight.
+    if (client !== target) return;
+    set({ userName: user?.name?.trim() ?? "" });
+  } catch {
+    if (client !== target) return;
+    set({ userName: "" });
+  }
+}
 
 /**
  * Registry reads need an admin token. A non-admin still gets a working dashboard,
@@ -389,6 +417,7 @@ export const useHaStore = create<HaState>((set, get) => ({
   entities: {},
   areas: [],
   areaByEntity: {},
+  userName: "",
   status: "idle",
   failure: null,
   session: "unknown",
@@ -578,6 +607,7 @@ export const useHaStore = create<HaState>((set, get) => ({
       entities: {},
       areas: [],
       areaByEntity: {},
+      userName: "",
       status: "idle",
       failure: null,
       mode: null,

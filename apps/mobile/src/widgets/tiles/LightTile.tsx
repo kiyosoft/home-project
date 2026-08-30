@@ -1,10 +1,14 @@
 import { deriveLight } from "@ethio/ha-sdk";
 import { Slider } from "heroui-native";
+import { useCallback } from "react";
+import { View } from "react-native";
+import { GestureDetector } from "react-native-gesture-handler";
 
 import { useT } from "@/store/locale-store";
 import { LightDetailBody } from "@/widgets/detail/LightDetailBody";
 import { LampSwitch } from "@/widgets/light/LampSwitch";
 import { useLightWash } from "@/widgets/light/light-wash";
+import { useDimDrag } from "@/widgets/light/use-dim-drag";
 import { singleSliderValue, type WidgetBodyProps } from "@/widgets/types";
 import { useOptimistic } from "@/widgets/use-optimistic";
 import { useCallService } from "@/widgets/use-service";
@@ -34,16 +38,47 @@ export function LightTile({ config, size }: WidgetBodyProps) {
     });
   };
 
-  const setBrightness = (percent: number) => {
-    setOptimisticBrightness(percent);
-    setOptimisticOn(percent > 0);
-    callService("light", percent > 0 ? "turn_on" : "turn_off", {
-      entity_id: entityId,
-      ...(percent > 0 ? { brightness_pct: percent } : {}),
-    });
-  };
+  const setBrightness = useCallback(
+    (percent: number) => {
+      setOptimisticBrightness(percent);
+      setOptimisticOn(percent > 0);
+      callService("light", percent > 0 ? "turn_on" : "turn_off", {
+        entity_id: entityId,
+        ...(percent > 0 ? { brightness_pct: percent } : {}),
+      });
+    },
+    [setOptimisticBrightness, setOptimisticOn, callService, entityId],
+  );
+
+  // Painted while a drag or slider is in flight, so the lamp lights up under
+  // the finger instead of waiting for the service call to land.
+  const previewBrightness = useCallback(
+    (percent: number) => {
+      setOptimisticBrightness(percent);
+      setOptimisticOn(percent > 0);
+    },
+    [setOptimisticBrightness, setOptimisticOn],
+  );
+
+  const dimmable = light?.supportsBrightness ?? false;
+
+  // A full tile keeps the slider for a precise, discoverable drag; its pan
+  // would fight a hold-and-drag on the same card. A half tile has no room for
+  // a slider, so that is where holding the tile becomes the dimmer.
+  // Colour lives in the detail sheet either way: two strips crowd a tile.
+  const showSlider = size === "md" && dimmable;
+  const canDrag = dimmable && !showSlider && !unavailable;
+
+  const dim = useDimDrag({
+    value: isOn ? brightness : 0,
+    isDisabled: !canDrag,
+    onChange: previewBrightness,
+    onCommit: setBrightness,
+  });
 
   const openDetail = () => {
+    // The release that ends a drag still reads as a tap on the card.
+    if (dim.justDragged()) return;
     sheet.open({
       title,
       body: <LightDetailBody entityId={entityId} />,
@@ -58,11 +93,7 @@ export function LightTile({ config, size }: WidgetBodyProps) {
         : t("widget.state.on")
       : t("widget.state.off");
 
-  // A slider needs room to be draggable; a half tile gets the switch instead.
-  // Colour lives in the detail sheet: two strips crowd a tile.
-  const showSlider = size === "md" && (light?.supportsBrightness ?? false);
-
-  return (
+  const tile = (
     <WidgetTile
       title={title}
       status={status}
@@ -70,10 +101,19 @@ export function LightTile({ config, size }: WidgetBodyProps) {
       size={size}
       active={isOn && !unavailable}
       disabled={unavailable}
-      tint={wash ? { overlay: wash.overlay, border: wash.border } : undefined}
-      // Tapping opens the controls; the switch is how the grid toggles.
+      tint={
+        wash
+          ? {
+              overlay: wash.overlay,
+              border: wash.border,
+              fill: wash.fill,
+              ink: wash.switchThumb,
+            }
+          : undefined
+      }
+      // Tapping opens the controls and the switch toggles. Holding is the
+      // dimmer, so there is no long press left to open the sheet with.
       onPress={openDetail}
-      onLongPress={openDetail}
       accessory={
         <LampSwitch
           isSelected={isOn}
@@ -86,9 +126,7 @@ export function LightTile({ config, size }: WidgetBodyProps) {
       {showSlider ? (
         <Slider
           value={brightness}
-          onChange={(value) =>
-            setOptimisticBrightness(singleSliderValue(value))
-          }
+          onChange={(value) => previewBrightness(singleSliderValue(value))}
           onChangeEnd={(value) => setBrightness(singleSliderValue(value))}
           minValue={0}
           maxValue={100}
@@ -107,5 +145,15 @@ export function LightTile({ config, size }: WidgetBodyProps) {
         </Slider>
       ) : null}
     </WidgetTile>
+  );
+
+  if (!canDrag) return tile;
+
+  // A plain View gives the detector a native view of its own to attach to,
+  // rather than relying on the tile's root forwarding a ref.
+  return (
+    <GestureDetector gesture={dim.gesture}>
+      <View className="flex-1">{tile}</View>
+    </GestureDetector>
   );
 }

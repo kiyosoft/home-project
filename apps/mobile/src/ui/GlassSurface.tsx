@@ -18,7 +18,7 @@ const LiquidGlass = withUniwind(LiquidGlassView);
  */
 export type GlassLevel = "chrome" | "tile" | "inner";
 
-const RADIUS: Record<GlassLevel, number> = {
+export const GLASS_RADIUS: Record<GlassLevel, number> = {
   chrome: 28,
   tile: 22,
   inner: 16,
@@ -56,7 +56,7 @@ export function GlassSurface({
 }: GlassSurfaceProps) {
   const nested = useContext(InsideGlassContext);
   const shape = {
-    borderRadius: RADIUS[level],
+    borderRadius: GLASS_RADIUS[level],
     borderCurve: "continuous",
   } as const;
 

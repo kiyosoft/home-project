@@ -1,9 +1,10 @@
 import {
   LegendList,
+  type LegendListRef,
   type LegendListRenderItemProps,
 } from "@legendapp/list/react-native";
 import { Button, Card, Chip, Text } from "heroui-native";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { View, type LayoutChangeEvent } from "react-native";
 
 import {
@@ -23,9 +24,11 @@ import { resolveSections, widgetForId } from "@/dashboard/resolve-sections";
 import { useDashboardStore } from "@/store/dashboard-store";
 import { useHaStore } from "@/store/ha-store";
 import { useT } from "@/store/locale-store";
+import { AmbientBackground } from "@/ui/AmbientBackground";
 import { ConnectionNotice } from "@/ui/ConnectionNotice";
-import { ConnectionStatusChip } from "@/ui/ConnectionStatusChip";
+import { HomeHeader, type HomeSectionChip } from "@/ui/HomeHeader";
 import { Screen } from "@/ui/Screen";
+import { SectionHeader } from "@/ui/SectionHeader";
 import { EntityPickerSheet } from "@/widgets/EntityPickerSheet";
 import { TILE_GAP, TileRow } from "@/widgets/TileRow";
 
@@ -40,8 +43,8 @@ const SPACING: Record<RowSpacing, number> = {
   row: TILE_GAP,
 };
 
-/** A half tile is the shortest row, so the list starts from that guess. */
-const ESTIMATED_ROW_HEIGHT = 148;
+/** A half tile plus its gap is the shortest row, so the list starts there. */
+const ESTIMATED_ROW_HEIGHT = 170;
 
 export function HomeScreen() {
   const t = useT();
@@ -81,6 +84,35 @@ export function HomeScreen() {
   const rows = useMemo(
     () => buildDashboardRows({ sections, editing }),
     [sections, editing],
+  );
+
+  // Only titled sections get a chip, because an untitled one has no header row
+  // to scroll to and nothing to name the chip with.
+  const chips = useMemo<HomeSectionChip[]>(
+    () =>
+      sections
+        .filter((section) => section.title)
+        .map((section) => ({
+          id: section.id,
+          title: section.title,
+          entityIds: section.widgets
+            .map((widget) => widget.config.entity_id)
+            .filter((entityId): entityId is string => typeof entityId === "string"),
+        })),
+    [sections],
+  );
+
+  const listRef = useRef<LegendListRef>(null);
+
+  const jumpToSection = useCallback(
+    (sectionId: string) => {
+      const index = rows.findIndex(
+        (row) => row.kind === "header" && row.id === `${sectionId}:header`,
+      );
+      if (index < 0) return;
+      void listRef.current?.scrollToIndex({ index, animated: true });
+    },
+    [rows],
   );
 
   const onLayout = (event: LayoutChangeEvent) => {
@@ -130,9 +162,7 @@ export function HomeScreen() {
       if (item.kind === "header") {
         return (
           <View style={{ paddingTop: SECTION_GAP, paddingBottom: TITLE_GAP }}>
-            <Text className="text-muted px-1 text-sm font-medium uppercase">
-              {item.title}
-            </Text>
+            <SectionHeader title={item.title} entityIds={item.entityIds} />
           </View>
         );
       }
@@ -172,25 +202,12 @@ export function HomeScreen() {
   }
 
   const header = (
-    <View className="flex-row items-start justify-between gap-3">
-      <View className="flex-1 gap-2">
-        <Text.Heading type="h1">{t("home.title")}</Text.Heading>
-        {mode === "demo" ? (
-          <Chip size="sm" color="success" variant="soft" className="self-start">
-            {t("home.demoBadge")}
-          </Chip>
-        ) : (
-          <ConnectionStatusChip />
-        )}
-      </View>
-      <Button
-        size="sm"
-        variant={editing ? "primary" : "secondary"}
-        onPress={() => setEditorMode(editing ? "live" : "edit")}
-      >
-        {t(editing ? "home.done" : "home.edit")}
-      </Button>
-    </View>
+    <HomeHeader
+      sections={chips}
+      onJumpToSection={jumpToSection}
+      editing={editing}
+      onToggleEditing={() => setEditorMode(editing ? "live" : "edit")}
+    />
   );
 
   const empty = (
@@ -211,10 +228,11 @@ export function HomeScreen() {
   );
 
   return (
-    <Screen>
+    <Screen backdrop={<AmbientBackground />}>
       <View className="flex-1" onLayout={onLayout}>
         {width > 0 ? (
           <LegendList
+            ref={listRef}
             data={rows}
             renderItem={renderRow}
             keyExtractor={(row) => row.id}
