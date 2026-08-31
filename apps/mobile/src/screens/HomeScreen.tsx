@@ -1,3 +1,4 @@
+import { SCENE_DOMAINS } from "@ethio/mobile-schema";
 import {
   LegendList,
   type LegendListRef,
@@ -12,9 +13,14 @@ import {
   type DashboardRow,
   type RowSpacing,
 } from "@/dashboard/dashboard-rows";
-import { DEFAULT_DASHBOARD } from "@/dashboard/default-dashboard";
 import {
+  DEFAULT_DASHBOARD,
+  ensureScenesSection,
+} from "@/dashboard/default-dashboard";
+import {
+  addSceneToSection,
   addWidgetToSection,
+  removeSceneFromSection,
   removeWidgetFromSection,
   sectionForEdit,
   toggleWidgetSize,
@@ -30,6 +36,7 @@ import { HomeHeader, type HomeSectionChip } from "@/ui/HomeHeader";
 import { Screen } from "@/ui/Screen";
 import { SectionHeader } from "@/ui/SectionHeader";
 import { EntityPickerSheet } from "@/widgets/EntityPickerSheet";
+import { SceneRow } from "@/widgets/SceneRow";
 import { TILE_GAP, TileRow } from "@/widgets/TileRow";
 
 /** The gaps the old ScrollView applied with `gap-6` between sections and `gap-3` under a title. */
@@ -65,7 +72,10 @@ export function HomeScreen() {
 
   // Without a saved document the screen starts empty. Tiles appear only after
   // the user picks them.
-  const document = saved ?? DEFAULT_DASHBOARD;
+  const document = useMemo(
+    () => ensureScenesSection(saved ?? DEFAULT_DASHBOARD),
+    [saved],
+  );
 
   const sections = useMemo(
     () =>
@@ -86,6 +96,14 @@ export function HomeScreen() {
     [sections, editing],
   );
 
+  const pickerSection = useMemo(
+    () =>
+      pickerSectionId
+        ? sectionForEdit(sections, document, pickerSectionId)
+        : null,
+    [sections, document, pickerSectionId],
+  );
+
   // Only titled sections get a chip, because an untitled one has no header row
   // to scroll to and nothing to name the chip with.
   const chips = useMemo<HomeSectionChip[]>(
@@ -95,9 +113,13 @@ export function HomeScreen() {
         .map((section) => ({
           id: section.id,
           title: section.title,
-          entityIds: section.widgets
-            .map((widget) => widget.config.entity_id)
-            .filter((entityId): entityId is string => typeof entityId === "string"),
+          entityIds:
+            section.scenes ??
+            section.widgets
+              .map((widget) => widget.config.entity_id)
+              .filter(
+                (entityId): entityId is string => typeof entityId === "string",
+              ),
         })),
     [sections],
   );
@@ -138,20 +160,34 @@ export function HomeScreen() {
     [sections, document, save],
   );
 
-  const addWidget = useCallback(
-    (entityId: string) => {
-      if (!pickerSectionId) return;
-      const section = sectionForEdit(sections, document, pickerSectionId);
+  const removeScene = useCallback(
+    (sectionId: string, entityId: string) => {
+      const section = sections.find((entry) => entry.id === sectionId);
       if (!section) return;
-      const widget = widgetForId(section.id, entityId, entities);
-      if (!widget) return;
-      void save(addWidgetToSection(document, section, widget));
+      void save(removeSceneFromSection(document, section, entityId));
     },
-    [sections, pickerSectionId, entities, document, save],
+    [sections, document, save],
+  );
+
+  const addEntity = useCallback(
+    (entityId: string) => {
+      if (!pickerSection) return;
+      if (pickerSection.scenes !== undefined) {
+        void save(addSceneToSection(document, pickerSection, entityId));
+        return;
+      }
+      const widget = widgetForId(pickerSection.id, entityId, entities);
+      if (!widget) return;
+      void save(addWidgetToSection(document, pickerSection, widget));
+    },
+    [pickerSection, entities, document, save],
   );
 
   const startAdding = () => {
-    const sectionId = document.sections[0]?.id;
+    // Empty-state CTA adds a tile, not a scene.
+    const sectionId = document.sections.find(
+      (section) => section.source.kind !== "scene",
+    )?.id;
     if (!sectionId) return;
     setEditorMode("edit");
     setPickerSectionId(sectionId);
@@ -163,6 +199,20 @@ export function HomeScreen() {
         return (
           <View style={{ paddingTop: SECTION_GAP, paddingBottom: TITLE_GAP }}>
             <SectionHeader title={item.title} entityIds={item.entityIds} />
+          </View>
+        );
+      }
+
+      if (item.kind === "scenes") {
+        return (
+          <View style={{ paddingTop: SPACING[item.spacing] }}>
+            <SceneRow
+              entityIds={item.entityIds}
+              editing={editing}
+              withAdd={item.withAdd}
+              onRemove={(entityId) => removeScene(item.sectionId, entityId)}
+              onAdd={() => setPickerSectionId(item.sectionId)}
+            />
           </View>
         );
       }
@@ -181,7 +231,7 @@ export function HomeScreen() {
         </View>
       );
     },
-    [width, editing, removeWidget, resizeWidget],
+    [width, editing, removeWidget, resizeWidget, removeScene],
   );
 
   // Only when there is nothing cached to show. A reconnect that fails later
@@ -256,7 +306,10 @@ export function HomeScreen() {
           if (!open) setPickerSectionId(null);
         }}
         used={used}
-        onSelect={addWidget}
+        domains={
+          pickerSection?.scenes !== undefined ? SCENE_DOMAINS : undefined
+        }
+        onSelect={addEntity}
       />
     </Screen>
   );

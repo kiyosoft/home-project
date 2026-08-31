@@ -12,6 +12,7 @@ import type {
 
 const DEMO_HEADER_PILLS: HeaderPillConfig[] = [
   { entity_id: DEMO_ENTITY_IDS.person },
+  { entity_id: DEMO_ENTITY_IDS.movieNight },
   {
     entity_id: DEMO_ENTITY_IDS.fasting,
     template:

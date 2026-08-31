@@ -1,14 +1,16 @@
 import {
   Activity,
   Lightbulb,
+  Play,
   Plus,
   Shield,
+  Sparkles,
   Speaker,
   User,
   X,
   type LucideIcon,
 } from "lucide-react";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   resolveEntityImageUrl,
   useBaseUrl,
@@ -32,7 +34,13 @@ const DOMAIN_ICON: Record<string, LucideIcon> = {
   media_player: Speaker,
   alarm_control_panel: Shield,
   light: Lightbulb,
+  scene: Sparkles,
+  script: Play,
 };
+
+const ACTION_DOMAINS = new Set(["scene", "script"]);
+
+const FLASH_MS = 600;
 
 function domainOf(entityId: string): string {
   return entityId.split(".")[0] ?? "";
@@ -52,18 +60,41 @@ function HeaderPill({
   const locale = useLocaleStore((state) => state.locale);
   const entityId = pill.entity_id?.trim() ?? "";
   const template = pill.template?.trim() ?? "";
+  const domain = entityId ? domainOf(entityId) : "";
+  const isAction = ACTION_DOMAINS.has(domain);
   const entity = useHaStore((state) =>
     entityId ? state.entities[entityId] : undefined,
   );
+  const callService = useHaStore((state) => state.callService);
   const baseUrl = useBaseUrl();
   const entityDetail = useEntityDetail();
   const { html, error } = useRenderTemplate(template);
   const lastGood = useRef("");
+  const [flashing, setFlashing] = useState(false);
+  const flashTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
+
+  useEffect(() => () => clearTimeout(flashTimer.current), []);
+
+  const activate = () => {
+    void callService(domain, "turn_on", { entity_id: entityId }).catch(() => {});
+    setFlashing(true);
+    clearTimeout(flashTimer.current);
+    flashTimer.current = setTimeout(() => setFlashing(false), FLASH_MS);
+  };
+
+  const onTap = isAction
+    ? activate
+    : entityId
+      ? () => entityDetail.open(entityId)
+      : canManage
+        ? onEdit
+        : undefined;
+
   const longPress = useLongPress({
     ms: 500,
     disabled: !canManage,
     onLongPress: onEdit,
-    onClick: entityId ? () => entityDetail.open(entityId) : onEdit,
+    onClick: onTap,
   });
 
   const rendered = html.trim();
@@ -79,8 +110,12 @@ function HeaderPill({
     else if (!title) title = t(locale, "header.pillUnavailable");
     if (entity) subtitle = getFriendlyName(entity);
   } else if (entity) {
-    title = entity.state;
-    subtitle = getFriendlyName(entity);
+    if (isAction) {
+      title = flashing ? t(locale, "header.pillActivated") : getFriendlyName(entity);
+    } else {
+      title = entity.state;
+      subtitle = getFriendlyName(entity);
+    }
   } else if (entityId) {
     title = t(locale, "header.pillUnavailable");
     subtitle = entityId;
@@ -100,10 +135,11 @@ function HeaderPill({
         baseUrl,
       )
     : null;
-  const domain = entityId ? domainOf(entityId) : "";
   const Icon = DOMAIN_ICON[domain] ?? Activity;
   const showPresence = domain === "person" || domain === "device_tracker";
   const home = entity?.state === "home";
+  const running = isAction && entity?.state === "on";
+  const lit = flashing || running;
   const muted = Boolean(!entity && entityId) || Boolean(error && !rendered);
 
   return (
@@ -114,8 +150,7 @@ function HeaderPill({
         onKeyDown={(event) => {
           if (event.key === "Enter" || event.key === " ") {
             event.preventDefault();
-            if (entityId) entityDetail.open(entityId);
-            else if (canManage) onEdit();
+            onTap?.();
           }
         }}
         {...longPress}
@@ -124,6 +159,7 @@ function HeaderPill({
           "cursor-pointer hover:border-primary/40 focus-visible:ring-2 focus-visible:ring-ring",
           canManage && "pr-8",
           muted && "opacity-70",
+          lit && "border-primary bg-primary/10",
         )}
       >
         {entityId ? (
@@ -154,7 +190,7 @@ function HeaderPill({
           <span
             className={cn(
               "block truncate text-xs font-medium",
-              !template && "capitalize",
+              !template && !isAction && "capitalize",
             )}
           >
             {title}

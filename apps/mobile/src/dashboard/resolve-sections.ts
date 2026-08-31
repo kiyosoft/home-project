@@ -4,6 +4,7 @@ import type {
   MobileSection,
   MobileWidget,
 } from "@ethio/mobile-schema";
+import { isSceneEntityId } from "@ethio/mobile-schema";
 
 import type { MessageKey, TranslateParams } from "@/i18n";
 import { entityDomain, entityName } from "@/store/use-entity";
@@ -17,6 +18,8 @@ export interface ResolvedSection {
   title: string;
   collapsed: boolean;
   widgets: MobileWidget[];
+  /** Scene and script ids. Set only on a scene section, which has no widgets. */
+  scenes?: string[];
 }
 
 export interface ResolveOptions {
@@ -83,6 +86,22 @@ function resolveSection(
   const { entities, areas, areaByEntity, t } = options;
   const source = section.source;
 
+  if (source.kind === "scene") {
+    // Drop ids the hub no longer exposes rather than showing a dead button.
+    const scenes = source.entities.filter(
+      (entityId) => entities[entityId] && isSceneEntityId(entityId),
+    );
+    for (const entityId of scenes) seen.add(entityId);
+    if (!scenes.length && !options.includeEmpty) return null;
+    return {
+      id: section.id,
+      title: section.title ?? "",
+      collapsed: section.collapsed ?? false,
+      widgets: [],
+      scenes,
+    };
+  }
+
   if (source.kind === "explicit") {
     // Hand-written widgets render as written, even if something above showed the entity.
     const widgets = source.widgets;
@@ -148,11 +167,18 @@ function applySizes(
  * Flattens a dashboard document into the sections a screen renders. Sections
  * resolve in order and a query section skips entities an earlier section
  * already claimed, so area sections take precedence over domain sweeps.
+ * Scene sections are lifted to the top, whatever their index.
  */
 export function resolveSections(options: ResolveOptions): ResolvedSection[] {
   const seen = new Set<string>();
   const resolved: ResolvedSection[] = [];
   const sizes = options.document.sizes;
+
+  for (const section of options.document.sections) {
+    if (section.source.kind !== "scene") continue;
+    const next = resolveSection(section, options, seen);
+    if (next) resolved.push(next);
+  }
 
   const favorites = options.document.favorites ?? [];
   if (favorites.length) {
@@ -174,6 +200,7 @@ export function resolveSections(options: ResolveOptions): ResolvedSection[] {
   }
 
   for (const section of options.document.sections) {
+    if (section.source.kind === "scene") continue;
     const next = resolveSection(section, options, seen);
     if (next) resolved.push(next);
   }

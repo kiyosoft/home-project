@@ -82,13 +82,22 @@ export const en = {
   "home.summaryPlayingOne": "1 playing",
   "home.summaryPlaying": "{count} playing",
   "home.jumpToSection": "Jump to {name}",
+  "home.addScene": "Add scene",
+  "home.removeScene": "Remove scene",
 
   "picker.title": "Add a tile",
   "picker.description": "Pick an entity. Its type decides the tile.",
   "picker.searchPlaceholder": "Search entities",
   "picker.empty": "Every supported entity is already on the dashboard.",
+  "picker.sceneTitle": "Add a scene",
+  "picker.sceneDescription": "Pick a scene or script to run from the home screen.",
+  "picker.sceneEmpty": "Every scene and script is already on the dashboard.",
+
+  "scene.activate": "Run {name}",
+  "scene.activated": "Activated",
 
   "widget.section.favorites": "Favourites",
+  "widget.section.scenes": "Scenes",
 
   "widget.domain.light": "Lights",
   "widget.domain.climate": "Climate",

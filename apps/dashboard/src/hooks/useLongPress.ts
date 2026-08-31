@@ -45,7 +45,6 @@ export function useLongPress({
   };
 
   const start = (event: ReactPointerEvent) => {
-    if (disabled) return;
     if (event.button != null && event.button !== 0) return;
     const target = event.target;
     if (
@@ -57,6 +56,8 @@ export function useLongPress({
     fired.current = false;
     origin.current = { x: event.clientX, y: event.clientY };
     clear();
+    // Long-press is off; the tap still fires.
+    if (disabled) return;
     timer.current = setTimeout(() => {
       fired.current = true;
       suppressClickUntil = Date.now() + 500;
@@ -76,7 +77,7 @@ export function useLongPress({
   const end = () => {
     const wasFired = fired.current;
     clear();
-    if (!wasFired && !disabled) {
+    if (!wasFired) {
       onClick?.();
     }
   };

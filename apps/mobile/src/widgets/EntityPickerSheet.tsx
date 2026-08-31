@@ -47,6 +47,8 @@ const DOMAIN_ICONS: Record<string, keyof typeof Ionicons.glyphMap> = {
   camera: "videocam-outline",
   sensor: "analytics-outline",
   binary_sensor: "radio-outline",
+  scene: "color-wand-outline",
+  script: "play-outline",
 };
 
 const WIDGET_ICONS: Record<string, keyof typeof Ionicons.glyphMap> = {
@@ -62,31 +64,38 @@ interface Candidate {
   icon: keyof typeof Ionicons.glyphMap;
 }
 
-/** The entity map and the used ids as they were when the sheet opened. */
+/** The entity map, the used ids, and the filter as they were on open. */
 interface Snapshot {
   entities: HassEntities;
   used: Set<string>;
+  domains?: readonly string[];
 }
 
 const EMPTY_SNAPSHOT: Snapshot = { entities: {}, used: new Set() };
 
-function buildCandidates({ entities, used }: Snapshot): Candidate[] {
+function buildCandidates({ entities, used, domains }: Snapshot): Candidate[] {
   const list: Candidate[] = [];
 
   for (const entity of Object.values(entities)) {
     if (used.has(entity.entity_id)) continue;
-    const def = widgetForEntity(entity);
-    if (!def) continue;
+    const domain = entityDomain(entity.entity_id);
+
+    let icon: keyof typeof Ionicons.glyphMap;
+    if (domains) {
+      if (!domains.includes(domain)) continue;
+      icon = DOMAIN_ICONS[domain] ?? "ellipse-outline";
+    } else {
+      const def = widgetForEntity(entity);
+      if (!def) continue;
+      icon = WIDGET_ICONS[def.id] ?? DOMAIN_ICONS[domain] ?? "ellipse-outline";
+    }
 
     const name = entityName(entity);
     list.push({
       entityId: entity.entity_id,
       name,
       search: `${name}\n${entity.entity_id}`.toLowerCase(),
-      icon:
-        WIDGET_ICONS[def.id] ??
-        DOMAIN_ICONS[entityDomain(entity.entity_id)] ??
-        "ellipse-outline",
+      icon,
     });
   }
 
@@ -99,6 +108,8 @@ export interface EntityPickerSheetProps {
   onOpenChange: (open: boolean) => void;
   /** Entity ids already on the dashboard, hidden so a tile is never duplicated. */
   used: Set<string>;
+  /** Limit the list to these domains instead of the widget registry. */
+  domains?: readonly string[];
   onSelect: (entityId: string) => void;
 }
 
@@ -170,6 +181,7 @@ export function EntityPickerSheet({
   isOpen,
   onOpenChange,
   used,
+  domains,
   onSelect,
 }: EntityPickerSheetProps) {
   const t = useT();
@@ -183,6 +195,8 @@ export function EntityPickerSheet({
   // snapshot taken on open cannot look stale.
   const latestUsed = useRef(used);
   latestUsed.current = used;
+  const latestDomains = useRef(domains);
+  latestDomains.current = domains;
   const [snapshot, setSnapshot] = useState<Snapshot>(EMPTY_SNAPSHOT);
 
   useEffect(() => {
@@ -190,6 +204,7 @@ export function EntityPickerSheet({
     setSnapshot({
       entities: useHaStore.getState().entities,
       used: latestUsed.current,
+      domains: latestDomains.current,
     });
   }, [isOpen]);
 
@@ -235,9 +250,11 @@ export function EntityPickerSheet({
           keyboardBehavior="extend"
           contentContainerClassName="h-full"
         >
-          <BottomSheet.Title>{t("picker.title")}</BottomSheet.Title>
+          <BottomSheet.Title>
+            {t(domains ? "picker.sceneTitle" : "picker.title")}
+          </BottomSheet.Title>
           <BottomSheet.Description>
-            {t("picker.description")}
+            {t(domains ? "picker.sceneDescription" : "picker.description")}
           </BottomSheet.Description>
 
           <View className="pb-3 pt-4">
@@ -261,7 +278,7 @@ export function EntityPickerSheet({
             contentContainerStyle={{ paddingBottom: 32 }}
             ListEmptyComponent={
               <Text className="text-muted py-8 text-center">
-                {t("picker.empty")}
+                {t(domains ? "picker.sceneEmpty" : "picker.empty")}
               </Text>
             }
           />

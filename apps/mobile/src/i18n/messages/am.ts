@@ -82,13 +82,22 @@ export const am: Record<MessageKey, string> = {
   "home.summaryPlayingOne": "1 እየተጫወተ ነው",
   "home.summaryPlaying": "{count} እየተጫወቱ ናቸው",
   "home.jumpToSection": "ወደ {name} ሂድ",
+  "home.addScene": "ትዕይንት አክል",
+  "home.removeScene": "ትዕይንት አስወግድ",
 
   "picker.title": "ታይል አክል",
   "picker.description": "ኤንቲቲ ይምረጡ። ዓይነቱ ታይሉን ይወስናል።",
   "picker.searchPlaceholder": "ኤንቲቲዎችን ይፈልጉ",
   "picker.empty": "የሚደገፉ ኤንቲቲዎች ሁሉ በዳሽቦርዱ ላይ ናቸው።",
+  "picker.sceneTitle": "ትዕይንት አክል",
+  "picker.sceneDescription": "ከመነሻ ገጽ የሚያሄዱት ትዕይንት ወይም ስክሪፕት ይምረጡ።",
+  "picker.sceneEmpty": "ትዕይንቶችና ስክሪፕቶች ሁሉ በዳሽቦርዱ ላይ ናቸው።",
+
+  "scene.activate": "{name} አሂድ",
+  "scene.activated": "ተሰርቷል",
 
   "widget.section.favorites": "ተወዳጆች",
+  "widget.section.scenes": "ትዕይንቶች",
 
   "widget.domain.light": "መብራቶች",
   "widget.domain.climate": "የአየር ንብረት",

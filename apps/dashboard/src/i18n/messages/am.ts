@@ -50,6 +50,7 @@ export const am: Record<MessageKey, string> = {
   "header.settingsAria": "የዳሽቦርድ ቅንብሮች",
   "header.imported": "ዳሽቦርድ ገብቷል",
   "header.pillUnavailable": "አይገኝም",
+  "header.pillActivated": "ተሰርቷል",
   "runtime.editHelp": "የአርትዖት ሁነታ — ይጎትቱ፣ መጠን ይቀይሩ፣ ይጀምሩ እና ዊጄቶችን ያዋቅሩ። ለውጦች በራስ-ሰር ይቀመጣሉ።",
   "runtime.demoHelp": "የሙከራ ኤንቲቲዎች በቀጥታ ይዘምናሉ። ዝርዝሮችን ለማየት ሴንሰሮችን ይንኩ፤ ማብሪያ/ማጥፊያዎች በመንካት ይሰራሉ፤ ሙሉ አትሪቢዩት ሉህ ለማየት ማንኛውንም ኤንቲቲ ይጫኑ።",
   "runtime.liveHelp": "ከ ሆም አሲስታንትዎ የቀጥታ ኤንቲቲዎች። ዝርዝሮችን ለማየት ሴንሰሮችን ይንኩ፤ አትሪቢዩቶችን ለማየት ማንኛውንም ኤንቲቲ ይጫኑ።",

@@ -29,7 +29,20 @@ export interface DashboardTilesRow {
   spacing: RowSpacing;
 }
 
-export type DashboardRow = DashboardHeaderRow | DashboardTilesRow;
+export interface DashboardScenesRow {
+  kind: "scenes";
+  id: string;
+  sectionId: string;
+  entityIds: string[];
+  /** Edit mode's add pill, filling this row or standing alone. */
+  withAdd: boolean;
+  spacing: RowSpacing;
+}
+
+export type DashboardRow =
+  | DashboardHeaderRow
+  | DashboardTilesRow
+  | DashboardScenesRow;
 
 export interface BuildRowsOptions {
   sections: ResolvedSection[];
@@ -64,47 +77,59 @@ export function buildDashboardRows({
       });
     }
 
-    // The row a half-width tile can still join.
-    let open: DashboardTilesRow | null = null;
+    if (section.scenes !== undefined) {
+      // One pill row for the whole section, including an empty edit-mode add.
+      rows.push({
+        kind: "scenes",
+        id: `${section.id}:scenes`,
+        sectionId: section.id,
+        entityIds: section.scenes,
+        withAdd: editing,
+        spacing: "row",
+      });
+    } else {
+      // The row a half-width tile can still join.
+      let open: DashboardTilesRow | null = null;
 
-    for (const widget of section.widgets) {
-      const span = tileSpan(widget.size ?? "sm");
+      for (const widget of section.widgets) {
+        const span = tileSpan(widget.size ?? "sm");
 
-      if (open && span < COLUMNS) {
-        open.widgets.push(widget);
-        open = null;
-        continue;
+        if (open && span < COLUMNS) {
+          open.widgets.push(widget);
+          open = null;
+          continue;
+        }
+
+        const row: DashboardTilesRow = {
+          kind: "tiles",
+          id: `${section.id}:row:${widget.id}`,
+          sectionId: section.id,
+          widgets: [widget],
+          withAdd: false,
+          spacing: "row",
+        };
+        rows.push(row);
+        open = span < COLUMNS ? row : null;
       }
 
-      const row: DashboardTilesRow = {
-        kind: "tiles",
-        id: `${section.id}:row:${widget.id}`,
-        sectionId: section.id,
-        widgets: [widget],
-        withAdd: false,
-        spacing: "row",
-      };
-      rows.push(row);
-      open = span < COLUMNS ? row : null;
-    }
-
-    if (editing) {
-      if (open) {
-        open.withAdd = true;
-      } else {
-        rows.push({
-          kind: "tiles",
-          id: `${section.id}:add`,
-          sectionId: section.id,
-          widgets: [],
-          withAdd: true,
-          spacing: "row",
-        });
+      if (editing) {
+        if (open) {
+          open.withAdd = true;
+        } else {
+          rows.push({
+            kind: "tiles",
+            id: `${section.id}:add`,
+            sectionId: section.id,
+            widgets: [],
+            withAdd: true,
+            spacing: "row",
+          });
+        }
       }
     }
 
     const first = rows[section.title ? start + 1 : start];
-    if (first?.kind === "tiles") {
+    if (first && first.kind !== "header") {
       first.spacing = section.title ? "title" : "section";
     }
   }

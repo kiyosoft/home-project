@@ -35,6 +35,51 @@ function withWidgets(
   };
 }
 
+function withScenes(
+  document: MobileDashboard,
+  sectionId: string,
+  entities: string[],
+): MobileDashboard {
+  return {
+    ...document,
+    sections: document.sections.map((entry) =>
+      entry.id === sectionId && entry.source.kind === "scene"
+        ? { ...entry, source: { kind: "scene", entities } }
+        : entry,
+    ),
+  };
+}
+
+export function addSceneToSection(
+  document: MobileDashboard,
+  section: ResolvedSection,
+  entityId: string,
+): MobileDashboard {
+  if (!entityId) return document;
+  const stored = storedScenes(document, section.id);
+  if (stored.includes(entityId)) return document;
+  return withScenes(document, section.id, [...stored, entityId]);
+}
+
+export function removeSceneFromSection(
+  document: MobileDashboard,
+  section: ResolvedSection,
+  entityId: string,
+): MobileDashboard {
+  const stored = storedScenes(document, section.id);
+  if (!stored.includes(entityId)) return document;
+  return withScenes(
+    document,
+    section.id,
+    stored.filter((id) => id !== entityId),
+  );
+}
+
+function storedScenes(document: MobileDashboard, sectionId: string): string[] {
+  const entry = document.sections.find((section) => section.id === sectionId);
+  return entry?.source.kind === "scene" ? entry.source.entities : [];
+}
+
 export function addWidgetToSection(
   document: MobileDashboard,
   section: ResolvedSection,
@@ -71,6 +116,7 @@ export function sectionForEdit(
     title: entry.title ?? "",
     collapsed: entry.collapsed ?? false,
     widgets: entry.source.kind === "explicit" ? entry.source.widgets : [],
+    scenes: entry.source.kind === "scene" ? entry.source.entities : undefined,
   };
 }
 
@@ -124,6 +170,7 @@ export function usedEntityIds(sections: ResolvedSection[]): Set<string> {
       const entityId = entityIdOf(widget);
       if (entityId) used.add(entityId);
     }
+    for (const entityId of section.scenes ?? []) used.add(entityId);
   }
   return used;
 }

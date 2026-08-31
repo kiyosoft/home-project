@@ -30,7 +30,16 @@ export interface DomainSource {
   exclude?: string[];
 }
 
-export type SectionSource = ExplicitSource | AreaSource | DomainSource;
+export interface SceneSource {
+  kind: "scene";
+  entities: string[];
+}
+
+export type SectionSource =
+  | ExplicitSource
+  | AreaSource
+  | DomainSource
+  | SceneSource;
 
 export interface MobileSection {
   id: string;
@@ -53,6 +62,20 @@ export interface MobileDashboard {
    */
   sizes?: Record<string, TileSize>;
   sections: MobileSection[];
+}
+
+export const SCENE_DOMAINS: readonly string[] = ["scene", "script"];
+
+export function isSceneEntityId(entityId: string): boolean {
+  return SCENE_DOMAINS.includes(entityId.split(".")[0] ?? "");
+}
+
+export function serviceForSceneEntity(
+  entityId: string,
+): { domain: string; service: string } | null {
+  const domain = entityId.split(".")[0] ?? "";
+  if (!SCENE_DOMAINS.includes(domain)) return null;
+  return { domain, service: "turn_on" };
 }
 
 export const TILE_SIZES: TileSize[] = ["sm", "md"];

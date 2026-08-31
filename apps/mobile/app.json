@@ -86,7 +86,8 @@
           "color": "#0f6b5c",
           "defaultChannel": "default"
         }
-      ]
+      ],
+      "expo-widgets"
     ],
     "experiments": {
       "typedRoutes": true

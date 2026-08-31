@@ -29,10 +29,16 @@ export const domainSourceSchema = z.object({
   exclude: z.array(z.string()).optional(),
 });
 
+export const sceneSourceSchema = z.object({
+  kind: z.literal("scene"),
+  entities: z.array(z.string().min(1)),
+});
+
 export const sectionSourceSchema = z.discriminatedUnion("kind", [
   explicitSourceSchema,
   areaSourceSchema,
   domainSourceSchema,
+  sceneSourceSchema,
 ]);
 
 export const mobileSectionSchema = z.object({

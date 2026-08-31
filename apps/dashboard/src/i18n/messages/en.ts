@@ -54,6 +54,7 @@ export const en = {
   "header.settingsAria": "Dashboard settings",
   "header.imported": "Dashboard imported",
   "header.pillUnavailable": "unavailable",
+  "header.pillActivated": "Activated",
 
   "runtime.editHelp":
     "Edit mode — drag, resize, add, and configure widgets. Changes autosave.",

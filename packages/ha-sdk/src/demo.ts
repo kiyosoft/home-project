@@ -358,6 +358,45 @@ const DEMO_ENTITIES: HassEntities = {
       supported_features: DEMO_TODO_FEATURES,
     },
   },
+  "scene.movie_night": {
+    entity_id: "scene.movie_night",
+    state: "unknown",
+    attributes: {
+      friendly_name: "Movie night",
+      icon: "mdi:movie-open",
+    },
+  },
+  "scene.good_morning": {
+    entity_id: "scene.good_morning",
+    state: "unknown",
+    attributes: {
+      friendly_name: "Good morning",
+      icon: "mdi:weather-sunset-up",
+    },
+  },
+  "scene.good_night": {
+    entity_id: "scene.good_night",
+    state: "unknown",
+    attributes: {
+      friendly_name: "Good night",
+      icon: "mdi:weather-night",
+    },
+  },
+  "scene.away": {
+    entity_id: "scene.away",
+    state: "unknown",
+    attributes: {
+      friendly_name: "Away",
+      icon: "mdi:home-export-outline",
+    },
+  },
+  "script.guest_welcome": {
+    entity_id: "script.guest_welcome",
+    state: "off",
+    attributes: {
+      friendly_name: "Guest welcome",
+    },
+  },
 };
 
 const DEMO_AREAS: AreaRegistryEntry[] = [
@@ -550,6 +589,60 @@ function nowIso(): string {
   return new Date().toISOString();
 }
 
+const DEMO_SCENE_EFFECTS: Record<
+  string,
+  Record<string, { state: string; attributes?: Record<string, unknown> }>
+> = {
+  "scene.movie_night": {
+    "light.living_room": {
+      state: "on",
+      attributes: { brightness: 40, color_mode: "brightness" },
+    },
+    "cover.living_blinds": {
+      state: "closed",
+      attributes: { current_position: 0 },
+    },
+  },
+  "scene.good_morning": {
+    "light.living_room": {
+      state: "on",
+      attributes: {
+        brightness: 220,
+        color_mode: "color_temp",
+        color_temp_kelvin: 4500,
+      },
+    },
+    "cover.living_blinds": {
+      state: "open",
+      attributes: { current_position: 100 },
+    },
+    "switch.porch": { state: "off" },
+  },
+  "scene.good_night": {
+    "light.living_room": { state: "off" },
+    "cover.living_blinds": {
+      state: "closed",
+      attributes: { current_position: 0 },
+    },
+    "switch.porch": { state: "off" },
+    "media_player.homepod": { state: "off" },
+    "lock.front_door": { state: "locked" },
+  },
+  "scene.away": {
+    "light.living_room": { state: "off" },
+    "switch.porch": { state: "off" },
+    "media_player.homepod": { state: "off" },
+    "lock.front_door": { state: "locked" },
+    "input_boolean.guest_mode": { state: "off" },
+  },
+  "script.guest_welcome": {
+    "input_boolean.guest_mode": { state: "on" },
+    "switch.porch": { state: "on" },
+  },
+};
+
+const SCRIPT_RUN_MS = 800;
+
 const DEMO_ARSENAL_PLAYS = [
   "Saka beats Cucurella on the right and cuts the ball back into the six-yard box.",
   "Ødegaard threads a pass between the centre-backs — Colwill just gets a toe to it.",
@@ -604,6 +697,7 @@ export function connectDemo(): EntityClient {
   let doorTimer: ReturnType<typeof setInterval> | undefined;
   let teamScoreTimer: ReturnType<typeof setInterval> | undefined;
   const lockTimers = new Map<string, ReturnType<typeof setTimeout>>();
+  const scriptTimers = new Map<string, ReturnType<typeof setTimeout>>();
   let closed = false;
 
   const emit = () => {
@@ -839,6 +933,56 @@ export function connectDemo(): EntityClient {
       if (domain === "todo") {
         if (entityId === DEMO_TODO_ENTITY_ID) {
           handleTodoService(service, serviceData);
+        }
+        return;
+      }
+
+      if (
+        (domain === "scene" || domain === "script") &&
+        service === "turn_on"
+      ) {
+        const effects = DEMO_SCENE_EFFECTS[entityId];
+        if (effects) {
+          for (const [targetId, patch] of Object.entries(effects)) {
+            const target = entities[targetId];
+            if (!target) continue;
+            const attributes = {
+              ...target.attributes,
+              ...patch.attributes,
+            };
+            if (patch.state === "off" && targetId.startsWith("light.")) {
+              delete attributes.brightness;
+              delete attributes.rgb_color;
+              delete attributes.color_temp_kelvin;
+              delete attributes.effect;
+            }
+            if (patch.state === "off" && targetId.startsWith("media_player.")) {
+              attributes.media_title = undefined;
+              attributes.media_artist = undefined;
+              attributes.media_album_name = undefined;
+              attributes.entity_picture = undefined;
+              attributes.media_position = 0;
+            }
+            setEntity(targetId, { ...target, state: patch.state, attributes });
+          }
+        }
+
+        if (domain === "script") {
+          const pending = scriptTimers.get(entityId);
+          if (pending) clearTimeout(pending);
+          setEntity(entityId, { ...current, state: "on" });
+          scriptTimers.set(
+            entityId,
+            setTimeout(() => {
+              scriptTimers.delete(entityId);
+              if (closed) return;
+              const latest = entities[entityId];
+              if (!latest) return;
+              setEntity(entityId, { ...latest, state: "off" });
+            }, SCRIPT_RUN_MS),
+          );
+        } else {
+          setEntity(entityId, { ...current, state: nowIso() });
         }
         return;
       }
@@ -1341,6 +1485,8 @@ export function connectDemo(): EntityClient {
       if (teamScoreTimer) clearInterval(teamScoreTimer);
       for (const timer of lockTimers.values()) clearTimeout(timer);
       lockTimers.clear();
+      for (const timer of scriptTimers.values()) clearTimeout(timer);
+      scriptTimers.clear();
     },
   };
 
@@ -1405,4 +1551,9 @@ export const DEMO_ENTITY_IDS = {
   lock: "lock.front_door",
   alarm: "alarm_control_panel.home",
   calendar: "calendar.family",
+  movieNight: "scene.movie_night",
+  goodMorning: "scene.good_morning",
+  goodNight: "scene.good_night",
+  away: "scene.away",
+  guestWelcome: "script.guest_welcome",
 } as const;
