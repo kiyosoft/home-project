@@ -181,7 +181,9 @@ export function resolveSections(options: ResolveOptions): ResolvedSection[] {
   }
 
   const favorites = options.document.favorites ?? [];
-  if (favorites.length) {
+  // Favourites is a synthetic section, not a stored one, so an empty list
+  // would otherwise never appear — and there would be no way to pin the first.
+  if (favorites.length || options.includeEmpty) {
     const widgets: MobileWidget[] = [];
     for (const entityId of favorites) {
       const widget = widgetForId(FAVORITES_SECTION_ID, entityId, options.entities);

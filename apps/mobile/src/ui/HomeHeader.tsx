@@ -2,14 +2,12 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 import { Button, Chip, Text, useThemeColor } from "heroui-native";
 import { ScrollView, View } from "react-native";
 
-import { useHomeSummary, type HomeSummary } from "@/dashboard/home-summary";
-import type { MessageKey, TranslateParams } from "@/i18n";
+import { formatHomeSummary, useHomeSummary } from "@/dashboard/home-summary";
+import type { MessageKey } from "@/i18n";
 import { useHaStore } from "@/store/ha-store";
 import { useT } from "@/store/locale-store";
 import { isActiveState } from "@/store/use-entity";
 import { ConnectionStatusChip } from "@/ui/ConnectionStatusChip";
-
-type Translate = (key: MessageKey, params?: TranslateParams) => string;
 
 export interface HomeSectionChip {
   id: string;
@@ -28,34 +26,6 @@ function greetingKey(hour: number): MessageKey {
   if (hour < 12) return "home.greetingMorning";
   if (hour < 18) return "home.greetingAfternoon";
   return "home.greetingEvening";
-}
-
-/**
- * The one-line answer to "what is the house doing". Parts drop out when they
- * have nothing to say, so a home with no locks never reads "0 unlocked".
- */
-function summaryLine(summary: HomeSummary, t: Translate): string {
-  const parts: string[] = [];
-
-  if (summary.lightsOn === 1) parts.push(t("home.summaryLightOne"));
-  else if (summary.lightsOn > 1)
-    parts.push(t("home.summaryLights", { count: summary.lightsOn }));
-  else parts.push(t("home.summaryLightsOff"));
-
-  if (summary.temperature !== null) {
-    parts.push(`${summary.temperature}${summary.temperatureUnit}`);
-  }
-
-  if (summary.unlocked === 1) parts.push(t("home.summaryUnlockedOne"));
-  else if (summary.unlocked > 1)
-    parts.push(t("home.summaryUnlocked", { count: summary.unlocked }));
-  else if (summary.lockCount > 0) parts.push(t("home.summaryLocked"));
-
-  if (summary.playing === 1) parts.push(t("home.summaryPlayingOne"));
-  else if (summary.playing > 1)
-    parts.push(t("home.summaryPlaying", { count: summary.playing }));
-
-  return parts.join(" · ");
 }
 
 /** A section shortcut that lights up while anything under it is on. */
@@ -146,7 +116,9 @@ export function HomeHeader({
         </Button>
       </View>
 
-      <Text className="text-muted text-[15px]">{summaryLine(summary, t)}</Text>
+      <Text className="text-muted text-[15px]">
+        {formatHomeSummary(summary, t)}
+      </Text>
 
       {mode === "demo" ? (
         <Chip size="sm" color="success" variant="soft" className="self-start">

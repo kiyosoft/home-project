@@ -8,6 +8,7 @@ import {
 } from "@ethio/ha-sdk";
 import { useMemo } from "react";
 
+import type { MessageKey, TranslateParams } from "@/i18n";
 import { useHaStore } from "@/store/ha-store";
 import { entityDomain } from "@/store/use-entity";
 
@@ -142,6 +143,37 @@ export function summarizeHome(entities: HassEntities): HomeSummary {
     temperatureUnit,
     lamp: blendLamps(lamps),
   };
+}
+
+/**
+ * The one-line answer to "what is the house doing". Parts drop out when they
+ * have nothing to say, so a home with no locks never reads "0 unlocked".
+ */
+export function formatHomeSummary(
+  summary: HomeSummary,
+  t: (key: MessageKey, params?: TranslateParams) => string,
+): string {
+  const parts: string[] = [];
+
+  if (summary.lightsOn === 1) parts.push(t("home.summaryLightOne"));
+  else if (summary.lightsOn > 1)
+    parts.push(t("home.summaryLights", { count: summary.lightsOn }));
+  else parts.push(t("home.summaryLightsOff"));
+
+  if (summary.temperature !== null) {
+    parts.push(`${summary.temperature}${summary.temperatureUnit}`);
+  }
+
+  if (summary.unlocked === 1) parts.push(t("home.summaryUnlockedOne"));
+  else if (summary.unlocked > 1)
+    parts.push(t("home.summaryUnlocked", { count: summary.unlocked }));
+  else if (summary.lockCount > 0) parts.push(t("home.summaryLocked"));
+
+  if (summary.playing === 1) parts.push(t("home.summaryPlayingOne"));
+  else if (summary.playing > 1)
+    parts.push(t("home.summaryPlaying", { count: summary.playing }));
+
+  return parts.join(" · ");
 }
 
 /**

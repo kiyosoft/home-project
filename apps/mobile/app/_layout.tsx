@@ -9,6 +9,7 @@ import { View } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
+import { useHomeScreenSync } from "@/home-screen/use-home-screen-sync";
 import { useDashboardStore } from "@/store/dashboard-store";
 import { useHaStore } from "@/store/ha-store";
 import { useLocaleStore } from "@/store/locale-store";
@@ -34,6 +35,7 @@ export default function RootLayout() {
   useConnectionWatch();
   useNotifySession();
   usePushToken();
+  useHomeScreenSync();
 
   useEffect(() => {
     // Locale first so the Connect screen never flashes the wrong script.

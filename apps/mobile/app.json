@@ -87,7 +87,43 @@
           "defaultChannel": "default"
         }
       ],
-      "expo-widgets"
+      [
+        "expo-widgets",
+        {
+          "bundleIdentifier": "app.ethiohome.companion.ExpoWidgetsTarget",
+          "groupIdentifier": "group.app.ethiohome.companion",
+          "widgets": [
+            {
+              "name": "HomeGlance",
+              "displayName": "Ethio Home",
+              "description": "House status, scenes, and favourite controls",
+              "supportedFamilies": [
+                "systemSmall",
+                "systemMedium",
+                "systemLarge"
+              ],
+              "ios": {
+                "contentMarginsDisabled": true,
+                "supportedFamilies": [
+                  "systemSmall",
+                  "systemMedium",
+                  "systemLarge"
+                ]
+              }
+            },
+            {
+              "name": "ActivityGlance",
+              "displayName": "Activity",
+              "description": "Unread notifications from your hub",
+              "supportedFamilies": ["systemSmall", "systemMedium"],
+              "ios": {
+                "contentMarginsDisabled": true,
+                "supportedFamilies": ["systemSmall", "systemMedium"]
+              }
+            }
+          ]
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true
