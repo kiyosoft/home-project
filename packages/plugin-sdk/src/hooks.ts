@@ -227,6 +227,12 @@ export function useRenderTemplate(template: string): RenderTemplateState {
     retryCountRef.current = 0;
   }, [debouncedTemplate]);
 
+  const variablesKey = useSyncExternalStore(
+    subscribe,
+    () => JSON.stringify(getPlatformBindings().getTemplateVariables?.() ?? {}),
+    () => "{}",
+  );
+
   useEffect(() => {
     const trimmed = debouncedTemplate.trim();
     if (!trimmed) {
@@ -244,6 +250,16 @@ export function useRenderTemplate(template: string): RenderTemplateState {
     setLoading(true);
     setError(null);
 
+    let variables: Record<string, unknown> = {};
+    try {
+      const parsed: unknown = JSON.parse(variablesKey);
+      if (typeof parsed === "object" && parsed !== null && !Array.isArray(parsed)) {
+        variables = parsed as Record<string, unknown>;
+      }
+    } catch {
+      variables = {};
+    }
+
     void (async () => {
       try {
         assertCapability(pluginId, "entity.read");
@@ -253,7 +269,7 @@ export function useRenderTemplate(template: string): RenderTemplateState {
         }
         const unsub = await subscribeRenderTemplate(
           bindings.subscribeMessage,
-          { template: debouncedTemplate, report_errors: true },
+          { template: debouncedTemplate, report_errors: true, variables },
           (update) => {
             // Accept while this request is still latest. latestRequestId only
             // advances when a new effect run starts — so a late first-event
@@ -302,7 +318,7 @@ export function useRenderTemplate(template: string): RenderTemplateState {
       window.clearTimeout(retryTimer);
       unsubscribe?.();
     };
-  }, [debouncedTemplate, pluginId, retryToken]);
+  }, [debouncedTemplate, pluginId, retryToken, variablesKey]);
 
   return { html, loading, error };
 }

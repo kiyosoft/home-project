@@ -5,6 +5,11 @@ import {
 
 import { pluginHasCapability } from "@/plugins/manager";
 import { liveAccessToken } from "@/lib/settings";
+import {
+  dashboardTemplateVariables,
+  refreshTemplateVariables,
+  snapshotPreviousPeople,
+} from "@/lib/template-variables";
 import { useHaStore } from "@/store/ha-store";
 
 let wired = false;
@@ -26,13 +31,20 @@ export function wirePlatformBindings(): void {
     getBaseUrl: () => useHaStore.getState().baseUrl,
     getAuthToken: liveAccessToken,
     hasCapability: pluginHasCapability,
+    getTemplateVariables: dashboardTemplateVariables,
   });
 
   useHaStore.subscribe((state, prev) => {
+    if (state.entities !== prev.entities) {
+      snapshotPreviousPeople(prev.entities);
+    }
     if (
       state.entities !== prev.entities ||
-      state.baseUrl !== prev.baseUrl
+      state.baseUrl !== prev.baseUrl ||
+      state.userId !== prev.userId ||
+      state.userName !== prev.userName
     ) {
+      refreshTemplateVariables();
       notifyEntityStoreChanged();
     }
   });

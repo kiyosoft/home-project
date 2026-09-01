@@ -10,12 +10,14 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import { useHomeScreenSync } from "@/home-screen/use-home-screen-sync";
+import "@/lib/location-task";
 import { useDashboardStore } from "@/store/dashboard-store";
 import { useHaStore } from "@/store/ha-store";
 import { useLocaleStore } from "@/store/locale-store";
 import { useNotificationStore } from "@/store/notification-store";
 import { useThemeStore } from "@/store/theme-store";
 import { useConnectionWatch } from "@/store/use-connection-watch";
+import { useLocationSession } from "@/store/use-location-session";
 import { useNotifySession } from "@/store/use-notify-session";
 import { usePushToken } from "@/store/use-push-token";
 import { AssistHost } from "@/widgets/AssistHost";
@@ -36,6 +38,7 @@ export default function RootLayout() {
   useNotifySession();
   usePushToken();
   useHomeScreenSync();
+  useLocationSession();
 
   useEffect(() => {
     // Locale first so the Connect screen never flashes the wrong script.

@@ -15,6 +15,7 @@ import { ThemeChooser } from "@/components/ThemeChooser";
 import { Button } from "@/components/ui/button";
 import type { TimeFormat } from "@/dashboard/types";
 import { useClock } from "@/hooks/useClock";
+import { useArrivalWelcome } from "@/hooks/useArrivalWelcome";
 import { t, type Locale } from "@/i18n";
 import { formatHeaderDate, formatHeaderTime } from "@/lib/header-format";
 import { useDashboardStore } from "@/store/dashboard-store";
@@ -64,8 +65,15 @@ export function AppHeader({
   const pills = header?.pills ?? [];
   const canAddPills = showBuilder && !kiosk;
   const showToolbar = showBuilder && !kiosk;
+  const arrival = useArrivalWelcome();
+  const showWelcome = arrival.arrived && Boolean(arrival.name);
   const showHero =
-    showTitle || showDate || showTime || pills.length > 0 || canAddPills;
+    showTitle ||
+    showDate ||
+    showTime ||
+    pills.length > 0 ||
+    canAddPills ||
+    showWelcome;
 
   if (!showHero && !showToolbar && !showDisconnect) {
     return showBuilder ? (
@@ -91,6 +99,15 @@ export function AppHeader({
               ) : null}
               {showDate ? (
                 <HeaderDate locale={locale} spaced={showTitle} />
+              ) : null}
+              {showWelcome ? (
+                <p
+                  className={`text-lg text-muted-foreground sm:text-xl ${
+                    showTitle || showDate ? "mt-2" : ""
+                  }`}
+                >
+                  {t(locale, "header.welcomeHome", { name: arrival.name })}
+                </p>
               ) : null}
               <HeaderPills pills={pills} canAdd={canAddPills} />
             </div>

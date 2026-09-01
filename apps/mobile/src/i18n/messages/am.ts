@@ -73,6 +73,7 @@ export const am: Record<MessageKey, string> = {
   "home.greetingMorning": "እንደምን አደሩ",
   "home.greetingAfternoon": "እንደምን ዋሉ",
   "home.greetingEvening": "እንደምን አመሹ",
+  "home.greetingWelcome": "እንኳን ደህና መጡ",
   "home.summaryLightOne": "1 መብራት በርቷል",
   "home.summaryLights": "{count} መብራቶች በርተዋል",
   "home.summaryLightsOff": "ሁሉም መብራቶች ጠፍተዋል",
@@ -276,7 +277,7 @@ export const am: Record<MessageKey, string> = {
   "connection.openSettings": "የግንኙነት ቅንብሮች",
   "connection.permissionTitle": "የአካባቢ ፈቃድ ያስፈልጋል",
   "connection.permissionBody":
-    "iOS እና አንድሮይድ የዋይ-ፋይ ኔትዎርክ ስምን የሚያሳዩት የአካባቢ ፈቃድ ላላቸው መተግበሪያዎች ብቻ ነው። ስለ አካባቢዎ ምንም አይቀመጥም ወይም አይላክም።",
+    "iOS እና አንድሮይድ የዋይ-ፋይ ኔትዎርክ ስምን የሚያሳዩት የአካባቢ ፈቃድ ላላቸው መተግበሪያዎች ብቻ ነው። ይህ ፈቃድ ወደ ቤት ሲደርሱ ለሆም አሲስታንት ለመንገርም ይጠቅማል።",
   "connection.grantPermission": "ፍቀድ",
   "connection.activeAddress": "አሁን በአገልግሎት ላይ",
   "connection.reconnect": "እንደገና ተገናኝ",

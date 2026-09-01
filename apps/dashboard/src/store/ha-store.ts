@@ -2,6 +2,7 @@ import {
   connectDemo,
   connectLive,
   connectLiveWithTokens,
+  fetchCurrentUser,
   revokeTokens,
   type ConnectionStatus,
   type EntityClient,
@@ -34,6 +35,9 @@ interface HaState {
   mfaFlowId: string | null;
   mode: ConnectionMode | null;
   baseUrl: string;
+  /** Signed-in dashboard user. Separate from whoever just arrived home. */
+  userName: string;
+  userId: string;
   signIn: (baseUrl: string, username: string, password: string) => Promise<void>;
   submitMfa: (code: string) => Promise<void>;
   /** Drop a half-finished sign-in and its error so the form starts clean. */
@@ -81,6 +85,21 @@ async function attachClient(
     set({ entities: { ...entities }, status: "connected", error: null });
   });
   set({ status: "connected", error: null, loginFailure: null });
+  void loadUser(next, set);
+}
+
+async function loadUser(
+  target: EntityClient,
+  set: (partial: Partial<HaState>) => void,
+) {
+  const user = await fetchCurrentUser((message) =>
+    target.sendMessagePromise(message),
+  );
+  if (client !== target) return;
+  set({
+    userName: user?.name?.trim() ?? "",
+    userId: user?.id ?? "",
+  });
 }
 
 function openClient(settings: ConnectionSettings): Promise<EntityClient> {
@@ -111,6 +130,8 @@ export const useHaStore = create<HaState>((set, get) => ({
   mfaFlowId: null,
   mode: null,
   baseUrl: "",
+  userName: "",
+  userId: "",
 
   async signIn(baseUrl, username, password) {
     set({
@@ -216,6 +237,8 @@ export const useHaStore = create<HaState>((set, get) => ({
       mfaFlowId: null,
       mode: null,
       baseUrl: "",
+      userName: "",
+      userId: "",
     });
   },
 

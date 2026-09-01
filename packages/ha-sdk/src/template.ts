@@ -123,6 +123,7 @@ function evalIsState(
 function evaluateExpression(
   expr: string,
   entities: HassEntities,
+  variables?: Record<string, unknown>,
 ): unknown {
   const trimmed = expr.trim();
 
@@ -143,6 +144,10 @@ function evaluateExpression(
   );
   if (stateAttr) {
     return readAttr(entities, stateAttr[1]!, stateAttr[2]!);
+  }
+
+  if (variables && Object.prototype.hasOwnProperty.call(variables, trimmed)) {
+    return variables[trimmed];
   }
 
   return undefined;
@@ -170,9 +175,10 @@ function isTruthy(value: unknown): boolean {
 function interpolateExpressions(
   template: string,
   entities: HassEntities,
+  variables?: Record<string, unknown>,
 ): string {
   return template.replace(/\{\{\s*([\s\S]*?)\s*\}\}/g, (_match, raw: string) => {
-    const value = evaluateExpression(raw, entities);
+    const value = evaluateExpression(raw, entities, variables);
     if (value == null) return "";
     return coerceResult(value);
   });
@@ -201,15 +207,16 @@ function nextToken(input: string, from: number): Token | null {
 
 /**
  * Minimal demo Jinja stub: `states()`, `state_attr()`, `is_state()`,
- * and `{% if %}…{% else %}…{% endif %}`. Unrecognized tags are left as-is.
+ * `{% if %}…{% else %}…{% endif %}`, and injected `variables` identifiers.
  */
 export function renderDemoTemplate(
   template: string,
   entities: HassEntities,
+  variables?: Record<string, unknown>,
 ): string {
   if (!template) return "";
   if (!/\{%\s*if\b/.test(template)) {
-    return interpolateExpressions(template, entities);
+    return interpolateExpressions(template, entities, variables);
   }
 
   let out = "";
@@ -218,7 +225,7 @@ export function renderDemoTemplate(
   while (cursor < template.length) {
     const open = nextToken(template, cursor);
     if (!open || open.kind !== "if") {
-      out += interpolateExpressions(template.slice(cursor), entities);
+      out += interpolateExpressions(template.slice(cursor), entities, variables);
       break;
     }
 
@@ -226,6 +233,7 @@ export function renderDemoTemplate(
     out += interpolateExpressions(
       template.slice(cursor, open.index),
       entities,
+      variables,
     );
 
     const afterOpen = open.index + open.length;
@@ -259,7 +267,7 @@ export function renderDemoTemplate(
 
     if (endIndex < 0) {
       // Unbalanced — leave the rest as interpolated text
-      out += interpolateExpressions(template.slice(open.index), entities);
+      out += interpolateExpressions(template.slice(open.index), entities, variables);
       break;
     }
 
@@ -270,10 +278,12 @@ export function renderDemoTemplate(
         ? template.slice(elseIndex + elseLength, endIndex)
         : "";
 
-    const branch = isTruthy(evaluateExpression(open.condition, entities))
+    const branch = isTruthy(
+      evaluateExpression(open.condition, entities, variables),
+    )
       ? consequent
       : alternate;
-    out += renderDemoTemplate(branch, entities);
+    out += renderDemoTemplate(branch, entities, variables);
     cursor = endIndex + endLength;
   }
 

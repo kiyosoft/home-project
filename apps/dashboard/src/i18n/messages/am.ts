@@ -51,6 +51,7 @@ export const am: Record<MessageKey, string> = {
   "header.imported": "ዳሽቦርድ ገብቷል",
   "header.pillUnavailable": "አይገኝም",
   "header.pillActivated": "ተሰርቷል",
+  "header.welcomeHome": "እንኳን ደህና መጡ, {name}",
   "runtime.editHelp": "የአርትዖት ሁነታ — ይጎትቱ፣ መጠን ይቀይሩ፣ ይጀምሩ እና ዊጄቶችን ያዋቅሩ። ለውጦች በራስ-ሰር ይቀመጣሉ።",
   "runtime.demoHelp": "የሙከራ ኤንቲቲዎች በቀጥታ ይዘምናሉ። ዝርዝሮችን ለማየት ሴንሰሮችን ይንኩ፤ ማብሪያ/ማጥፊያዎች በመንካት ይሰራሉ፤ ሙሉ አትሪቢዩት ሉህ ለማየት ማንኛውንም ኤንቲቲ ይጫኑ።",
   "runtime.liveHelp": "ከ ሆም አሲስታንትዎ የቀጥታ ኤንቲቲዎች። ዝርዝሮችን ለማየት ሴንሰሮችን ይንኩ፤ አትሪቢዩቶችን ለማየት ማንኛውንም ኤንቲቲ ይጫኑ።",
@@ -205,7 +206,7 @@ export const am: Record<MessageKey, string> = {
   "textCard.placeholder":
     "ጽሑፍ ይጫፉ… ለቀጥታ እሴቶች {{ states('sensor.temp') }} ይጠቀሙ",
   "textCard.templateHint":
-    "Home Assistant Jinja: {{ states('entity_id') }}፣ {{ state_attr('entity_id', 'attr') }}፣ {% if is_state('entity_id', 'on') %}…{% endif %}",
+    "ከዚህ ማዕከል Jinja። {{ user }} / {{ user_id }} በዚህ ዳሽቦርድ የገባው ነው። {{ name }}፣ {{ person }} እና {% if arrived %} ወደ ቤት የገባውን ቤተሰብ ይከተላሉ — የታብሌቱን መግቢያ አይደለም።",
   "textCard.titlePlaceholder": "አማራጭ የካርድ ርዕስ",
   "textCard.preview": "ቅድመ እይታ",
   "textCard.background": "ዳራ",

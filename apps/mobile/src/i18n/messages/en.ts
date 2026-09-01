@@ -73,6 +73,7 @@ export const en = {
   "home.greetingMorning": "Good morning",
   "home.greetingAfternoon": "Good afternoon",
   "home.greetingEvening": "Good evening",
+  "home.greetingWelcome": "Welcome home",
   "home.summaryLightOne": "1 light on",
   "home.summaryLights": "{count} lights on",
   "home.summaryLightsOff": "All lights off",
@@ -277,7 +278,7 @@ export const en = {
   "connection.openSettings": "Connection settings",
   "connection.permissionTitle": "Location permission needed",
   "connection.permissionBody":
-    "iOS and Android only reveal the Wi-Fi network name to apps with location permission. Nothing about your location is stored or sent anywhere.",
+    "iOS and Android only reveal the Wi-Fi network name to apps with location permission. The same permission is used to tell Home Assistant when you arrive home.",
   "connection.grantPermission": "Allow",
   "connection.activeAddress": "Now using",
   "connection.reconnect": "Reconnect",

@@ -272,7 +272,8 @@ export async function postWebhook(options: {
   baseUrl: string;
   webhookId: string;
   type: string;
-  data?: Record<string, unknown>;
+  /** Object for most commands; an array for `update_sensor_states`. */
+  data?: unknown;
 }): Promise<unknown> {
   const body: Record<string, unknown> = { type: options.type };
   if (options.data) body.data = options.data;
@@ -357,6 +358,156 @@ export async function updateRegistration(options: {
       "Home Assistant rejected the registration update",
     );
   }
+}
+
+/** GPS report that Home Assistant turns into this device's `device_tracker`. */
+export interface LocationUpdate {
+  gps: [latitude: number, longitude: number];
+  gpsAccuracy?: number;
+  battery?: number;
+  speed?: number;
+  altitude?: number;
+  course?: number;
+  verticalAccuracy?: number;
+}
+
+export const LOCATION_TRIGGER = {
+  zoneEnter: "Zone Enter",
+  zoneExit: "Zone Exit",
+  appOpen: "App Open",
+} as const;
+export type LocationTrigger =
+  (typeof LOCATION_TRIGGER)[keyof typeof LOCATION_TRIGGER];
+
+/** Companion-style unique_id for why the last location report was sent. */
+export const LAST_UPDATE_TRIGGER_ID = "last_update_trigger";
+
+export interface MobileAppSensor {
+  uniqueId: string;
+  type: "sensor" | "binary_sensor";
+  state: string | number | boolean;
+  name?: string;
+  icon?: string;
+  attributes?: Record<string, unknown>;
+  deviceClass?: string;
+  unitOfMeasurement?: string;
+  stateClass?: string;
+  entityCategory?: string;
+  disabled?: boolean;
+}
+
+export function buildLocationPayload(
+  update: LocationUpdate,
+): Record<string, unknown> {
+  const data: Record<string, unknown> = {
+    gps: [update.gps[0], update.gps[1]],
+  };
+  if (update.gpsAccuracy !== undefined) data.gps_accuracy = update.gpsAccuracy;
+  if (update.battery !== undefined) data.battery = update.battery;
+  if (update.speed !== undefined) data.speed = update.speed;
+  if (update.altitude !== undefined) data.altitude = update.altitude;
+  if (update.course !== undefined) data.course = update.course;
+  if (update.verticalAccuracy !== undefined) {
+    data.vertical_accuracy = update.verticalAccuracy;
+  }
+  return data;
+}
+
+export function buildSensorRegistration(
+  sensor: MobileAppSensor,
+): Record<string, unknown> {
+  const data: Record<string, unknown> = {
+    unique_id: sensor.uniqueId,
+    type: sensor.type,
+    state: sensor.state,
+  };
+  if (sensor.name) data.name = sensor.name;
+  if (sensor.icon) data.icon = sensor.icon;
+  if (sensor.attributes) data.attributes = sensor.attributes;
+  if (sensor.deviceClass) data.device_class = sensor.deviceClass;
+  if (sensor.unitOfMeasurement) {
+    data.unit_of_measurement = sensor.unitOfMeasurement;
+  }
+  if (sensor.stateClass) data.state_class = sensor.stateClass;
+  if (sensor.entityCategory) data.entity_category = sensor.entityCategory;
+  if (sensor.disabled !== undefined) data.disabled = sensor.disabled;
+  return data;
+}
+
+export function buildSensorState(sensor: MobileAppSensor): Record<string, unknown> {
+  const data: Record<string, unknown> = {
+    unique_id: sensor.uniqueId,
+    type: sensor.type,
+    state: sensor.state,
+  };
+  if (sensor.icon) data.icon = sensor.icon;
+  if (sensor.attributes) data.attributes = sensor.attributes;
+  return data;
+}
+
+function requireWebhookHandled(result: unknown, type: string): void {
+  if (result === null) {
+    throw new MobileAppError(
+      "not-loaded",
+      `Home Assistant has no handler for this ${type}`,
+    );
+  }
+}
+
+/**
+ * Report this phone's coordinates. Home Assistant matches them to zones and
+ * sets `device_tracker.<device>` to `home` / `not_home` / a zone name.
+ */
+export async function updateLocation(options: {
+  baseUrl: string;
+  webhookId: string;
+  update: LocationUpdate;
+}): Promise<void> {
+  const result = await postWebhook({
+    baseUrl: options.baseUrl,
+    webhookId: options.webhookId,
+    type: "update_location",
+    data: buildLocationPayload(options.update),
+  });
+  requireWebhookHandled(result, "update_location");
+}
+
+export async function registerSensor(options: {
+  baseUrl: string;
+  webhookId: string;
+  sensor: MobileAppSensor;
+}): Promise<void> {
+  const result = await postWebhook({
+    baseUrl: options.baseUrl,
+    webhookId: options.webhookId,
+    type: "register_sensor",
+    data: buildSensorRegistration(options.sensor),
+  });
+  requireWebhookHandled(result, "register_sensor");
+}
+
+export async function updateSensorStates(options: {
+  baseUrl: string;
+  webhookId: string;
+  sensors: MobileAppSensor[];
+}): Promise<void> {
+  const result = await postWebhook({
+    baseUrl: options.baseUrl,
+    webhookId: options.webhookId,
+    type: "update_sensor_states",
+    data: options.sensors.map(buildSensorState),
+  });
+  requireWebhookHandled(result, "update_sensor_states");
+}
+
+export function lastUpdateTriggerSensor(state: LocationTrigger): MobileAppSensor {
+  return {
+    uniqueId: LAST_UPDATE_TRIGGER_ID,
+    type: "sensor",
+    name: "Last Update Trigger",
+    icon: "mdi:cellphone-marker",
+    state,
+  };
 }
 
 /**

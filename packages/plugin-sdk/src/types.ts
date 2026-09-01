@@ -80,6 +80,8 @@ export interface PlatformBindings {
   /** Current plugin id for capability checks during hook use */
   getActivePluginId?: () => string | null;
   hasCapability?: (pluginId: string, capability: Capability) => boolean;
+  /** Injected into every `render_template` (Lovelace-style user, plus arrival). */
+  getTemplateVariables?: () => Record<string, unknown>;
 }
 
 export interface RegisteredWidget extends DefinedWidget {

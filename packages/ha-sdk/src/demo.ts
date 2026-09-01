@@ -308,10 +308,11 @@ const DEMO_ENTITIES: HassEntities = {
   },
   "person.kidus": {
     entity_id: "person.kidus",
-    state: "home",
+    state: "not_home",
     attributes: {
       friendly_name: "Kidus",
       id: "kidus",
+      user_id: "demo-kidus",
       source: "device_tracker.phone",
     },
   },
@@ -852,6 +853,15 @@ export function connectDemo(): EntityClient {
       });
     }
   }, 8000);
+
+  // Kidus walks in a few seconds after demo starts so Welcome home is visible.
+  let personArrivalTimer: ReturnType<typeof setTimeout> | undefined;
+  personArrivalTimer = setTimeout(() => {
+    if (closed) return;
+    const current = entities["person.kidus"];
+    if (!current) return;
+    setEntity("person.kidus", { ...current, state: "home" });
+  }, 5000);
 
   // Live-feel ticks: clock + last_play often, score less often for celebrations.
   let teamLiveTick = 0;
@@ -1401,6 +1411,9 @@ export function connectDemo(): EntityClient {
           longitude: 38.74,
         } as T;
       }
+      if (message.type === "auth/current_user") {
+        return { ...DEMO_CURRENT_USER } as T;
+      }
       if (message.type === "todo/item/list") {
         assertDemoTodoEntity(message.entity_id);
         return { items: structuredClone(todoItems) } as T;
@@ -1429,9 +1442,14 @@ export function connectDemo(): EntityClient {
       if (message.type === "render_template") {
         const template =
           typeof message.template === "string" ? message.template : "";
+        const rawVars = message.variables;
+        const variables =
+          typeof rawVars === "object" && rawVars !== null && !Array.isArray(rawVars)
+            ? (rawVars as Record<string, unknown>)
+            : undefined;
         const push = () => {
           onMessage({
-            result: renderDemoTemplate(template, entities),
+            result: renderDemoTemplate(template, entities, variables),
             listeners: {},
           } as T);
         };
@@ -1483,6 +1501,7 @@ export function connectDemo(): EntityClient {
       if (sensorTimer) clearInterval(sensorTimer);
       if (doorTimer) clearInterval(doorTimer);
       if (teamScoreTimer) clearInterval(teamScoreTimer);
+      if (personArrivalTimer) clearTimeout(personArrivalTimer);
       for (const timer of lockTimers.values()) clearTimeout(timer);
       lockTimers.clear();
       for (const timer of scriptTimers.values()) clearTimeout(timer);
@@ -1531,6 +1550,11 @@ export function connectDemo(): EntityClient {
     commitTodoItems(next);
   }
 }
+
+export const DEMO_CURRENT_USER = {
+  id: "demo-kiosk",
+  name: "Kiosk",
+} as const;
 
 export const DEMO_ENTITY_IDS = {
   light: "light.living_room",

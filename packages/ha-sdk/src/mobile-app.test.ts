@@ -2,10 +2,17 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {
   buildAppData,
+  buildLocationPayload,
+  buildSensorRegistration,
+  buildSensorState,
   fireWebhookEvent,
+  lastUpdateTriggerSensor,
+  LOCATION_TRIGGER,
   MobileAppError,
   parsePushNotification,
+  updateLocation,
   updateRegistration,
+  updateSensorStates,
 } from "./mobile-app";
 
 /**
@@ -277,5 +284,71 @@ describe("parsePushNotification", () => {
       sound: false,
       badge: false,
     });
+  });
+});
+
+describe("location and sensors", () => {
+  it("sends gps as a lat/long pair", () => {
+    expect(
+      buildLocationPayload({
+        gps: [9.03, 38.74],
+        gpsAccuracy: 12,
+        battery: 80,
+      }),
+    ).toEqual({
+      gps: [9.03, 38.74],
+      gps_accuracy: 12,
+      battery: 80,
+    });
+  });
+
+  it("registers last_update_trigger the way Companion names it", () => {
+    expect(lastUpdateTriggerSensor(LOCATION_TRIGGER.zoneEnter)).toEqual({
+      uniqueId: "last_update_trigger",
+      type: "sensor",
+      name: "Last Update Trigger",
+      icon: "mdi:cellphone-marker",
+      state: "Zone Enter",
+    });
+    expect(
+      buildSensorRegistration(lastUpdateTriggerSensor(LOCATION_TRIGGER.zoneExit)),
+    ).toMatchObject({
+      unique_id: "last_update_trigger",
+      type: "sensor",
+      state: "Zone Exit",
+    });
+  });
+
+  it("posts update_sensor_states as an array", async () => {
+    const fetchMock = vi.fn(async (_url: string, init?: RequestInit) => {
+      const body = JSON.parse(String(init?.body)) as {
+        type: string;
+        data: unknown;
+      };
+      expect(body.type).toBe("update_sensor_states");
+      expect(body.data).toEqual([
+        buildSensorState(lastUpdateTriggerSensor(LOCATION_TRIGGER.appOpen)),
+      ]);
+      return new Response("{}", { status: 200 });
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    await updateSensorStates({
+      baseUrl: "http://ha.local",
+      webhookId: "hook",
+      sensors: [lastUpdateTriggerSensor(LOCATION_TRIGGER.appOpen)],
+    });
+    expect(fetchMock).toHaveBeenCalled();
+  });
+
+  it("rejects an empty body for update_location", async () => {
+    reply("");
+    await expect(
+      updateLocation({
+        baseUrl: "http://ha.local",
+        webhookId: "hook",
+        update: { gps: [9.03, 38.74] },
+      }),
+    ).rejects.toMatchObject({ kind: "not-loaded" });
   });
 });

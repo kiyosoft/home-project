@@ -18,6 +18,7 @@
           "_home-assistant._tcp"
         ],
         "NSLocalNetworkUsageDescription": "Ethio Home looks for your Home Assistant on this network so you can connect without typing an address.",
+        "UIBackgroundModes": ["location"],
         "ITSAppUsesNonExemptEncryption": false
       }
     },
@@ -26,6 +27,7 @@
       "googleServicesFile": "./google-services.json",
       "permissions": [
         "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.ACCESS_BACKGROUND_LOCATION",
         "android.permission.ACCESS_NETWORK_STATE",
         "android.permission.ACCESS_WIFI_STATE",
         "android.permission.CHANGE_WIFI_MULTICAST_STATE",
@@ -55,11 +57,13 @@
       [
         "expo-location",
         {
-          "locationWhenInUsePermission": "Ethio Home reads the name of the Wi-Fi network you are on to tell whether it should use your home address or your remote one. Your location is never stored or sent anywhere.",
-          "isAndroidBackgroundLocationEnabled": false,
-          "isIosBackgroundLocationEnabled": false
+          "locationWhenInUsePermission": "Ethio Home uses your location to tell when you arrive home and to read the Wi-Fi name so it can pick your home address. Coordinates are sent only to the Home Assistant you signed into.",
+          "locationAlwaysAndWhenInUsePermission": "Ethio Home needs location in the background to tell Home Assistant when you enter or leave home, even if the app is closed. Coordinates are sent only to the Home Assistant you signed into.",
+          "isAndroidBackgroundLocationEnabled": true,
+          "isIosBackgroundLocationEnabled": true
         }
       ],
+      "expo-task-manager",
       "expo-localization",
       [
         "expo-font",

@@ -55,6 +55,7 @@ export const en = {
   "header.imported": "Dashboard imported",
   "header.pillUnavailable": "unavailable",
   "header.pillActivated": "Activated",
+  "header.welcomeHome": "Welcome home, {name}",
 
   "runtime.editHelp":
     "Edit mode — drag, resize, add, and configure widgets. Changes autosave.",
@@ -227,7 +228,7 @@ export const en = {
   "textCard.placeholder":
     "Write text… use {{ states('sensor.temp') }} for live values",
   "textCard.templateHint":
-    "Home Assistant Jinja: {{ states('entity_id') }}, {{ state_attr('entity_id', 'attr') }}, {% if is_state('entity_id', 'on') %}…{% endif %}",
+    "Jinja from this hub. {{ user }} / {{ user_id }} is who is signed into this dashboard. {{ name }}, {{ person }}, and {% if arrived %} follow whoever in the household just got home — not the tablet login.",
   "textCard.titlePlaceholder": "Optional card title",
   "textCard.preview": "Preview",
   "textCard.background": "Background",

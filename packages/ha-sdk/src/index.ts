@@ -73,7 +73,7 @@ export type {
   HaOAuthErrorKind,
   HaTokens,
 } from "./oauth";
-export { connectDemo, DEMO_ENTITY_IDS } from "./demo";
+export { connectDemo, DEMO_CURRENT_USER, DEMO_ENTITY_IDS } from "./demo";
 export {
   deriveLight,
   lightColorModes,
@@ -132,30 +132,53 @@ export type { MediaView } from "./media";
 export { entityImageUrl, withAuthToken } from "./media-auth";
 export {
   buildAppData,
+  buildLocationPayload,
+  buildSensorRegistration,
+  buildSensorState,
   CLEAR_NOTIFICATION,
   confirmPush,
   fireWebhookEvent,
   isMobileAppLoaded,
+  LAST_UPDATE_TRIGGER_ID,
+  lastUpdateTriggerSensor,
+  LOCATION_TRIGGER,
   MobileAppError,
   parsePushNotification,
   postWebhook,
   registerMobileApp,
+  registerSensor,
   subscribePushChannel,
+  updateLocation,
   updateRegistration,
+  updateSensorStates,
   webhookUrl,
 } from "./mobile-app";
 export type {
+  LocationTrigger,
+  LocationUpdate,
   MobileAppData,
   MobileAppErrorKind,
   MobileAppNotificationAction,
   MobileAppPushNotification,
   MobileAppRegistration,
   MobileAppRegistrationRequest,
+  MobileAppSensor,
   MobileAppUpdateRequest,
   NotificationImportance,
   NotificationInterruption,
   NotificationPresentation,
 } from "./mobile-app";
+export {
+  ARRIVAL_WINDOW_MS,
+  fetchCurrentUser,
+  firstName,
+  isPersonEntityId,
+  latestAccountArrival,
+  personDisplayName,
+  personForUser,
+  shouldShowArrivalWelcome,
+} from "./person";
+export type { HassCurrentUser } from "./person";
 export {
   dismissPersistentNotification,
   subscribePersistentNotifications,

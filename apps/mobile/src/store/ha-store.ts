@@ -4,6 +4,7 @@ import {
   connectLiveWithTokens,
   EMPTY_AREA_INDEX,
   fetchAreaIndex,
+  fetchCurrentUser,
   getHassConfig,
   revokeTokens,
   type AreaRegistryEntry,
@@ -17,6 +18,7 @@ import {
   classifyConnectError,
   type ConnectFailure,
 } from "@/lib/connection-error";
+import { clearLocationTargets } from "@/lib/location-report";
 import { loginWithHomeAssistant, type LoginFailure } from "@/lib/ha-auth";
 import {
   clearRegistration,
@@ -52,8 +54,10 @@ interface HaState {
   /** Empty until the area registry resolves. */
   areas: AreaRegistryEntry[];
   areaByEntity: Record<string, string>;
-  /** Signed-in person's name. Empty in demo mode and until it resolves. */
+  /** Signed-in person's name. Empty until it resolves. */
   userName: string;
+  /** HA user id. Empty until it resolves. */
+  userId: string;
   status: ConnectionStatus;
   failure: ConnectFailure | null;
   session: SessionState;
@@ -238,29 +242,18 @@ async function registerDevice(
  */
 let recovery: Promise<StoredRegistration | null> | null = null;
 
-interface CurrentUser {
-  name?: string | null;
-}
-
-/**
- * Only the greeting depends on this, so a hub that will not answer (the demo
- * client, an older core) just leaves the header impersonal.
- */
 async function loadUser(
   target: EntityClient,
   set: (partial: Partial<HaState>) => void,
 ) {
-  try {
-    const user = await target.sendMessagePromise<CurrentUser>({
-      type: "auth/current_user",
-    });
-    // A reconnect may have swapped the client while this was in flight.
-    if (client !== target) return;
-    set({ userName: user?.name?.trim() ?? "" });
-  } catch {
-    if (client !== target) return;
-    set({ userName: "" });
-  }
+  const user = await fetchCurrentUser((message) =>
+    target.sendMessagePromise(message),
+  );
+  if (client !== target) return;
+  set({
+    userName: user?.name?.trim() ?? "",
+    userId: user?.id ?? "",
+  });
 }
 
 /**
@@ -418,6 +411,7 @@ export const useHaStore = create<HaState>((set, get) => ({
   areas: [],
   areaByEntity: {},
   userName: "",
+  userId: "",
   status: "idle",
   failure: null,
   session: "unknown",
@@ -601,6 +595,7 @@ export const useHaStore = create<HaState>((set, get) => ({
       // The device stays in Home Assistant so the user can see and remove it
       // there; we only forget our side of the registration.
       void clearRegistration();
+      void clearLocationTargets();
       saved = null;
     }
     set({
@@ -608,6 +603,7 @@ export const useHaStore = create<HaState>((set, get) => ({
       areas: [],
       areaByEntity: {},
       userName: "",
+      userId: "",
       status: "idle",
       failure: null,
       mode: null,

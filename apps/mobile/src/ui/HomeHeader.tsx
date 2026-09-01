@@ -3,6 +3,7 @@ import { Button, Chip, Text, useThemeColor } from "heroui-native";
 import { ScrollView, View } from "react-native";
 
 import { formatHomeSummary, useHomeSummary } from "@/dashboard/home-summary";
+import { useArrivalWelcome } from "@/dashboard/use-arrival-welcome";
 import type { MessageKey } from "@/i18n";
 import { useHaStore } from "@/store/ha-store";
 import { useT } from "@/store/locale-store";
@@ -77,7 +78,8 @@ export function HomeHeader({
 
   // A greeting wants what people call you, not your registered full name.
   const name = useHaStore((state) => state.userName).split(" ")[0] ?? "";
-  const greeting = t(greetingKey(new Date().getHours()));
+  const { welcome } = useArrivalWelcome();
+  const greeting = t(welcome ? "home.greetingWelcome" : greetingKey(new Date().getHours()));
   const editLabel = t(editing ? "home.done" : "home.edit");
 
   return (
