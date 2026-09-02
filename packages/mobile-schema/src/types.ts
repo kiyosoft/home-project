@@ -1,8 +1,8 @@
 /** Plugin widget id, shared with the web dashboard (e.g. "@ethio/core/light"). */
 export type WidgetType = string;
 
-/** Phone tiles flow instead of sitting on a grid: half width or full width. */
-export type TileSize = "sm" | "md";
+/** Phone tiles flow instead of sitting on a grid: half width, full width, or tall. */
+export type TileSize = "sm" | "md" | "lg";
 
 export interface MobileWidget {
   id: string;
@@ -78,12 +78,14 @@ export function serviceForSceneEntity(
   return { domain, service: "turn_on" };
 }
 
-export const TILE_SIZES: TileSize[] = ["sm", "md"];
+export const TILE_SIZES: TileSize[] = ["sm", "md", "lg"];
 
 export function tileSpan(size: TileSize): 1 | 2 {
   return size === "sm" ? 1 : 2;
 }
 
 export function otherTileSize(size: TileSize): TileSize {
-  return size === "sm" ? "md" : "sm";
+  if (size === "sm") return "md";
+  if (size === "md") return "lg";
+  return "sm";
 }

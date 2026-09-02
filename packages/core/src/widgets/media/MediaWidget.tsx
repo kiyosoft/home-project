@@ -50,7 +50,7 @@ export function MediaWidget({
 
   if (!entityId) {
     return (
-      <div className="flex h-full min-h-36 flex-col rounded-2xl border border-border bg-card p-5 text-card-foreground shadow-sm">
+      <div className="flex h-full min-h-0 flex-col overflow-hidden rounded-2xl border border-border bg-card p-5 text-card-foreground shadow-sm">
         <h3 className="font-display text-base font-semibold">
           {customTitle || "Media"}
         </h3>
@@ -63,7 +63,7 @@ export function MediaWidget({
 
   if (!entity) {
     return (
-      <div className="flex h-full min-h-36 flex-col rounded-2xl border border-dashed border-border bg-card p-5">
+      <div className="flex h-full min-h-0 flex-col overflow-hidden rounded-2xl border border-dashed border-border bg-card p-5">
         <h3 className="font-display text-base font-semibold">
           {customTitle || entityId}
         </h3>

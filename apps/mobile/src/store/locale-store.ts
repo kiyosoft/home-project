@@ -7,24 +7,41 @@ import {
   type MessageKey,
   type TranslateParams,
 } from "@/i18n";
-import { loadLocale, saveLocale } from "@/lib/settings";
+import {
+  loadEthiopianHours,
+  loadLocale,
+  saveEthiopianHours,
+  saveLocale,
+} from "@/lib/settings";
 
 interface LocaleState {
   locale: Locale;
+  ethiopianHours: boolean;
   setLocale: (locale: Locale) => void;
+  setEthiopianHours: (value: boolean) => void;
   hydrate: () => Promise<void>;
 }
 
 export const useLocaleStore = create<LocaleState>((set) => ({
   locale: "en",
+  ethiopianHours: false,
 
   setLocale(locale) {
     set({ locale });
     void saveLocale(locale);
   },
 
+  setEthiopianHours(ethiopianHours) {
+    set({ ethiopianHours });
+    void saveEthiopianHours(ethiopianHours);
+  },
+
   async hydrate() {
-    set({ locale: await loadLocale() });
+    const [locale, ethiopianHours] = await Promise.all([
+      loadLocale(),
+      loadEthiopianHours(),
+    ]);
+    set({ locale, ethiopianHours });
   },
 }));
 

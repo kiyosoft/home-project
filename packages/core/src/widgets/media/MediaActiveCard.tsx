@@ -8,6 +8,9 @@ import {
 } from "lucide-react";
 import type { MouseEvent } from "react";
 
+import { cardShellClass, chipShellClass, cx, useCardDensity } from "../../ui";
+import { ChipFace } from "../ChipFace";
+
 export function MediaActiveCard({
   name,
   title,
@@ -45,6 +48,7 @@ export function MediaActiveCard({
   onNext: (event: MouseEvent) => void;
   onPower: (event: MouseEvent) => void;
 }) {
+  const { ref, compact, tight, chip } = useCardDensity();
   return (
     <div
       role={interactive ? "button" : undefined}
@@ -60,12 +64,26 @@ export function MediaActiveCard({
             }
           : undefined
       }
-      className={`relative flex h-full min-h-36 flex-col justify-between overflow-hidden rounded-2xl border border-border shadow-sm outline-none transition-colors ${
+      ref={ref}
+      className={cx(
+        chip ? chipShellClass : cardShellClass,
+        "relative border-border outline-none transition-colors",
+        !chip && "justify-between border shadow-sm",
         interactive
           ? "cursor-pointer hover:border-primary/40 focus-visible:ring-2 focus-visible:ring-ring"
-          : ""
-      } ${lightOnArt ? "text-white" : "bg-card text-card-foreground"}`}
+          : "",
+        lightOnArt && !chip ? "text-white" : "bg-card text-card-foreground",
+      )}
     >
+      {chip ? (
+        <ChipFace
+          title={name}
+          status={title || "Active"}
+          icon={Speaker}
+          active={isPlaying}
+        />
+      ) : (
+      <>
       {picture ? (
         <>
           <img
@@ -85,7 +103,7 @@ export function MediaActiveCard({
         </>
       ) : null}
 
-      <div className="relative flex items-start justify-between gap-3 p-5 pb-0">
+      <div className={cx("relative flex items-start justify-between gap-3 pb-0", compact ? "p-4" : "p-5")}>
         <div className="min-w-0">
           <p
             className={`text-xs uppercase tracking-[0.14em] ${
@@ -113,7 +131,7 @@ export function MediaActiveCard({
         ) : null}
       </div>
 
-      <div className="relative space-y-1 px-5 pt-4">
+      <div className={cx("relative space-y-1 pt-4", compact ? "px-4" : "px-5")}>
         <p className="truncate font-display text-lg font-semibold tracking-tight">
           {title || "Active"}
         </p>
@@ -128,8 +146,8 @@ export function MediaActiveCard({
         ) : null}
       </div>
 
-      {interactive ? (
-        <div className="relative mt-auto flex items-center justify-center gap-2 p-5 pt-4">
+      {interactive && !tight ? (
+        <div className={cx("relative mt-auto flex items-center justify-center gap-2 pt-4", compact ? "p-4" : "p-5")}>
           {canPrev ? (
             <button
               type="button"
@@ -196,7 +214,9 @@ export function MediaActiveCard({
           ) : null}
         </div>
       ) : (
-        <div className="p-5 pt-4" />
+        <div className={cx("pt-4", compact ? "p-4" : "p-5")} />
+      )}
+      </>
       )}
     </div>
   );

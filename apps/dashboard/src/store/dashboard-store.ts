@@ -26,7 +26,40 @@ import {
   saveDashboard,
   saveLockSettings,
 } from "@/lib/settings";
-import { getWidgetOrThrow } from "@/plugins/registry";
+import { getWidget, getWidgetOrThrow } from "@/plugins/registry";
+
+function syncLayoutConstraints(dashboard: DashboardConfig): DashboardConfig {
+  return {
+    ...dashboard,
+    pages: dashboard.pages.map((page) => {
+      const typeById = new Map(page.widgets.map((widget) => [widget.id, widget.type]));
+      const sync = (item: GridItem): GridItem => {
+        const type = typeById.get(item.i);
+        if (!type) return item;
+        const def = getWidget(type);
+        if (!def) return item;
+        const chipDefault = def.minSize.h === 1 && def.defaultSize.h === 1;
+        return {
+          ...item,
+          w: Math.max(item.w, def.minSize.w),
+          h: chipDefault && item.h === 2 ? 1 : Math.max(item.h, def.minSize.h),
+          minW: def.minSize.w,
+          minH: def.minSize.h,
+          maxW: def.maxSize.w,
+          maxH: def.maxSize.h,
+        };
+      };
+      return {
+        ...page,
+        layouts: {
+          lg: page.layouts.lg.map(sync),
+          md: page.layouts.md.map(sync),
+          sm: page.layouts.sm.map(sync),
+        },
+      };
+    }),
+  };
+}
 
 let saveTimer: ReturnType<typeof setTimeout> | undefined;
 
@@ -160,7 +193,7 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
     }
 
     set({
-      dashboard: saved,
+      dashboard: syncLayoutConstraints(saved),
       activePageId: saved.pages[0]?.id ?? null,
       pinHash: lock.pinHash,
       kiosk: lock.kiosk,

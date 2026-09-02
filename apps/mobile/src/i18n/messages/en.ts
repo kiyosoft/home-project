@@ -68,7 +68,11 @@ export const en = {
   "home.addWidget": "Add tile",
   "home.removeWidget": "Remove tile",
   "home.widthFull": "Make tile full width",
+  "home.widthTall": "Make tile taller",
   "home.widthHalf": "Make tile half width",
+  "home.lightsOn": "{count} on",
+  "home.lightsOnOne": "1 on",
+  "home.lightsChipAria": "Lights currently on",
   "home.sectionActive": "{count} on",
   "home.greetingMorning": "Good morning",
   "home.greetingAfternoon": "Good afternoon",
@@ -93,6 +97,23 @@ export const en = {
   "picker.sceneTitle": "Add a scene",
   "picker.sceneDescription": "Pick a scene or script to run from the home screen.",
   "picker.sceneEmpty": "Every scene and script is already on the dashboard.",
+  "picker.typeTitle": "What kind of tile?",
+  "picker.typeDescription": "Clock and batteries need no entity. Everything else asks next.",
+  "picker.typeClock": "Clock",
+  "picker.typeClockBody": "Live time, weekday, and date",
+  "picker.typeBatteries": "Batteries",
+  "picker.typeBatteriesBody": "Watch every battery sensor",
+  "picker.typeClimateSensors": "Climate sensors",
+  "picker.typeClimateSensorsBody": "Average of temperature sensors",
+  "picker.typeArea": "Area",
+  "picker.typeAreaBody": "A room with lights, climate, and blinds",
+  "picker.typeScene": "Scene",
+  "picker.typeSceneBody": "Activate a scene or script",
+  "picker.typeEntity": "Device",
+  "picker.typeEntityBody": "A light, switch, camera, or other entity",
+  "picker.areaTitle": "Pick a room",
+  "picker.areaDescription": "The area card summarises lights, climate, and blinds.",
+  "picker.areaEmpty": "No areas are available on this hub.",
 
   "scene.activate": "Run {name}",
   "scene.activated": "Activated",
@@ -145,6 +166,8 @@ export const en = {
   "widget.light.effects": "Effects",
 
   "widget.climate.currentValue": "Now {value}",
+  "widget.climate.heatingTo": "Heating to {value}",
+  "widget.climate.coolingTo": "Cooling to {value}",
   "widget.climate.warmer": "Warmer",
   "widget.climate.cooler": "Cooler",
 
@@ -165,6 +188,37 @@ export const en = {
   "widget.camera.still": "Show still",
   "widget.camera.power": "Power",
   "widget.camera.liveFailed": "Could not start the live stream.",
+  "widget.camera.noSignal": "No signal",
+  "widget.camera.retry": "Tap to retry",
+
+  "widget.batteries.title": "Batteries",
+  "widget.batteries.allGood": "All good",
+  "widget.batteries.none": "No batteries",
+  "widget.batteries.low": "{count} low",
+
+  "widget.climateSensors.title": "Climate Sensors",
+  "widget.climateSensors.none": "No sensors",
+  "widget.climateSensors.average": "Average of {count}",
+
+  "widget.weather.title": "Weather",
+  "widget.weather.pick": "Pick a weather entity.",
+  "widget.weather.feelsLike": "Feels like {value}",
+
+  "widget.fan.title": "Fan",
+  "widget.fan.speed": "Speed",
+  "widget.fan.onValue": "On - {percent}%",
+
+  "widget.area.title": "Area",
+  "widget.area.kicker": "Area",
+  "widget.area.lights": "Lights",
+  "widget.area.climate": "Climate",
+  "widget.area.blinds": "Blinds",
+  "widget.area.ideal": "Ideal",
+  "widget.area.noDevices": "No devices",
+
+  "widget.scene.pick": "Pick a scene",
+  "widget.scene.activate": "Activate",
+  "widget.scene.activating": "Activating…",
 
   "widget.detail.state": "State",
   "widget.detail.entityId": "Entity ID",
@@ -296,11 +350,15 @@ export const en = {
   "settings.dashboard": "Dashboard",
   "settings.resetLayout": "Reset layout",
   "settings.resetLayoutDescription":
-    "Removes every tile you added and starts from an empty dashboard.",
+    "Removes every tile you added and restores the starting dashboard.",
   "settings.resetLayoutConfirm": "Clear every tile from the dashboard?",
 
   "settings.langEn": "English",
   "settings.langAm": "አማርኛ",
+
+  "settings.ethiopianHours": "Ethiopian hours",
+  "settings.ethiopianHoursHelp":
+    "Count the clock from 6:00, as 12-hour ቀን and ሌሊት.",
 
   "settings.theme": "Theme",
   "settings.themeLight": "Light",

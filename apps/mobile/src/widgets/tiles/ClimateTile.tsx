@@ -1,6 +1,13 @@
+import {
+  CLIMATE_STEP,
+  deriveClimate,
+  stepClimateTarget,
+  type ClimateView,
+} from "@ethio/ha-sdk";
 import { Text } from "heroui-native";
 import { View } from "react-native";
 
+import type { MessageKey, TranslateParams } from "@/i18n";
 import { useT } from "@/store/locale-store";
 import { TileButton } from "@/widgets/TileButton";
 import type { WidgetBodyProps } from "@/widgets/types";
@@ -9,28 +16,50 @@ import { useCallService } from "@/widgets/use-service";
 import { useTile } from "@/widgets/use-tile";
 import { WidgetTile } from "@/widgets/WidgetTile";
 
-const STEP = 0.5;
-
-function num(value: unknown): number | undefined {
-  return typeof value === "number" && Number.isFinite(value) ? value : undefined;
+function climateStatus(
+  climate: ClimateView | null,
+  unavailable: boolean,
+  target: number,
+  state: string | undefined,
+  t: (key: MessageKey, params?: TranslateParams) => string,
+): string {
+  if (unavailable) return t("widget.state.unavailable");
+  const unit = climate?.unit ?? "";
+  const value = `${target}${unit}`;
+  if (climate?.heating && climate.target != null) {
+    return t("widget.climate.heatingTo", { value });
+  }
+  if (climate?.cooling && climate.target != null) {
+    return t("widget.climate.coolingTo", { value });
+  }
+  if (climate?.current != null) {
+    return t("widget.climate.currentValue", {
+      value: `${climate.current}${unit}`,
+    });
+  }
+  return state ?? "";
 }
 
 export function ClimateTile({ config, size }: WidgetBodyProps) {
   const t = useT();
   const callService = useCallService();
   const { entityId, entity, title, unavailable, openEntityDetail } = useTile(config);
-
-  const attrs = entity?.attributes ?? {};
-  const unit = typeof attrs.temperature_unit === "string" ? attrs.temperature_unit : "";
-  const current = num(attrs.current_temperature);
-  const [target, setOptimisticTarget] = useOptimistic(num(attrs.temperature) ?? 0);
-
-  const isOff = !entity || entity.state === "off";
-  const hasTarget = num(attrs.temperature) != null;
+  const climate = entity ? deriveClimate(entity) : null;
+  const unit = climate?.unit ?? "";
+  const [target, setOptimisticTarget] = useOptimistic(climate?.target ?? 0);
+  const hasTarget = climate?.target != null;
+  const isOff = !entity || climate?.isOff;
+  const headline = climateStatus(
+    climate,
+    unavailable,
+    target,
+    entity?.state,
+    t,
+  );
 
   const step = (delta: number) => {
     if (unavailable || !hasTarget) return;
-    const next = Math.round((target + delta) * 2) / 2;
+    const next = stepClimateTarget(target, delta);
     setOptimisticTarget(next);
     callService("climate", "set_temperature", {
       entity_id: entityId,
@@ -41,13 +70,7 @@ export function ClimateTile({ config, size }: WidgetBodyProps) {
   return (
     <WidgetTile
       title={title}
-      status={
-        unavailable
-          ? t("widget.state.unavailable")
-          : current != null
-            ? t("widget.climate.currentValue", { value: `${current}${unit}` })
-            : (entity?.state ?? "")
-      }
+      status={headline}
       icon={isOff ? "thermometer-outline" : "flame-outline"}
       size={size}
       active={!isOff && !unavailable}
@@ -63,18 +86,18 @@ export function ClimateTile({ config, size }: WidgetBodyProps) {
           </View>
           {/* The setpoint needs a stop either side of it; a half tile sends the
               stepper to the detail sheet rather than squeeze it in. */}
-          {size === "md" ? (
+          {size !== "sm" ? (
             <View className="flex-row gap-2">
               <TileButton
                 icon="remove"
                 label={t("widget.climate.cooler")}
-                onPress={() => step(-STEP)}
+                onPress={() => step(-CLIMATE_STEP)}
                 disabled={unavailable}
               />
               <TileButton
                 icon="add"
                 label={t("widget.climate.warmer")}
-                onPress={() => step(STEP)}
+                onPress={() => step(CLIMATE_STEP)}
                 disabled={unavailable}
               />
             </View>

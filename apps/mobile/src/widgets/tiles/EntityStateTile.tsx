@@ -1,10 +1,13 @@
+import { formatAllOrFraction, isDetectedState, stringAttr, type GroupTally, type HassEntity } from "@ethio/ha-sdk";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { Text } from "heroui-native";
 import { View } from "react-native";
 
+import type { MessageKey, TranslateParams } from "@/i18n";
 import { useT } from "@/store/locale-store";
 import { entityDomain } from "@/store/use-entity";
 import type { WidgetBodyProps } from "@/widgets/types";
+import { useGroupTally } from "@/widgets/use-group";
 import { useTile } from "@/widgets/use-tile";
 import { WidgetTile } from "@/widgets/WidgetTile";
 
@@ -24,29 +27,42 @@ const DEVICE_CLASS_ICONS: Record<string, keyof typeof Ionicons.glyphMap> = {
   smoke: "flame-outline",
 };
 
+function sensorValue(
+  unavailable: boolean,
+  isBinary: boolean,
+  grouped: boolean,
+  tally: GroupTally,
+  entity: HassEntity | undefined,
+  t: (key: MessageKey, params?: TranslateParams) => string,
+): string {
+  if (unavailable) return "—";
+  if (grouped) {
+    return formatAllOrFraction(tally.active, tally.total, {
+      all: "All on",
+      none: "All off",
+      word: "on",
+    });
+  }
+  if (isBinary) {
+    return entity?.state === "on"
+      ? t("widget.state.detected")
+      : t("widget.state.clear");
+  }
+  return entity?.state ?? "—";
+}
+
 export function EntityStateTile({ config, size }: WidgetBodyProps) {
   const t = useT();
   const { entityId, entity, title, unavailable, openEntityDetail } = useTile(config);
+  const { members, tally } = useGroupTally(config, entity, isDetectedState);
 
-  const deviceClass =
-    typeof entity?.attributes.device_class === "string"
-      ? entity.attributes.device_class
-      : "";
-  const unit =
-    typeof entity?.attributes.unit_of_measurement === "string"
-      ? entity.attributes.unit_of_measurement
-      : "";
+  const deviceClass = stringAttr(entity?.attributes ?? {}, "device_class") ?? "";
+  const unit = stringAttr(entity?.attributes ?? {}, "unit_of_measurement") ?? "";
 
   const isBinary = entityDomain(entityId) === "binary_sensor";
-  const active = isBinary && entity?.state === "on";
-
-  const value = unavailable
-    ? "—"
-    : isBinary
-      ? entity?.state === "on"
-        ? t("widget.state.detected")
-        : t("widget.state.clear")
-      : (entity?.state ?? "—");
+  const grouped = isBinary && members.length > 1;
+  const active = isBinary && (grouped ? tally.active > 0 : entity?.state === "on");
+  const value = sensorValue(unavailable, isBinary, grouped, tally, entity, t);
 
   return (
     <WidgetTile

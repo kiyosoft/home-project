@@ -26,7 +26,11 @@ export default function TabLayout() {
   }
 
   return (
-    <NativeTabs minimizeBehavior="onScrollDown" tintColor={tintColor}>
+    <NativeTabs
+      minimizeBehavior="onScrollDown"
+      tintColor={tintColor}
+      backgroundColor="transparent"
+    >
       <NativeTabs.Trigger name="home">
         <Label>{t("tabs.home")}</Label>
         <Icon

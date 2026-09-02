@@ -22,6 +22,12 @@ export type { Hsv, Rgb } from "./color-utils";
 export { cx } from "./cx";
 export { useThemeSurface } from "./theme-surface";
 export type { ThemeSurface } from "./theme-surface";
+export {
+  cardShellClass,
+  chipShellClass,
+  useCardDensity,
+} from "./use-card-density";
+export type { CardDensity } from "./use-card-density";
 export { useElementSize } from "./use-element-size";
 export type { ElementSize } from "./use-element-size";
 export { useLiveValue, useThrottledEmit } from "./use-live-value";

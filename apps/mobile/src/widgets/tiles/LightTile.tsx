@@ -1,4 +1,4 @@
-import { deriveLight } from "@ethio/ha-sdk";
+import { deriveLight, formatFraction, isOnState } from "@ethio/ha-sdk";
 import { Slider } from "heroui-native";
 import { useCallback } from "react";
 import { View } from "react-native";
@@ -10,6 +10,7 @@ import { LampSwitch } from "@/widgets/light/LampSwitch";
 import { useLightWash } from "@/widgets/light/light-wash";
 import { useDimDrag } from "@/widgets/light/use-dim-drag";
 import { singleSliderValue, type WidgetBodyProps } from "@/widgets/types";
+import { useGroupTally } from "@/widgets/use-group";
 import { useOptimistic } from "@/widgets/use-optimistic";
 import { useCallService } from "@/widgets/use-service";
 import { useTile } from "@/widgets/use-tile";
@@ -20,6 +21,11 @@ export function LightTile({ config, size }: WidgetBodyProps) {
   const callService = useCallService();
   const { entityId, entity, title, unavailable, sheet } = useTile(config);
   const light = deriveLight(entity);
+  const { members, tally } = useGroupTally(config, entity, isOnState);
+  const groupStatus =
+    members.length > 1
+      ? formatFraction(tally.active, tally.total, "on")
+      : null;
 
   const [isOn, setOptimisticOn] = useOptimistic(light?.isOn ?? false);
   const [brightness, setOptimisticBrightness] = useOptimistic(
@@ -66,7 +72,7 @@ export function LightTile({ config, size }: WidgetBodyProps) {
   // would fight a hold-and-drag on the same card. A half tile has no room for
   // a slider, so that is where holding the tile becomes the dimmer.
   // Colour lives in the detail sheet either way: two strips crowd a tile.
-  const showSlider = size === "md" && dimmable;
+  const showSlider = size !== "sm" && dimmable;
   const canDrag = dimmable && !showSlider && !unavailable;
 
   const dim = useDimDrag({
@@ -87,11 +93,13 @@ export function LightTile({ config, size }: WidgetBodyProps) {
 
   const status = unavailable
     ? t("widget.state.unavailable")
-    : isOn
-      ? light?.supportsBrightness
-        ? t("widget.brightnessValue", { percent: brightness })
-        : t("widget.state.on")
-      : t("widget.state.off");
+    : groupStatus
+      ? groupStatus
+      : isOn
+        ? light?.supportsBrightness
+          ? t("widget.brightnessValue", { percent: brightness })
+          : t("widget.state.on")
+        : t("widget.state.off");
 
   const tile = (
     <WidgetTile

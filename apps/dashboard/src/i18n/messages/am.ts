@@ -52,6 +52,12 @@ export const am: Record<MessageKey, string> = {
   "header.pillUnavailable": "አይገኝም",
   "header.pillActivated": "ተሰርቷል",
   "header.welcomeHome": "እንኳን ደህና መጡ, {name}",
+  "header.greetingMorning": "እንደምን አደሩ",
+  "header.greetingAfternoon": "እንደምን አረፈዱ",
+  "header.greetingEvening": "እንደምን አመሹ",
+  "header.lightsOn": "{count} በርተዋል",
+  "header.lightsOnOne": "1 በርቷል",
+  "header.lightsChipAria": "ያሉ መብራቶች",
   "runtime.editHelp": "የአርትዖት ሁነታ — ይጎትቱ፣ መጠን ይቀይሩ፣ ይጀምሩ እና ዊጄቶችን ያዋቅሩ። ለውጦች በራስ-ሰር ይቀመጣሉ።",
   "runtime.demoHelp": "የሙከራ ኤንቲቲዎች በቀጥታ ይዘምናሉ። ዝርዝሮችን ለማየት ሴንሰሮችን ይንኩ፤ ማብሪያ/ማጥፊያዎች በመንካት ይሰራሉ፤ ሙሉ አትሪቢዩት ሉህ ለማየት ማንኛውንም ኤንቲቲ ይጫኑ።",
   "runtime.liveHelp": "ከ ሆም አሲስታንትዎ የቀጥታ ኤንቲቲዎች። ዝርዝሮችን ለማየት ሴንሰሮችን ይንኩ፤ አትሪቢዩቶችን ለማየት ማንኛውንም ኤንቲቲ ይጫኑ።",
@@ -203,6 +209,9 @@ export const am: Record<MessageKey, string> = {
   "schema.apply": "ተግብር",
   "schema.title": "ርዕስ",
   "schema.titlePlaceholder": "አማራጭ ብጁ ርዕስ",
+  "schema.ethiopianHours": "የኢትዮጵያ ሰዓት",
+  "schema.ethiopianHoursHelp":
+    "ሰዓቱን ከ6:00 ጀምሮ በ12 ሰዓት ቀንና ሌሊት ያሳዩ።",
   "textCard.placeholder":
     "ጽሑፍ ይጫፉ… ለቀጥታ እሴቶች {{ states('sensor.temp') }} ይጠቀሙ",
   "textCard.templateHint":

@@ -118,6 +118,48 @@ const DEMO_ENTITIES: HassEntities = {
       effect: "none",
     },
   },
+  "light.living_lamp": {
+    entity_id: "light.living_lamp",
+    state: "on",
+    attributes: {
+      friendly_name: "Living Lamp",
+      brightness: 160,
+      color_mode: "brightness",
+      supported_color_modes: ["brightness"],
+    },
+  },
+  "light.living_floor": {
+    entity_id: "light.living_floor",
+    state: "on",
+    attributes: {
+      friendly_name: "Floor Lamp",
+      brightness: 120,
+      color_mode: "brightness",
+      supported_color_modes: ["brightness"],
+    },
+  },
+  "light.living_lights": {
+    entity_id: "light.living_lights",
+    state: "on",
+    attributes: {
+      friendly_name: "Lights",
+      brightness: 153,
+      entity_id: [
+        "light.living_room",
+        "light.living_lamp",
+        "light.living_floor",
+      ],
+      supported_color_modes: ["brightness"],
+    },
+  },
+  "light.bedroom": {
+    entity_id: "light.bedroom",
+    state: "off",
+    attributes: {
+      friendly_name: "Bedroom Light",
+      supported_color_modes: ["brightness"],
+    },
+  },
   "camera.front_door": {
     entity_id: "camera.front_door",
     state: "idle",
@@ -138,6 +180,24 @@ const DEMO_ENTITIES: HassEntities = {
       friendly_name: "Front Door Lock",
       supported_features: 1,
       changed_by: "Demo User",
+    },
+  },
+  "lock.back_door": {
+    entity_id: "lock.back_door",
+    state: "locked",
+    attributes: {
+      friendly_name: "Back Door Lock",
+      supported_features: 1,
+      changed_by: "Demo User",
+    },
+  },
+  "lock.house": {
+    entity_id: "lock.house",
+    state: "locked",
+    attributes: {
+      friendly_name: "Locks",
+      supported_features: 1,
+      entity_id: ["lock.front_door", "lock.back_door"],
     },
   },
   "alarm_control_panel.home": {
@@ -171,6 +231,21 @@ const DEMO_ENTITIES: HassEntities = {
       friendly_name: "Porch Switch",
     },
   },
+  "switch.kitchen": {
+    entity_id: "switch.kitchen",
+    state: "on",
+    attributes: {
+      friendly_name: "Kitchen Switch",
+    },
+  },
+  "switch.living": {
+    entity_id: "switch.living",
+    state: "on",
+    attributes: {
+      friendly_name: "Switches",
+      entity_id: ["switch.porch", "switch.kitchen"],
+    },
+  },
   "sensor.outdoor_temperature": {
     entity_id: "sensor.outdoor_temperature",
     state: "21.4",
@@ -180,12 +255,92 @@ const DEMO_ENTITIES: HassEntities = {
       device_class: "temperature",
     },
   },
+  "sensor.living_temperature": {
+    entity_id: "sensor.living_temperature",
+    state: "22.1",
+    attributes: {
+      friendly_name: "Living Temperature",
+      unit_of_measurement: "°C",
+      device_class: "temperature",
+    },
+  },
+  "sensor.kitchen_temperature": {
+    entity_id: "sensor.kitchen_temperature",
+    state: "21.4",
+    attributes: {
+      friendly_name: "Kitchen Temperature",
+      unit_of_measurement: "°C",
+      device_class: "temperature",
+    },
+  },
+  "sensor.bedroom_temperature": {
+    entity_id: "sensor.bedroom_temperature",
+    state: "21.9",
+    attributes: {
+      friendly_name: "Bedroom Temperature",
+      unit_of_measurement: "°C",
+      device_class: "temperature",
+    },
+  },
+  "sensor.lock_battery": {
+    entity_id: "sensor.lock_battery",
+    state: "88",
+    attributes: {
+      friendly_name: "Front Door Lock Battery",
+      unit_of_measurement: "%",
+      device_class: "battery",
+    },
+  },
+  "sensor.remote_battery": {
+    entity_id: "sensor.remote_battery",
+    state: "92",
+    attributes: {
+      friendly_name: "Remote Battery",
+      unit_of_measurement: "%",
+      device_class: "battery",
+    },
+  },
+  "sensor.motion_battery": {
+    entity_id: "sensor.motion_battery",
+    state: "78",
+    attributes: {
+      friendly_name: "Motion Sensor Battery",
+      unit_of_measurement: "%",
+      device_class: "battery",
+    },
+  },
+  "sensor.door_battery": {
+    entity_id: "sensor.door_battery",
+    state: "84",
+    attributes: {
+      friendly_name: "Door Sensor Battery",
+      unit_of_measurement: "%",
+      device_class: "battery",
+    },
+  },
   "binary_sensor.front_door": {
     entity_id: "binary_sensor.front_door",
     state: "off",
     attributes: {
       friendly_name: "Front Door",
       device_class: "door",
+    },
+  },
+  "binary_sensor.front_window": {
+    entity_id: "binary_sensor.front_window",
+    state: "off",
+    attributes: {
+      friendly_name: "Front Window",
+      device_class: "window",
+    },
+  },
+  "binary_sensor.front_entry": {
+    entity_id: "binary_sensor.front_entry",
+    state: "off",
+    attributes: {
+      friendly_name: "Front Door",
+      device_class: "door",
+      entity_id: ["binary_sensor.front_door", "binary_sensor.front_window"],
     },
   },
   "binary_sensor.fasting": {
@@ -306,6 +461,36 @@ const DEMO_ENTITIES: HassEntities = {
       supported_features: 15,
     },
   },
+  "cover.living_sheer": {
+    entity_id: "cover.living_sheer",
+    state: "open",
+    attributes: {
+      friendly_name: "Living Sheer",
+      current_position: 100,
+      supported_features: 15,
+    },
+  },
+  "cover.living_windows": {
+    entity_id: "cover.living_windows",
+    state: "open",
+    attributes: {
+      friendly_name: "Blinds",
+      current_position: 90,
+      supported_features: 15,
+      entity_id: ["cover.living_blinds", "cover.living_sheer"],
+    },
+  },
+  "fan.living_purifier": {
+    entity_id: "fan.living_purifier",
+    state: "on",
+    attributes: {
+      friendly_name: "Purifier",
+      percentage: 40,
+      percentage_step: 20,
+      oscillating: false,
+      supported_features: 1,
+    },
+  },
   "person.kidus": {
     entity_id: "person.kidus",
     state: "not_home",
@@ -321,10 +506,29 @@ const DEMO_ENTITIES: HassEntities = {
     state: "partlycloudy",
     attributes: {
       friendly_name: "Home Weather",
-      temperature: 24,
+      temperature: 23,
       temperature_unit: "°C",
-      humidity: 48,
+      apparent_temperature: 22,
+      humidity: 50,
       wind_speed: 12,
+      wind_speed_unit: "km/h",
+      forecast: [
+        {
+          datetime: new Date().toISOString(),
+          temperature: 23,
+          condition: "partlycloudy",
+        },
+        {
+          datetime: new Date(Date.now() + 3 * 60 * 60 * 1000).toISOString(),
+          temperature: 25,
+          condition: "sunny",
+        },
+        {
+          datetime: new Date(Date.now() + 8 * 60 * 60 * 1000).toISOString(),
+          temperature: 21,
+          condition: "cloudy",
+        },
+      ],
     },
   },
   "media_player.homepod": {
@@ -333,9 +537,9 @@ const DEMO_ENTITIES: HassEntities = {
     attributes: {
       friendly_name: "Living Room HomePod",
       app_name: "Music Assistant",
-      media_title: DEMO_TRACKS[0].title,
-      media_artist: DEMO_TRACKS[0].artist,
-      media_album_name: DEMO_TRACKS[0].album,
+      media_title: "Chill Station",
+      media_artist: "Lo-fi Beats",
+      media_album_name: "Evening",
       media_content_id: DEMO_TRACKS[0].id,
       media_content_type: DEMO_TRACKS[0].contentType,
       media_duration: DEMO_TRACKS[0].duration,
@@ -402,6 +606,7 @@ const DEMO_ENTITIES: HassEntities = {
 
 const DEMO_AREAS: AreaRegistryEntry[] = [
   { area_id: "living_room", name: "Living Room", icon: "mdi:sofa", floor_id: "ground" },
+  { area_id: "bedroom", name: "Bedroom", icon: "mdi:bed", floor_id: "ground" },
   { area_id: "front_door", name: "Front Door", icon: "mdi:door", floor_id: "ground" },
   { area_id: "kitchen", name: "Kitchen", icon: "mdi:silverware-fork-knife", floor_id: "ground" },
   { area_id: "outdoors", name: "Outdoors", icon: "mdi:tree", floor_id: null },
@@ -410,11 +615,24 @@ const DEMO_AREAS: AreaRegistryEntry[] = [
 /** Entities wired straight to an area, with no device in between. */
 const DEMO_ENTITY_AREAS: Record<string, string> = {
   "light.living_room": "living_room",
+  "light.living_lamp": "living_room",
+  "light.living_floor": "living_room",
+  "light.living_lights": "living_room",
+  "light.bedroom": "bedroom",
   "climate.living_room": "living_room",
   "cover.living_blinds": "living_room",
+  "cover.living_sheer": "living_room",
+  "cover.living_windows": "living_room",
+  "fan.living_purifier": "living_room",
   "media_player.homepod": "living_room",
+  "sensor.living_temperature": "living_room",
+  "sensor.bedroom_temperature": "bedroom",
+  "sensor.kitchen_temperature": "kitchen",
   "binary_sensor.front_door": "front_door",
+  "binary_sensor.front_window": "front_door",
+  "binary_sensor.front_entry": "front_door",
   "switch.porch": "outdoors",
+  "switch.kitchen": "kitchen",
   "sensor.outdoor_temperature": "outdoors",
   "todo.shopping_list": "kitchen",
 };
@@ -427,6 +645,8 @@ const DEMO_DEVICES: DeviceRegistryEntry[] = [
 const DEMO_DEVICE_ENTITIES: Record<string, string> = {
   "camera.front_door": "demo-device-front-door",
   "lock.front_door": "demo-device-front-door",
+  "lock.back_door": "demo-device-front-door",
+  "lock.house": "demo-device-front-door",
 };
 
 function demoEntityRegistry(): EntityRegistryEntry[] {
@@ -998,7 +1218,10 @@ export function connectDemo(): EntityClient {
       }
 
       const isToggleDomain =
-        domain === "light" || domain === "switch" || domain === "input_boolean";
+        domain === "light" ||
+        domain === "switch" ||
+        domain === "input_boolean" ||
+        domain === "fan";
 
       if (
         isToggleDomain &&
@@ -1058,6 +1281,51 @@ export function connectDemo(): EntityClient {
           state: nextState,
           attributes,
         });
+
+        const members = Array.isArray(current.attributes.entity_id)
+          ? current.attributes.entity_id.filter(
+              (id): id is string => typeof id === "string",
+            )
+          : [];
+        for (const memberId of members) {
+          const member = entities[memberId];
+          if (!member) continue;
+          const memberAttributes = { ...member.attributes };
+          if (domain === "light" && nextState === "off") {
+            delete memberAttributes.brightness;
+            delete memberAttributes.rgb_color;
+            delete memberAttributes.color_temp_kelvin;
+            delete memberAttributes.effect;
+          }
+          if (domain === "fan") {
+            memberAttributes.percentage =
+              nextState === "on"
+                ? (typeof memberAttributes.percentage === "number"
+                    ? memberAttributes.percentage
+                    : 40)
+                : 0;
+          }
+          setEntity(memberId, {
+            ...member,
+            state: nextState,
+            attributes: memberAttributes,
+          });
+        }
+        return;
+      }
+
+      if (domain === "fan" && service === "set_percentage") {
+        const percentage =
+          typeof serviceData.percentage === "number"
+            ? serviceData.percentage
+            : Number(serviceData.percentage);
+        if (!Number.isFinite(percentage)) return;
+        const clamped = Math.min(100, Math.max(0, percentage));
+        setEntity(entityId, {
+          ...current,
+          state: clamped > 0 ? "on" : "off",
+          attributes: { ...current.attributes, percentage: clamped },
+        });
         return;
       }
 
@@ -1088,6 +1356,32 @@ export function connectDemo(): EntityClient {
             setEntity(entityId, { ...latest, state: settled });
           }, LOCK_TRAVEL_MS),
         );
+
+        const lockMembers = Array.isArray(current.attributes.entity_id)
+          ? current.attributes.entity_id.filter(
+              (id): id is string => typeof id === "string",
+            )
+          : [];
+        for (const memberId of lockMembers) {
+          const member = entities[memberId];
+          if (!member) continue;
+          const pending = lockTimers.get(memberId);
+          if (pending) clearTimeout(pending);
+          setEntity(memberId, {
+            ...member,
+            state: settled === "locked" ? "locking" : "unlocking",
+          });
+          lockTimers.set(
+            memberId,
+            setTimeout(() => {
+              lockTimers.delete(memberId);
+              if (closed) return;
+              const latest = entities[memberId];
+              if (!latest) return;
+              setEntity(memberId, { ...latest, state: settled });
+            }, LOCK_TRAVEL_MS),
+          );
+        }
         return;
       }
 
@@ -1143,6 +1437,28 @@ export function connectDemo(): EntityClient {
           setEntity(entityId, { ...current, state: "closed", attributes });
         } else if (service === "stop_cover") {
           setEntity(entityId, { ...current, state: "open", attributes });
+        }
+        const coverMembers = Array.isArray(current.attributes.entity_id)
+          ? current.attributes.entity_id.filter(
+              (id): id is string => typeof id === "string",
+            )
+          : [];
+        for (const memberId of coverMembers) {
+          const member = entities[memberId];
+          if (!member) continue;
+          if (service === "open_cover") {
+            setEntity(memberId, {
+              ...member,
+              state: "open",
+              attributes: { ...member.attributes, current_position: 100 },
+            });
+          } else if (service === "close_cover") {
+            setEntity(memberId, {
+              ...member,
+              state: "closed",
+              attributes: { ...member.attributes, current_position: 0 },
+            });
+          }
         }
         return;
       }
@@ -1558,21 +1874,33 @@ export const DEMO_CURRENT_USER = {
 
 export const DEMO_ENTITY_IDS = {
   light: "light.living_room",
+  lights: "light.living_lights",
+  bedroomLight: "light.bedroom",
   switch: "switch.porch",
+  switches: "switch.living",
   sensor: "sensor.outdoor_temperature",
+  climateSensors: [
+    "sensor.living_temperature",
+    "sensor.kitchen_temperature",
+    "sensor.bedroom_temperature",
+  ],
   binarySensor: "binary_sensor.front_door",
+  frontEntry: "binary_sensor.front_entry",
   fasting: "binary_sensor.fasting",
   inputBoolean: "input_boolean.guest_mode",
   teamtracker: "sensor.demo_arsenal",
   sinksar: "sensor.demo_sinksar",
   climate: "climate.living_room",
   cover: "cover.living_blinds",
+  blinds: "cover.living_windows",
+  fan: "fan.living_purifier",
   person: "person.kidus",
   weather: "weather.home",
   media: "media_player.homepod",
   todo: "todo.shopping_list",
   camera: "camera.front_door",
   lock: "lock.front_door",
+  locks: "lock.house",
   alarm: "alarm_control_panel.home",
   calendar: "calendar.family",
   movieNight: "scene.movie_night",
@@ -1580,4 +1908,6 @@ export const DEMO_ENTITY_IDS = {
   goodNight: "scene.good_night",
   away: "scene.away",
   guestWelcome: "script.guest_welcome",
+  livingArea: "living_room",
+  bedroomArea: "bedroom",
 } as const;

@@ -1,8 +1,11 @@
 import {
   clamp,
   deriveLight,
+  groupMemberIds,
   lightColor,
   lightIntensity,
+  numericAttr,
+  stringAttr,
   type HassEntities,
   type Rgb,
 } from "@ethio/ha-sdk";
@@ -43,10 +46,6 @@ const EMPTY: HomeSummary = {
 
 /** A lamp dimmed to nothing still has a hue worth blending. */
 const MIN_COLOR_WEIGHT = 0.05;
-
-function num(value: unknown): number | undefined {
-  return typeof value === "number" && Number.isFinite(value) ? value : undefined;
-}
 
 /**
  * Weighted mean hue, but the intensities combine rather than average: two lamps
@@ -102,6 +101,7 @@ export function summarizeHome(entities: HassEntities): HomeSummary {
 
     switch (entityDomain(entityId)) {
       case "light": {
+        if (groupMemberIds(entity).length > 0) break;
         const light = deriveLight(entity);
         if (!light?.isOn) break;
         lightsOn += 1;
@@ -121,13 +121,16 @@ export function summarizeHome(entities: HassEntities): HomeSummary {
         break;
       }
       case "climate": {
-        const current = num(entity.attributes.current_temperature);
+        const current = numericAttr(
+          entity.attributes,
+          "current_temperature",
+        );
         if (current === undefined) break;
         tempTotal += current;
         tempCount += 1;
         if (!temperatureUnit) {
-          const unit = entity.attributes.temperature_unit;
-          if (typeof unit === "string") temperatureUnit = unit;
+          temperatureUnit =
+            stringAttr(entity.attributes, "temperature_unit") ?? "";
         }
         break;
       }

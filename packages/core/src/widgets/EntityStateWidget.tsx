@@ -1,99 +1,94 @@
 import { Activity } from "lucide-react";
 import { z } from "zod";
 
+import { boundEntityIds, formatAllOrFraction, isDetectedState, stringAttr, tallyEntities } from "@ethio/ha-sdk";
 import {
   defineWidget,
+  useEntities,
   useEntity,
   useEntityDetail,
   type WidgetComponentProps,
 } from "@ethio/plugin-sdk";
+
+import { cardShellClass, chipShellClass, cx, useCardDensity } from "../ui";
+import { cardActivateProps } from "./card-activate";
+import { ChipFace } from "./ChipFace";
+import { friendlyName, widgetEntityId, widgetTitle } from "./names";
+import { WidgetPlaceholder } from "./WidgetPlaceholder";
 
 export const entityStateConfigSchema = z.object({
   title: z.string().default(""),
   entity_id: z.string().min(1, "Entity is required"),
 });
 
-function getFriendlyName(entity: {
-  entity_id: string;
-  attributes: Record<string, unknown>;
-}): string {
-  const name = entity.attributes.friendly_name;
-  if (typeof name === "string" && name.trim()) return name;
-  return entity.entity_id;
-}
-
-function getUnit(entity: { attributes: Record<string, unknown> }): string | undefined {
-  const unit = entity.attributes.unit_of_measurement;
-  return typeof unit === "string" ? unit : undefined;
-}
-
 function EntityStateWidget({ config, interactive }: WidgetComponentProps) {
-  const entityId =
-    typeof config.entity_id === "string" ? config.entity_id : "";
-  const customTitle = typeof config.title === "string" ? config.title.trim() : "";
+  const entityId = widgetEntityId(config);
+  const customTitle = widgetTitle(config);
   const entity = useEntity(entityId);
+  const entities = useEntities();
   const entityDetail = useEntityDetail();
+  const { ref, compact, tight, chip } = useCardDensity();
 
-  if (!entityId) {
+  if (!entityId || !entity) {
     return (
-      <div className="flex h-full min-h-36 flex-col rounded-2xl border border-border bg-card p-5 text-card-foreground shadow-sm">
-        <h3 className="font-display text-base font-semibold">
-          {customTitle || "No sensor found"}
-        </h3>
-        <p className="mt-2 text-sm text-muted-foreground">
-          Pick a sensor entity in widget settings.
-        </p>
-      </div>
+      <WidgetPlaceholder
+        title={customTitle || entityId || "No sensor found"}
+        message={
+          entityId
+            ? "Entity unavailable"
+            : "Pick a sensor entity in widget settings."
+        }
+        dashed={Boolean(entityId)}
+      />
     );
   }
 
-  if (!entity) {
-    return (
-      <div className="flex h-full min-h-36 flex-col rounded-2xl border border-dashed border-border bg-card p-5 text-card-foreground">
-        <h3 className="font-display text-base font-semibold">
-          {customTitle || entityId}
-        </h3>
-        <p className="mt-2 text-sm text-muted-foreground">Entity unavailable</p>
-      </div>
-    );
-  }
-
-  const unit = getUnit(entity);
-  const displayTitle = customTitle || getFriendlyName(entity);
+  const unit = stringAttr(entity.attributes, "unit_of_measurement");
+  const displayTitle = customTitle || friendlyName(entity, "Sensor");
   const isBinary = entity.entity_id.startsWith("binary_sensor.");
+  const members = boundEntityIds({ entity_id: entityId }, entity);
+  const tally = tallyEntities(entities, members, isDetectedState);
   const displayState = isBinary
-    ? entity.state === "on"
-      ? "Open / Detected"
-      : "Clear"
+    ? members.length > 1
+      ? formatAllOrFraction(tally.active, tally.total, {
+          all: "All on",
+          none: "All off",
+          word: "on",
+        })
+      : entity.state === "on"
+        ? "Open / Detected"
+        : "Clear"
     : entity.state;
 
   return (
     <div
-      role={interactive ? "button" : undefined}
-      tabIndex={interactive ? 0 : undefined}
-      onClick={interactive ? () => entityDetail.open(entityId) : undefined}
-      onKeyDown={
-        interactive
-          ? (event) => {
-              if (event.key === "Enter" || event.key === " ") {
-                event.preventDefault();
-                entityDetail.open(entityId);
-              }
-            }
-          : undefined
-      }
-      className={`flex h-full min-h-36 flex-col overflow-hidden rounded-2xl border border-border bg-card p-5 text-card-foreground shadow-sm outline-none transition-colors ${
+      ref={ref}
+      {...cardActivateProps(interactive, () => entityDetail.open(entityId))}
+      className={cx(
+        chip ? chipShellClass : cardShellClass,
+        "border-border bg-card text-card-foreground outline-none transition-colors",
+        !chip && "border shadow-sm",
+        !chip && (compact ? "p-4" : "p-5"),
         interactive
           ? "cursor-pointer hover:border-primary/40 focus-visible:ring-2 focus-visible:ring-ring"
-          : ""
-      }`}
+          : "",
+      )}
     >
+      {chip ? (
+        <ChipFace
+          title={displayTitle}
+          status={unit ? `${displayState} ${unit}` : displayState}
+          icon={Activity}
+          active={entity.state !== "unavailable" && entity.state !== "off"}
+        />
+      ) : (
+      <>
       <div className="flex items-start justify-between gap-3">
-        <div>
+        <div className="min-w-0">
           <p className="text-xs uppercase tracking-[0.14em] text-muted-foreground">
             Sensor
           </p>
-          <h3 className="mt-1 font-display text-base font-semibold tracking-tight">
+          <h3 className="mt-1 truncate font-display text-base font-semibold tracking-tight">
             {displayTitle}
           </h3>
         </div>
@@ -102,9 +97,11 @@ function EntityStateWidget({ config, interactive }: WidgetComponentProps) {
         </div>
       </div>
       <p
-        className={`mt-4 font-display text-3xl font-semibold tracking-tight ${
-          entity.state === "unavailable" ? "text-muted-foreground" : ""
-        }`}
+        className={cx(
+          "mt-4 font-display font-semibold tracking-tight",
+          compact ? "text-xl" : "text-3xl",
+          entity.state === "unavailable" ? "text-muted-foreground" : "",
+        )}
       >
         {displayState}
         {unit ? (
@@ -113,9 +110,13 @@ function EntityStateWidget({ config, interactive }: WidgetComponentProps) {
           </span>
         ) : null}
       </p>
-      <p className="mt-2 truncate text-xs text-muted-foreground">
-        {entity.entity_id}
-      </p>
+      {tight ? null : (
+        <p className="mt-2 truncate text-xs text-muted-foreground">
+          {entity.entity_id}
+        </p>
+      )}
+      </>
+      )}
     </div>
   );
 }
@@ -127,8 +128,8 @@ export const entityStateWidget = defineWidget({
   component: EntityStateWidget,
   configSchema: entityStateConfigSchema,
   defaultConfig: { title: "", entity_id: "" },
-  defaultSize: { w: 4, h: 3, minW: 2, minH: 2, maxW: 12, maxH: 6 },
-  minSize: { w: 2, h: 2 },
+  defaultSize: { w: 4, h: 1, minW: 2, minH: 1, maxW: 12, maxH: 6 },
+  minSize: { w: 2, h: 1 },
   maxSize: { w: 12, h: 6 },
   entityDomains: ["sensor", "binary_sensor"],
   capabilities: ["entity.read"],

@@ -1,3 +1,4 @@
+import { Lightbulb } from "lucide-react";
 import { useCallback, useRef, type KeyboardEvent } from "react";
 import { z } from "zod";
 
@@ -5,16 +6,20 @@ import {
   defineWidget,
   PluginScope,
   useDetailModal,
+  useEntities,
   useLight,
   usePluginId,
   type WidgetComponentProps,
 } from "@ethio/plugin-sdk";
+import { boundEntityIds, formatFraction, isOnState, tallyEntities } from "@ethio/ha-sdk";
 
 import {
   ColorStrip,
   Slider,
   Switch,
-  useElementSize,
+  cardShellClass,
+  chipShellClass,
+  useCardDensity,
   useServiceValue,
   useThemeSurface,
 } from "../ui";
@@ -24,6 +29,9 @@ import {
   hueToRgb,
   lightWash,
 } from "./light/light-visuals";
+import { ChipFace } from "./ChipFace";
+import { widgetEntityId, widgetTitle } from "./names";
+import { WidgetPlaceholder } from "./WidgetPlaceholder";
 
 export const lightConfigSchema = z.object({
   title: z.string().default(""),
@@ -33,7 +41,6 @@ export const lightConfigSchema = z.object({
 /** Enough room for the hue strip without crowding the dimmer. */
 const HUE_STRIP_MIN_HEIGHT = 210;
 const HUE_STRIP_MIN_WIDTH = 200;
-const COMPACT_HEIGHT = 172;
 
 function stopPropagation(event: { stopPropagation: () => void }) {
   event.stopPropagation();
@@ -44,15 +51,20 @@ function stopKeys(event: KeyboardEvent) {
 }
 
 function LightWidget({ config, interactive = true }: WidgetComponentProps) {
-  const entityId =
-    typeof config.entity_id === "string" ? config.entity_id : "";
-  const customTitle =
-    typeof config.title === "string" ? config.title.trim() : "";
+  const entityId = widgetEntityId(config);
+  const customTitle = widgetTitle(config);
   const light = useLight(entityId);
+  const entities = useEntities();
+  const members = boundEntityIds({ entity_id: entityId }, entities[entityId]);
+  const lightTally = tallyEntities(entities, members, isOnState);
+  const groupStatus =
+    members.length > 1
+      ? formatFraction(lightTally.active, lightTally.total, "on")
+      : null;
   const detailModal = useDetailModal();
   const pluginId = usePluginId();
   const surface = useThemeSurface();
-  const [cardRef, cardSize] = useElementSize<HTMLDivElement>();
+  const { ref: cardRef, size: cardSize, compact, tight, chip } = useCardDensity();
   // A drag that ends outside the slider gets its click dispatched on the card,
   // where stopPropagation on the control can no longer help.
   const pressedControl = useRef(false);
@@ -88,25 +100,20 @@ function LightWidget({ config, interactive = true }: WidgetComponentProps) {
 
   if (!entityId) {
     return (
-      <div className="flex h-full min-h-36 flex-col rounded-2xl border border-border bg-card p-5 text-card-foreground shadow-sm">
-        <h3 className="font-display text-base font-semibold">
-          {customTitle || "Light"}
-        </h3>
-        <p className="mt-2 text-sm text-muted-foreground">
-          Pick a light entity in settings.
-        </p>
-      </div>
+      <WidgetPlaceholder
+        title={customTitle || "Light"}
+        message="Pick a light entity in settings."
+      />
     );
   }
 
   if (!light) {
     return (
-      <div className="flex h-full min-h-36 flex-col rounded-2xl border border-dashed border-border bg-card p-5">
-        <h3 className="font-display text-base font-semibold">
-          {customTitle || entityId}
-        </h3>
-        <p className="mt-2 text-sm text-muted-foreground">Entity unavailable</p>
-      </div>
+      <WidgetPlaceholder
+        title={customTitle || entityId}
+        message="Entity unavailable"
+        dashed
+      />
     );
   }
 
@@ -124,7 +131,11 @@ function LightWidget({ config, interactive = true }: WidgetComponentProps) {
   });
 
   const unavailable = light.state === "unavailable";
-  const compact = cardSize.height > 0 && cardSize.height < COMPACT_HEIGHT;
+  const lightStatus = light.isOn
+    ? light.supportsBrightness
+      ? `${Math.max(1, brightness.value)}%`
+      : "On"
+    : "Off";
   const showHueStrip =
     light.supportsRgb &&
     light.isOn &&
@@ -163,6 +174,10 @@ function LightWidget({ config, interactive = true }: WidgetComponentProps) {
                 pressedControl.current = false;
                 return;
               }
+              if (chip) {
+                void (light.isOn ? light.turnOff() : light.turnOn());
+                return;
+              }
               openDetail();
             }
           : undefined
@@ -172,16 +187,35 @@ function LightWidget({ config, interactive = true }: WidgetComponentProps) {
           ? (event) => {
               if (event.key === "Enter" || event.key === " ") {
                 event.preventDefault();
+                if (chip) {
+                  void (light.isOn ? light.turnOff() : light.turnOn());
+                  return;
+                }
                 openDetail();
               }
             }
           : undefined
       }
-      className={`flex h-full min-h-36 w-full flex-col rounded-2xl border border-border bg-card text-left text-card-foreground shadow-sm motion-safe:transition-[border-color,box-shadow] motion-safe:duration-300 motion-safe:ease-[cubic-bezier(0.16,1,0.3,1)] ${
-        compact ? "gap-3 p-4" : "gap-4 p-5"
-      } ${light.isOn ? "" : "hover:border-primary/30"}`}
-      style={wash.surfaceStyle}
+      className={
+        chip
+          ? `${chipShellClass} text-left motion-safe:transition-[border-color,box-shadow] motion-safe:duration-300 motion-safe:ease-[cubic-bezier(0.16,1,0.3,1)] ${
+              light.isOn ? "border-primary/30 bg-primary/15" : "border-border bg-card hover:border-primary/30"
+            }`
+          : `${cardShellClass} border border-border bg-card text-left text-card-foreground shadow-sm motion-safe:transition-[border-color,box-shadow] motion-safe:duration-300 motion-safe:ease-[cubic-bezier(0.16,1,0.3,1)] ${
+              compact ? "gap-3 p-4" : "gap-4 p-5"
+            } ${light.isOn ? "" : "hover:border-primary/30"}`
+      }
+      style={chip ? undefined : wash.surfaceStyle}
     >
+      {chip ? (
+        <ChipFace
+          title={displayTitle}
+          status={groupStatus ?? lightStatus}
+          icon={Lightbulb}
+          active={light.isOn}
+        />
+      ) : (
+      <>
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <p
@@ -193,6 +227,14 @@ function LightWidget({ config, interactive = true }: WidgetComponentProps) {
           <h3 className="mt-1 truncate font-display text-base font-semibold tracking-tight">
             {displayTitle}
           </h3>
+          {groupStatus ? (
+            <p className="mt-1 text-sm" style={{ color: wash.inkMuted }}>
+              {groupStatus}
+              {light.supportsBrightness
+                ? ` - ${light.isOn ? brightness.value : 0}%`
+                : ""}
+            </p>
+          ) : null}
         </div>
         <div onPointerDown={stopPropagation} onClick={stopPropagation} onKeyDown={stopKeys}>
           <Switch
@@ -216,7 +258,7 @@ function LightWidget({ config, interactive = true }: WidgetComponentProps) {
         </p>
       )}
 
-      {light.supportsBrightness ? (
+      {light.supportsBrightness && !tight ? (
         <div
           className="mt-auto flex flex-col gap-2"
           onPointerDown={stopPropagation}
@@ -264,6 +306,8 @@ function LightWidget({ config, interactive = true }: WidgetComponentProps) {
           {interactive ? "Tap for details" : light.entityId}
         </p>
       )}
+      </>
+      )}
     </div>
   );
 }
@@ -275,8 +319,8 @@ export const lightWidget = defineWidget({
   component: LightWidget,
   configSchema: lightConfigSchema,
   defaultConfig: { title: "", entity_id: "" },
-  defaultSize: { w: 4, h: 4, minW: 2, minH: 3, maxW: 8, maxH: 6 },
-  minSize: { w: 2, h: 3 },
+  defaultSize: { w: 4, h: 2, minW: 2, minH: 1, maxW: 8, maxH: 6 },
+  minSize: { w: 1, h: 1 },
   maxSize: { w: 8, h: 6 },
   entityDomains: ["light"],
   capabilities: ["entity.read", "service.call"],

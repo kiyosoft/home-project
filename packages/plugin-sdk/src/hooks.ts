@@ -13,6 +13,8 @@ import {
   getHassConfig as haGetHassConfig,
   subscribeRenderTemplate,
   subscribeTodoItems,
+  EMPTY_AREA_INDEX,
+  type AreaIndex,
   type BrowseMediaItem,
   type BrowseMediaOptions,
   type HassCoreConfig,
@@ -79,6 +81,31 @@ export function useEntities(
   return Object.fromEntries(
     Object.entries(all).filter(([, entity]) => predicate(entity)),
   );
+}
+
+export function useAreaIndex(): AreaIndex {
+  const pluginId = usePluginId();
+  const index = useSyncExternalStore(
+    subscribe,
+    snapshotAreaIndex,
+    snapshotAreaIndex,
+  );
+  assertCapability(pluginId, "entity.read");
+  return index;
+}
+
+let cachedAreaIndex: AreaIndex = EMPTY_AREA_INDEX;
+
+function snapshotAreaIndex(): AreaIndex {
+  const next = getPlatformBindings().getAreaIndex?.() ?? EMPTY_AREA_INDEX;
+  if (
+    next.areas === cachedAreaIndex.areas &&
+    next.areaByEntity === cachedAreaIndex.areaByEntity
+  ) {
+    return cachedAreaIndex;
+  }
+  cachedAreaIndex = next;
+  return cachedAreaIndex;
 }
 
 export function useCallService(): (

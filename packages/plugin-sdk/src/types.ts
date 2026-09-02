@@ -1,7 +1,7 @@
 import type { ComponentType } from "react";
 import type { ZodTypeAny } from "zod";
 
-import type { HassEntities, HassEntity } from "@ethio/ha-sdk";
+import type { HassEntities, HassEntity, AreaIndex } from "@ethio/ha-sdk";
 
 export type Capability = "entity.read" | "service.call";
 
@@ -61,6 +61,7 @@ export interface DefinedPlugin {
 export interface PlatformBindings {
   getEntity: (entityId: string) => HassEntity | undefined;
   getEntities: () => HassEntities;
+  getAreaIndex?: () => AreaIndex;
   callService: (
     domain: string,
     service: string,

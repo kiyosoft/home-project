@@ -8,13 +8,14 @@ import {
   Chip,
   Dialog,
   Label,
+  Switch,
   Text,
 } from "heroui-native";
 
 import { parseOrigin } from "@/lib/url";
 import { useDashboardStore } from "@/store/dashboard-store";
 import { useHaStore } from "@/store/ha-store";
-import { useT } from "@/store/locale-store";
+import { useLocaleStore, useT } from "@/store/locale-store";
 import { ConnectionStatusChip } from "@/ui/ConnectionStatusChip";
 import { LanguageSwitcher } from "@/ui/LanguageSwitcher";
 import { ThemeChooser } from "@/ui/ThemeChooser";
@@ -34,6 +35,8 @@ export function SettingsScreen() {
   const resetDashboard = useDashboardStore((state) => state.reset);
   const mode = useHaStore((state) => state.mode);
   const activeUrl = useHaStore((state) => state.activeUrl);
+  const ethiopianHours = useLocaleStore((state) => state.ethiopianHours);
+  const setEthiopianHours = useLocaleStore((state) => state.setEthiopianHours);
   const entityCount = useHaStore(
     (state) => Object.keys(state.entities).length,
   );
@@ -84,6 +87,18 @@ export function SettingsScreen() {
         <Card.Body className="gap-3">
           <Label>{t("setup.language")}</Label>
           <LanguageSwitcher />
+          <View className="flex-row items-center justify-between gap-3 pt-1">
+            <View className="min-w-0 flex-1 gap-1">
+              <Label>{t("settings.ethiopianHours")}</Label>
+              <Card.Description>
+                {t("settings.ethiopianHoursHelp")}
+              </Card.Description>
+            </View>
+            <Switch
+              isSelected={ethiopianHours}
+              onSelectedChange={setEthiopianHours}
+            />
+          </View>
         </Card.Body>
       </Card>
 

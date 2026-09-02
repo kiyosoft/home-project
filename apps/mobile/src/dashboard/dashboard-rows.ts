@@ -2,8 +2,6 @@ import { tileSpan, type MobileWidget } from "@ethio/mobile-schema";
 
 import type { ResolvedSection } from "@/dashboard/resolve-sections";
 
-const COLUMNS = 2;
-
 /**
  * What sits above a row: the gap between sections, a section title, or the
  * previous row of the same section. The screen owns the pixels.
@@ -47,6 +45,7 @@ export type DashboardRow =
 export interface BuildRowsOptions {
   sections: ResolvedSection[];
   editing: boolean;
+  columns: number;
 }
 
 /**
@@ -57,6 +56,7 @@ export interface BuildRowsOptions {
 export function buildDashboardRows({
   sections,
   editing,
+  columns,
 }: BuildRowsOptions): DashboardRow[] {
   const rows: DashboardRow[] = [];
 
@@ -90,13 +90,18 @@ export function buildDashboardRows({
     } else {
       // The row a half-width tile can still join.
       let open: DashboardTilesRow | null = null;
+      let used = 0;
 
       for (const widget of section.widgets) {
         const span = tileSpan(widget.size ?? "sm");
 
-        if (open && span < COLUMNS) {
+        if (open && used + span <= columns) {
           open.widgets.push(widget);
-          open = null;
+          used += span;
+          if (used >= columns) {
+            open = null;
+            used = 0;
+          }
           continue;
         }
 
@@ -109,7 +114,13 @@ export function buildDashboardRows({
           spacing: "row",
         };
         rows.push(row);
-        open = span < COLUMNS ? row : null;
+        if (span < columns) {
+          open = row;
+          used = span;
+        } else {
+          open = null;
+          used = 0;
+        }
       }
 
       if (editing) {

@@ -115,20 +115,49 @@ export function SchemaForm({ type, config, onSave, onCancel }: SchemaFormProps) 
           );
         }
 
-        if (looksBoolean(field, fieldSchema, def.defaultConfig)) {
+        if (field === "entity_ids") {
+          return null;
+        }
+
+        if (field === "area_id") {
           return (
-            <div
-              key={field}
-              className="flex items-center justify-between gap-3 text-sm"
-            >
-              <span className="font-medium">{field}</span>
-              <Switch
-                checked={Boolean(draft[field])}
-                label={field}
-                onCheckedChange={(checked) =>
-                  setDraft((prev) => ({ ...prev, [field]: checked }))
+            <label key={field} className="block space-y-2 text-sm">
+              <span className="font-medium">Area ID</span>
+              <Input
+                value={typeof draft.area_id === "string" ? draft.area_id : ""}
+                placeholder="living_room"
+                onChange={(event) =>
+                  setDraft((prev) => ({ ...prev, area_id: event.target.value }))
                 }
               />
+            </label>
+          );
+        }
+
+        if (looksBoolean(field, fieldSchema, def.defaultConfig)) {
+          const label =
+            field === "ethiopian_hours"
+              ? t(locale, "schema.ethiopianHours")
+              : field;
+          const help =
+            field === "ethiopian_hours"
+              ? t(locale, "schema.ethiopianHoursHelp")
+              : null;
+          return (
+            <div key={field} className="space-y-1">
+              <div className="flex items-center justify-between gap-3 text-sm">
+                <span className="font-medium">{label}</span>
+                <Switch
+                  checked={Boolean(draft[field])}
+                  label={label}
+                  onCheckedChange={(checked) =>
+                    setDraft((prev) => ({ ...prev, [field]: checked }))
+                  }
+                />
+              </div>
+              {help ? (
+                <p className="text-xs text-muted-foreground">{help}</p>
+              ) : null}
             </div>
           );
         }

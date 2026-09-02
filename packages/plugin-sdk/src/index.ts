@@ -27,6 +27,7 @@ export {
   useBrowseMediaSource,
   useCallService,
   useEntities,
+  useAreaIndex,
   useEntity,
   useHassConfig,
   useRenderTemplate,

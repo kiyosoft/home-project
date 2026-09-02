@@ -13,6 +13,7 @@ import { isLocale, type Locale } from "@/i18n";
 const CONNECTION_V1_KEY = "ethio-home.connection:v1";
 const CONNECTION_KEY = "ethio-home.connection:v2";
 const LOCALE_KEY = "ethio-home.locale";
+const ETHIOPIAN_HOURS_KEY = "ethio-home.ethiopian-hours";
 const THEME_KEY = "ethio-home.theme";
 const TOKEN_KEY = "ethio-home.token.v1";
 const TOKENS_KEY = "ethio-home.tokens.v1";
@@ -253,6 +254,18 @@ export async function loadLocale(): Promise<Locale> {
 
 export async function saveLocale(locale: Locale): Promise<void> {
   await AsyncStorage.setItem(LOCALE_KEY, locale);
+}
+
+export async function loadEthiopianHours(): Promise<boolean> {
+  try {
+    return (await AsyncStorage.getItem(ETHIOPIAN_HOURS_KEY)) === "1";
+  } catch {
+    return false;
+  }
+}
+
+export async function saveEthiopianHours(enabled: boolean): Promise<void> {
+  await AsyncStorage.setItem(ETHIOPIAN_HOURS_KEY, enabled ? "1" : "0");
 }
 
 export type ThemePreference = "light" | "dark" | "system";

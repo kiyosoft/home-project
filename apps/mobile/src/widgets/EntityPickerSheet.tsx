@@ -174,8 +174,8 @@ const PickerRow = memo(function PickerRow({
 });
 
 /**
- * Entity chooser for edit mode. The phone has no widget-type picker: the
- * entity's domain decides the tile through the widget registry.
+ * Entity chooser for edit mode. Clock, batteries, and area tiles are chosen
+ * first in WidgetTypeSheet; this list is for devices and scenes.
  */
 export function EntityPickerSheet({
   isOpen,

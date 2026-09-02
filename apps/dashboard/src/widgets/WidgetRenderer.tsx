@@ -16,7 +16,7 @@ export function WidgetRenderer({
 
   if (!def) {
     return (
-      <div className="flex h-full min-h-36 flex-col rounded-2xl border border-dashed border-border bg-card p-5">
+      <div className="flex h-full min-h-0 flex-col overflow-hidden rounded-2xl border border-dashed border-border bg-card p-5">
         <h3 className="font-display text-base font-semibold">Unknown widget</h3>
         <p className="mt-2 text-sm text-muted-foreground">{widget.type}</p>
       </div>

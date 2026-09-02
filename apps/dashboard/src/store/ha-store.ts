@@ -2,8 +2,11 @@ import {
   connectDemo,
   connectLive,
   connectLiveWithTokens,
+  EMPTY_AREA_INDEX,
+  fetchAreaIndex,
   fetchCurrentUser,
   revokeTokens,
+  type AreaRegistryEntry,
   type ConnectionStatus,
   type EntityClient,
   type HassEntities,
@@ -27,6 +30,8 @@ import {
 
 interface HaState {
   entities: HassEntities;
+  areas: AreaRegistryEntry[];
+  areaByEntity: Record<string, string>;
   status: ConnectionStatus;
   error: string | null;
   /** Set when a failed sign-in is what the user has to fix. */
@@ -86,6 +91,24 @@ async function attachClient(
   });
   set({ status: "connected", error: null, loginFailure: null });
   void loadUser(next, set);
+  void loadAreas(next, set);
+}
+
+async function loadAreas(
+  target: EntityClient,
+  set: (partial: Partial<HaState>) => void,
+) {
+  try {
+    const index = await fetchAreaIndex(target);
+    if (client !== target) return;
+    set({ areas: index.areas, areaByEntity: index.areaByEntity });
+  } catch {
+    if (client !== target) return;
+    set({
+      areas: EMPTY_AREA_INDEX.areas,
+      areaByEntity: EMPTY_AREA_INDEX.areaByEntity,
+    });
+  }
 }
 
 async function loadUser(
@@ -124,6 +147,8 @@ function isConnectable(settings: ConnectionSettings): boolean {
 
 export const useHaStore = create<HaState>((set, get) => ({
   entities: {},
+  areas: [],
+  areaByEntity: {},
   status: "idle",
   error: null,
   loginFailure: null,
@@ -198,6 +223,8 @@ export const useHaStore = create<HaState>((set, get) => ({
         status: "error",
         error: message,
         entities: {},
+        areas: [],
+        areaByEntity: {},
         mode: "demo",
         baseUrl: "",
       });
@@ -231,6 +258,8 @@ export const useHaStore = create<HaState>((set, get) => ({
     }
     set({
       entities: {},
+      areas: [],
+      areaByEntity: {},
       status: "idle",
       error: null,
       loginFailure: null,
@@ -356,6 +385,8 @@ async function beginLive(
       status: "error",
       error: message,
       entities: {},
+      areas: [],
+      areaByEntity: {},
       mode: "live",
       baseUrl: settings.baseUrl,
     });

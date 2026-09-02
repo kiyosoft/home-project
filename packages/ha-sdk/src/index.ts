@@ -74,6 +74,69 @@ export type {
   HaTokens,
 } from "./oauth";
 export { connectDemo, DEMO_CURRENT_USER, DEMO_ENTITY_IDS } from "./demo";
+export { joinFacts, numericAttr, stringAttr } from "./attrs";
+export {
+  CLIMATE_STEP,
+  deriveClimate,
+  stepClimateTarget,
+} from "./climate";
+export type { ClimateView } from "./climate";
+export {
+  areaCoverStat,
+  areaStat,
+  areaSummary,
+  averageNumericStates,
+  BATTERY_LOW_PERCENT,
+  batteryPercent,
+  boundEntityIds,
+  countLightsOn,
+  deriveArea,
+  discoverBatteries,
+  discoverTemperatureSensors,
+  entitiesInArea,
+  entityDomain,
+  filterByDomain,
+  formatAllOrFraction,
+  formatFraction,
+  groupMemberIds,
+  isBatteryEntity,
+  isDetectedState,
+  isOnState,
+  isOpenState,
+  isTemperatureSensor,
+  isUnlockedState,
+  leafIds,
+  stringList,
+  tallyEntities,
+  unanimousService,
+} from "./group";
+export type {
+  AreaOverview,
+  BatteryReport,
+  GroupTally,
+  NumericAverage,
+} from "./group";
+export {
+  CLOCK_TICK_MS,
+  clockFace,
+  ethiopianPeriodLabel,
+  padClock,
+  secondProgress,
+  toEthiopianClock,
+} from "./ethiopian-time";
+export type {
+  ClockFace,
+  EthiopianClock,
+  EthiopianPeriod,
+} from "./ethiopian-time";
+export {
+  compactTemperatureUnit,
+  deriveWeather,
+  weatherForecast,
+  weatherSparklinePath,
+  WEATHER_SPARKLINE,
+} from "./weather";
+export type { WeatherForecastPoint, WeatherView } from "./weather";
 export {
   deriveLight,
   lightColorModes,

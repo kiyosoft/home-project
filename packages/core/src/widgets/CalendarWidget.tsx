@@ -38,7 +38,7 @@ function CalendarWidget({ config, interactive = true }: WidgetComponentProps) {
 
   if (!entityId) {
     return (
-      <div className="flex h-full min-h-36 flex-col rounded-2xl border border-border bg-card p-5 text-card-foreground shadow-sm">
+      <div className="flex h-full min-h-0 flex-col overflow-hidden rounded-2xl border border-border bg-card p-5 text-card-foreground shadow-sm">
         <h3 className="font-display text-base font-semibold">
           {customTitle || "Calendar"}
         </h3>
@@ -51,7 +51,7 @@ function CalendarWidget({ config, interactive = true }: WidgetComponentProps) {
 
   if (!calendar) {
     return (
-      <div className="flex h-full min-h-36 flex-col rounded-2xl border border-dashed border-border bg-card p-5">
+      <div className="flex h-full min-h-0 flex-col overflow-hidden rounded-2xl border border-dashed border-border bg-card p-5">
         <h3 className="font-display text-base font-semibold">
           {customTitle || entityId}
         </h3>
@@ -76,7 +76,7 @@ function CalendarWidget({ config, interactive = true }: WidgetComponentProps) {
     .slice(0, maxItems);
 
   return (
-    <div className="flex h-full min-h-36 flex-col rounded-2xl border border-border bg-card p-5 text-card-foreground shadow-sm">
+    <div className="flex h-full min-h-0 flex-col overflow-hidden rounded-2xl border border-border bg-card p-5 text-card-foreground shadow-sm">
       <div className="flex items-start justify-between gap-3">
         <div>
           <p className="text-xs uppercase tracking-[0.14em] text-muted-foreground">

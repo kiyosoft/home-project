@@ -101,7 +101,7 @@ export const TextCardBody = memo(function TextCardBody({
 
   return (
     <div
-      className={`flex h-full min-h-36 flex-col overflow-hidden rounded-2xl border border-border bg-card text-card-foreground shadow-sm ${
+      className={`flex h-full min-h-0 flex-col overflow-hidden rounded-2xl border border-border bg-card text-card-foreground shadow-sm ${
         PADDING_CLASS[cfg.padding] ?? PADDING_CLASS.md
       } ${ALIGN_CLASS[cfg.vertical_align] ?? ALIGN_CLASS.center}`}
       style={style}

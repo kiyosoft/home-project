@@ -68,7 +68,11 @@ export const am: Record<MessageKey, string> = {
   "home.addWidget": "ታይል አክል",
   "home.removeWidget": "ታይል አስወግድ",
   "home.widthFull": "ታይሉን ሙሉ ስፋት አድርግ",
+  "home.widthTall": "ታይሉን ከፍ አድርግ",
   "home.widthHalf": "ታይሉን ግማሽ ስፋት አድርግ",
+  "home.lightsOn": "{count} በርተዋል",
+  "home.lightsOnOne": "1 በርቷል",
+  "home.lightsChipAria": "አሁን የበሩ መብራቶች",
   "home.sectionActive": "{count} በርቷል",
   "home.greetingMorning": "እንደምን አደሩ",
   "home.greetingAfternoon": "እንደምን ዋሉ",
@@ -93,6 +97,23 @@ export const am: Record<MessageKey, string> = {
   "picker.sceneTitle": "ትዕይንት አክል",
   "picker.sceneDescription": "ከመነሻ ገጽ የሚያሄዱት ትዕይንት ወይም ስክሪፕት ይምረጡ።",
   "picker.sceneEmpty": "ትዕይንቶችና ስክሪፕቶች ሁሉ በዳሽቦርዱ ላይ ናቸው።",
+  "picker.typeTitle": "ምን ዓይነት ታይል?",
+  "picker.typeDescription": "ሰዓትና ባትሪ ኤንቲቲ አያስፈልጋቸውም። ሌሎቹ በሚቀጥለው ይጠይቃሉ።",
+  "picker.typeClock": "ሰዓት",
+  "picker.typeClockBody": "ቀጥተኛ ሰዓት፣ የሳምንቱ ቀን እና ቀን",
+  "picker.typeBatteries": "ባትሪዎች",
+  "picker.typeBatteriesBody": "የባትሪ ዳሳሾችን ይከታተሉ",
+  "picker.typeClimateSensors": "የአየር ዳሳሾች",
+  "picker.typeClimateSensorsBody": "የሙቀት ዳሳሾች አማካይ",
+  "picker.typeArea": "ክፍል",
+  "picker.typeAreaBody": "መብራት፣ የአየር ንብረት እና መጋረጃ ያለው ክፍል",
+  "picker.typeScene": "ትዕይንት",
+  "picker.typeSceneBody": "ትዕይንት ወይም ስክሪፕት ያስጀምሩ",
+  "picker.typeEntity": "መሣሪያ",
+  "picker.typeEntityBody": "መብራት፣ መቀያየሪያ፣ ካሜራ ወይም ሌላ ኤንቲቲ",
+  "picker.areaTitle": "ክፍል ይምረጡ",
+  "picker.areaDescription": "የክፍሉ ካርድ መብራት፣ የአየር ንብረት እና መጋረጃን ያጠቃልላል።",
+  "picker.areaEmpty": "በዚህ ሃብ ላይ ክፍሎች የሉም።",
 
   "scene.activate": "{name} አሂድ",
   "scene.activated": "ተሰርቷል",
@@ -145,6 +166,8 @@ export const am: Record<MessageKey, string> = {
   "widget.light.effects": "ተጽዕኖዎች",
 
   "widget.climate.currentValue": "አሁን {value}",
+  "widget.climate.heatingTo": "ወደ {value} እየሞቀ ነው",
+  "widget.climate.coolingTo": "ወደ {value} እየቀዘቀዘ ነው",
   "widget.climate.warmer": "ሙቀት ጨምር",
   "widget.climate.cooler": "ሙቀት ቀንስ",
 
@@ -165,6 +188,37 @@ export const am: Record<MessageKey, string> = {
   "widget.camera.still": "ምስል አሳይ",
   "widget.camera.power": "ኃይል",
   "widget.camera.liveFailed": "ቀጥታ ስርጭቱን ማስጀመር አልተቻለም።",
+  "widget.camera.noSignal": "ምልክት የለም",
+  "widget.camera.retry": "እንደገና ይሞክሩ",
+
+  "widget.batteries.title": "ባትሪዎች",
+  "widget.batteries.allGood": "ሁሉም ጥሩ ነው",
+  "widget.batteries.none": "ባትሪዎች የሉም",
+  "widget.batteries.low": "{count} ዝቅተኛ",
+
+  "widget.climateSensors.title": "የአየር ዳሳሾች",
+  "widget.climateSensors.none": "ዳሳሾች የሉም",
+  "widget.climateSensors.average": "የ{count} አማካይ",
+
+  "widget.weather.title": "የአየር ሁኔታ",
+  "widget.weather.pick": "የአየር ሁኔታ ኤንቲቲ ይምረጡ።",
+  "widget.weather.feelsLike": "እንደ {value} ይሰማል",
+
+  "widget.fan.title": "ማራገቢያ",
+  "widget.fan.speed": "ፍጥነት",
+  "widget.fan.onValue": "በርቷል - {percent}%",
+
+  "widget.area.title": "ክፍል",
+  "widget.area.kicker": "ክፍል",
+  "widget.area.lights": "መብራቶች",
+  "widget.area.climate": "አየር",
+  "widget.area.blinds": "መጋረጃዎች",
+  "widget.area.ideal": "ተስማሚ",
+  "widget.area.noDevices": "መሣሪያዎች የሉም",
+
+  "widget.scene.pick": "ትዕይንት ይምረጡ",
+  "widget.scene.activate": "አስጀምር",
+  "widget.scene.activating": "እየተጀመረ ነው…",
 
   "widget.detail.state": "ሁኔታ",
   "widget.detail.entityId": "የኤንቲቲ መለያ",
@@ -294,11 +348,15 @@ export const am: Record<MessageKey, string> = {
   "settings.dashboard": "ዳሽቦርድ",
   "settings.resetLayout": "አቀማመጥ ዳግም አስጀምር",
   "settings.resetLayoutDescription":
-    "የጨመሯቸው ታይሎች ሁሉ ይወገዳሉ፣ ዳሽቦርዱም ባዶ ሆኖ ይጀምራል።",
+    "የጨመሯቸው ታይሎች ሁሉ ይወገዳሉ፣ ዳሽቦርዱም ወደ መጀመሪያው ይመለሳል።",
   "settings.resetLayoutConfirm": "ሁሉም ታይሎች ከዳሽቦርዱ ይወገዱ?",
 
   "settings.langEn": "English",
   "settings.langAm": "አማርኛ",
+
+  "settings.ethiopianHours": "የኢትዮጵያ ሰዓት",
+  "settings.ethiopianHoursHelp":
+    "ሰዓቱን ከ6:00 ጀምሮ በ12 ሰዓት ቀንና ሌሊት ያሳዩ።",
 
   "settings.theme": "ገጽታ",
   "settings.themeLight": "ብርሃን",

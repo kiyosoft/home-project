@@ -1,13 +1,16 @@
 import {
   Check,
   Download,
+  Lightbulb,
   LogOut,
   Pencil,
   Plus,
   Settings,
   Upload,
 } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+
+import { countLightsOn } from "@ethio/ha-sdk";
 
 import { DashboardSettings } from "@/components/DashboardSettings";
 import { HeaderPills } from "@/components/HeaderPills";
@@ -16,7 +19,7 @@ import { Button } from "@/components/ui/button";
 import type { TimeFormat } from "@/dashboard/types";
 import { useClock } from "@/hooks/useClock";
 import { useArrivalWelcome } from "@/hooks/useArrivalWelcome";
-import { t, type Locale } from "@/i18n";
+import { t, type Locale, type MessageKey } from "@/i18n";
 import { formatHeaderDate, formatHeaderTime } from "@/lib/header-format";
 import { useDashboardStore } from "@/store/dashboard-store";
 import { useHaStore } from "@/store/ha-store";
@@ -97,8 +100,9 @@ export function AppHeader({
                   {title}
                 </h1>
               ) : null}
+              <HeaderGreeting locale={locale} />
               {showDate ? (
-                <HeaderDate locale={locale} spaced={showTitle} />
+                <HeaderDate locale={locale} spaced />
               ) : null}
               {showWelcome ? (
                 <p
@@ -111,9 +115,12 @@ export function AppHeader({
               ) : null}
               <HeaderPills pills={pills} canAdd={canAddPills} />
             </div>
-            {showTime ? (
-              <HeaderTime locale={locale} timeFormat={timeFormat} />
-            ) : null}
+            <div className="flex shrink-0 flex-col items-end gap-2">
+              {showTime ? (
+                <HeaderTime locale={locale} timeFormat={timeFormat} />
+              ) : null}
+              <LightsChip locale={locale} />
+            </div>
           </div>
         ) : null}
 
@@ -237,6 +244,29 @@ export function AppHeader({
   );
 }
 
+function greetingKey(hour: number): MessageKey {
+  if (hour < 12) return "header.greetingMorning";
+  if (hour < 18) return "header.greetingAfternoon";
+  return "header.greetingEvening";
+}
+
+function LightsChip({ locale }: { locale: Locale }) {
+  const entities = useHaStore((state) => state.entities);
+  const count = useMemo(() => countLightsOn(entities), [entities]);
+  if (count <= 0) return null;
+  return (
+    <span
+      className="inline-flex items-center gap-1.5 rounded-full border border-amber-400/30 bg-amber-400/10 px-2.5 py-1 text-xs font-medium text-amber-200"
+      aria-label={t(locale, "header.lightsChipAria")}
+    >
+      <Lightbulb className="h-3.5 w-3.5" />
+      {count === 1
+        ? t(locale, "header.lightsOnOne")
+        : t(locale, "header.lightsOn", { count })}
+    </span>
+  );
+}
+
 function HeaderDate({ locale, spaced }: { locale: Locale; spaced: boolean }) {
   const now = useClock();
   return (
@@ -265,5 +295,15 @@ function HeaderTime({
     >
       {formatHeaderTime(now, timeFormat, locale)}
     </time>
+  );
+}
+
+function HeaderGreeting({ locale }: { locale: Locale }) {
+  const now = useClock();
+  const weekday = now.toLocaleDateString(undefined, { weekday: "short", day: "numeric", month: "short" });
+  return (
+    <p className="mt-2 text-sm text-muted-foreground">
+      {t(locale, greetingKey(now.getHours()))} · {weekday}
+    </p>
   );
 }

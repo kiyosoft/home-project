@@ -3,63 +3,62 @@ import { useState } from "react";
 import { z } from "zod";
 
 import {
+  boundEntityIds,
+  formatFraction,
+  isOpenState,
+  numericAttr,
+  tallyEntities,
+} from "@ethio/ha-sdk";
+import {
   defineWidget,
   useCallService,
+  useEntities,
   useEntity,
+  useEntityDetail,
   type WidgetComponentProps,
 } from "@ethio/plugin-sdk";
+
+import { cardShellClass, chipShellClass, cx, useCardDensity } from "../ui";
+import { cardActivateProps } from "./card-activate";
+import { ChipFace } from "./ChipFace";
+import { friendlyName, widgetEntityId, widgetTitle } from "./names";
+import { WidgetPlaceholder } from "./WidgetPlaceholder";
 
 export const coverConfigSchema = z.object({
   title: z.string().default(""),
   entity_id: z.string().min(1, "Entity is required"),
 });
 
-function getFriendlyName(entity: {
-  entity_id: string;
-  attributes: Record<string, unknown>;
-}): string {
-  const name = entity.attributes.friendly_name;
-  if (typeof name === "string" && name.trim()) return name;
-  return entity.entity_id;
-}
-
 function CoverWidget({ config, interactive = true }: WidgetComponentProps) {
-  const entityId =
-    typeof config.entity_id === "string" ? config.entity_id : "";
-  const customTitle = typeof config.title === "string" ? config.title.trim() : "";
+  const entityId = widgetEntityId(config);
+  const customTitle = widgetTitle(config);
   const entity = useEntity(entityId);
+  const entities = useEntities();
   const callService = useCallService();
+  const entityDetail = useEntityDetail();
+  const { ref, compact, tight, chip } = useCardDensity();
   const [pending, setPending] = useState(false);
 
-  if (!entityId) {
+  if (!entityId || !entity) {
     return (
-      <div className="flex h-full min-h-36 flex-col rounded-2xl border border-border bg-card p-5 text-card-foreground shadow-sm">
-        <h3 className="font-display text-base font-semibold">
-          {customTitle || "Cover"}
-        </h3>
-        <p className="mt-2 text-sm text-muted-foreground">
-          Pick a cover entity in settings.
-        </p>
-      </div>
+      <WidgetPlaceholder
+        title={customTitle || entityId || "Cover"}
+        message={
+          entityId ? "Entity unavailable" : "Pick a cover entity in settings."
+        }
+        dashed={Boolean(entityId)}
+      />
     );
   }
 
-  if (!entity) {
-    return (
-      <div className="flex h-full min-h-36 flex-col rounded-2xl border border-dashed border-border bg-card p-5">
-        <h3 className="font-display text-base font-semibold">
-          {customTitle || entityId}
-        </h3>
-        <p className="mt-2 text-sm text-muted-foreground">Entity unavailable</p>
-      </div>
-    );
-  }
-
-  const displayTitle = customTitle || getFriendlyName(entity);
-  const position =
-    typeof entity.attributes.current_position === "number"
-      ? entity.attributes.current_position
-      : undefined;
+  const displayTitle = customTitle || friendlyName(entity, "Cover");
+  const members = boundEntityIds({ entity_id: entityId }, entity);
+  const tally = tallyEntities(entities, members, isOpenState);
+  const groupStatus =
+    members.length > 1
+      ? formatFraction(tally.active, tally.total, "open")
+      : entity.state;
+  const position = numericAttr(entity.attributes, "current_position");
 
   async function run(service: "open_cover" | "close_cover" | "stop_cover") {
     if (!interactive || pending) return;
@@ -72,13 +71,36 @@ function CoverWidget({ config, interactive = true }: WidgetComponentProps) {
   }
 
   return (
-    <div className="flex h-full min-h-36 flex-col rounded-2xl border border-border bg-card p-5 text-card-foreground shadow-sm">
+    <div
+      ref={ref}
+      {...cardActivateProps(interactive, () => entityDetail.open(entityId))}
+      className={cx(
+        chip ? chipShellClass : cardShellClass,
+        "border-border bg-card text-card-foreground outline-none",
+        !chip && "border shadow-sm",
+        !chip && (compact ? "p-4" : "p-5"),
+        interactive
+          ? "cursor-pointer hover:border-primary/40 focus-visible:ring-2 focus-visible:ring-ring"
+          : "",
+      )}
+    >
+      {chip ? (
+        <ChipFace
+          title={displayTitle}
+          status={
+            position != null ? `${Math.round(position)}%` : String(groupStatus)
+          }
+          icon={Blinds}
+          active={tally.active > 0}
+        />
+      ) : (
+      <>
       <div className="flex items-start justify-between gap-3">
-        <div>
+        <div className="min-w-0">
           <p className="text-xs uppercase tracking-[0.14em] text-muted-foreground">
             Cover
           </p>
-          <h3 className="mt-1 font-display text-base font-semibold tracking-tight">
+          <h3 className="mt-1 truncate font-display text-base font-semibold tracking-tight">
             {displayTitle}
           </h3>
         </div>
@@ -86,18 +108,27 @@ function CoverWidget({ config, interactive = true }: WidgetComponentProps) {
           <Blinds className="h-4 w-4" />
         </div>
       </div>
-      <p className="mt-4 font-display text-3xl font-semibold capitalize tracking-tight">
-        {entity.state}
+      <p
+        className={cx(
+          "mt-4 font-display font-semibold capitalize tracking-tight",
+          compact ? "text-xl" : "text-3xl",
+        )}
+      >
+        {groupStatus}
       </p>
-      {position != null ? (
+      {position != null && !tight ? (
         <p className="mt-1 text-sm text-muted-foreground">{position}% open</p>
       ) : null}
-      {interactive ? (
+      {interactive && !tight ? (
         <div className="mt-auto flex gap-2 pt-4">
           <button
             type="button"
             disabled={pending}
-            onClick={() => void run("open_cover")}
+            onPointerDown={(event) => event.stopPropagation()}
+            onClick={(event) => {
+              event.stopPropagation();
+              void run("open_cover");
+            }}
             className="inline-flex h-9 flex-1 items-center justify-center rounded-xl border border-border bg-muted/50 hover:bg-muted disabled:opacity-50"
             aria-label="Open cover"
           >
@@ -106,7 +137,11 @@ function CoverWidget({ config, interactive = true }: WidgetComponentProps) {
           <button
             type="button"
             disabled={pending}
-            onClick={() => void run("stop_cover")}
+            onPointerDown={(event) => event.stopPropagation()}
+            onClick={(event) => {
+              event.stopPropagation();
+              void run("stop_cover");
+            }}
             className="inline-flex h-9 flex-1 items-center justify-center rounded-xl border border-border bg-muted/50 hover:bg-muted disabled:opacity-50"
             aria-label="Stop cover"
           >
@@ -115,7 +150,11 @@ function CoverWidget({ config, interactive = true }: WidgetComponentProps) {
           <button
             type="button"
             disabled={pending}
-            onClick={() => void run("close_cover")}
+            onPointerDown={(event) => event.stopPropagation()}
+            onClick={(event) => {
+              event.stopPropagation();
+              void run("close_cover");
+            }}
             className="inline-flex h-9 flex-1 items-center justify-center rounded-xl border border-border bg-muted/50 hover:bg-muted disabled:opacity-50"
             aria-label="Close cover"
           >
@@ -123,6 +162,8 @@ function CoverWidget({ config, interactive = true }: WidgetComponentProps) {
           </button>
         </div>
       ) : null}
+      </>
+      )}
     </div>
   );
 }
@@ -134,8 +175,8 @@ export const coverWidget = defineWidget({
   component: CoverWidget,
   configSchema: coverConfigSchema,
   defaultConfig: { title: "", entity_id: "" },
-  defaultSize: { w: 4, h: 4, minW: 3, minH: 3, maxW: 8, maxH: 6 },
-  minSize: { w: 3, h: 3 },
+  defaultSize: { w: 4, h: 1, minW: 2, minH: 1, maxW: 8, maxH: 6 },
+  minSize: { w: 2, h: 1 },
   maxSize: { w: 8, h: 6 },
   entityDomains: ["cover"],
   capabilities: ["entity.read", "service.call"],

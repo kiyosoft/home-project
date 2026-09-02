@@ -1,60 +1,79 @@
 import { useEffect, useState, type KeyboardEvent } from "react";
 import { z } from "zod";
 
+import { boundEntityIds, formatAllOrFraction, tallyEntities } from "@ethio/ha-sdk";
 import {
   defineWidget,
+  useEntities,
   useLock,
   type UseLockResult,
   type WidgetComponentProps,
 } from "@ethio/plugin-sdk";
 
-import { cx, useElementSize } from "../ui";
+import { Lock } from "lucide-react";
+
+import { cardShellClass, chipShellClass, cx, useCardDensity } from "../ui";
+import { ChipFace } from "./ChipFace";
 import { Padlock } from "./lock/Padlock";
 import { lockVisuals } from "./lock/lock-visuals";
+import { widgetEntityId, widgetTitle } from "./names";
+import { WidgetPlaceholder } from "./WidgetPlaceholder";
 
 export const lockConfigSchema = z.object({
   title: z.string().default(""),
   entity_id: z.string().min(1, "Entity is required"),
 });
 
-/** Below this the big status line crowds the padlock out. */
-const COMPACT_HEIGHT = 208;
 /** A lock that never echoes its new state should not hold the pose forever. */
 const CONFIRM_TIMEOUT_MS = 4000;
 
 function LockWidget({ config, interactive = true }: WidgetComponentProps) {
-  const entityId =
-    typeof config.entity_id === "string" ? config.entity_id : "";
-  const customTitle =
-    typeof config.title === "string" ? config.title.trim() : "";
+  const entityId = widgetEntityId(config);
+  const customTitle = widgetTitle(config);
   const lock = useLock(entityId);
+  const entities = useEntities();
 
   if (!entityId) {
     return (
-      <div className="flex h-full min-h-36 flex-col rounded-2xl border border-border bg-card p-5 text-card-foreground shadow-sm">
-        <h3 className="font-display text-base font-semibold">
-          {customTitle || "Lock"}
-        </h3>
-        <p className="mt-2 text-sm text-muted-foreground">
-          Pick a lock entity in settings.
-        </p>
-      </div>
+      <WidgetPlaceholder
+        title={customTitle || "Lock"}
+        message="Pick a lock entity in settings."
+      />
     );
   }
 
   if (!lock) {
     return (
-      <div className="flex h-full min-h-36 flex-col rounded-2xl border border-dashed border-border bg-card p-5">
-        <h3 className="font-display text-base font-semibold">
-          {customTitle || entityId}
-        </h3>
-        <p className="mt-2 text-sm text-muted-foreground">Entity unavailable</p>
-      </div>
+      <WidgetPlaceholder
+        title={customTitle || entityId}
+        message="Entity unavailable"
+        dashed
+      />
     );
   }
 
+  const members = boundEntityIds({ entity_id: entityId }, entities[entityId]);
+  const tally = tallyEntities(
+    entities,
+    members,
+    (entry) => entry.state === "locked" || entry.state === "locking",
+  );
+  const groupLabel =
+    members.length > 1
+      ? formatAllOrFraction(tally.active, tally.total, {
+          all: "All locked",
+          none: "Unlocked",
+          word: "locked",
+        })
+      : null;
+
   return (
-    <LockCard lock={lock} customTitle={customTitle} interactive={interactive} />
+    <LockCard
+      lock={lock}
+      customTitle={customTitle}
+      interactive={interactive}
+      groupLabel={groupLabel}
+    />
   );
 }
 
@@ -62,14 +81,15 @@ interface LockCardProps {
   lock: UseLockResult;
   customTitle: string;
   interactive: boolean;
+  groupLabel: string | null;
 }
 
 /**
  * Split from the widget so the pose and its pending tap live behind the checks
  * for a missing or unavailable entity.
  */
-function LockCard({ lock, customTitle, interactive }: LockCardProps) {
-  const [cardRef, cardSize] = useElementSize<HTMLDivElement>();
+function LockCard({ lock, customTitle, interactive, groupLabel }: LockCardProps) {
+  const { ref: cardRef, compact, tight, chip } = useCardDensity();
   const [pending, setPending] = useState(false);
   // The padlock moves on tap; Home Assistant confirms a few hundred ms later.
   const [wanted, setWanted] = useState<boolean | null>(null);
@@ -93,7 +113,6 @@ function LockCard({ lock, customTitle, interactive }: LockCardProps) {
 
   const shownOpen = wanted ?? visuals.open;
   const canToggle = interactive && !pending && !visuals.busy;
-  const compact = cardSize.height > 0 && cardSize.height < COMPACT_HEIGHT;
 
   async function run(action: () => Promise<void>) {
     if (!interactive || pending) return;
@@ -128,7 +147,14 @@ function LockCard({ lock, customTitle, interactive }: LockCardProps) {
       }`
     : lock.entityId;
 
-  const body = (
+  const body = chip ? (
+    <ChipFace
+      title={displayTitle}
+      status={groupLabel ?? visuals.label}
+      icon={Lock}
+      active={!shownOpen}
+    />
+  ) : (
     <>
       <div className="min-w-0">
         <p className="text-xs uppercase tracking-[0.14em] text-muted-foreground">
@@ -143,7 +169,7 @@ function LockCard({ lock, customTitle, interactive }: LockCardProps) {
             compact ? "text-xl" : "text-2xl",
           )}
         >
-          {visuals.label}
+          {groupLabel ?? visuals.label}
         </p>
       </div>
 
@@ -152,14 +178,15 @@ function LockCard({ lock, customTitle, interactive }: LockCardProps) {
           open={shownOpen}
           jammed={visuals.jammed}
           className={cx(
-            "h-full max-h-44 w-full",
+            "h-full w-full",
+            tight ? "max-h-20" : compact ? "max-h-28" : "max-h-44",
             "motion-safe:transition-colors motion-safe:duration-300 motion-safe:ease-[cubic-bezier(0.16,1,0.3,1)]",
             visuals.glyph,
           )}
         />
       </div>
 
-      {interactive && lock.supportsOpen ? (
+      {interactive && lock.supportsOpen && !tight ? (
         <button
           type="button"
           disabled={pending}
@@ -172,7 +199,7 @@ function LockCard({ lock, customTitle, interactive }: LockCardProps) {
         >
           Open
         </button>
-      ) : (
+      ) : tight ? null : (
         <p className="shrink-0 truncate text-xs text-muted-foreground">
           {footNote}
         </p>
@@ -181,9 +208,11 @@ function LockCard({ lock, customTitle, interactive }: LockCardProps) {
   );
 
   const cardClass = cx(
-    "flex h-full min-h-36 w-full flex-col rounded-2xl border text-left text-card-foreground shadow-sm",
+    chip ? chipShellClass : cardShellClass,
+    "text-left text-card-foreground",
+    !chip && "border shadow-sm",
     "motion-safe:transition-[background-color,border-color,color] motion-safe:duration-300 motion-safe:ease-[cubic-bezier(0.16,1,0.3,1)]",
-    compact ? "gap-2 p-4" : "gap-3 p-5",
+    !chip && (compact ? "gap-2 p-4" : "gap-3 p-5"),
     visuals.card,
   );
 
@@ -227,8 +256,8 @@ export const lockWidget = defineWidget({
   component: LockWidget,
   configSchema: lockConfigSchema,
   defaultConfig: { title: "", entity_id: "" },
-  defaultSize: { w: 4, h: 4, minW: 2, minH: 3, maxW: 8, maxH: 6 },
-  minSize: { w: 2, h: 3 },
+  defaultSize: { w: 4, h: 1, minW: 2, minH: 1, maxW: 8, maxH: 6 },
+  minSize: { w: 2, h: 1 },
   maxSize: { w: 8, h: 6 },
   entityDomains: ["lock"],
   capabilities: ["entity.read", "service.call"],

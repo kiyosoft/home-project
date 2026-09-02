@@ -1,6 +1,9 @@
 import { Power, Speaker } from "lucide-react";
 import type { MouseEvent } from "react";
 
+import { cardShellClass, chipShellClass, cx, useCardDensity } from "../../ui";
+import { ChipFace } from "../ChipFace";
+
 export function MediaIdleCard({
   name,
   interactive,
@@ -16,6 +19,7 @@ export function MediaIdleCard({
   onOpenDetail: () => void;
   onPowerOn: (event: MouseEvent) => void;
 }) {
+  const { ref, compact, tight, chip } = useCardDensity();
   return (
     <div
       role={interactive ? "button" : undefined}
@@ -31,12 +35,21 @@ export function MediaIdleCard({
             }
           : undefined
       }
-      className={`flex h-full min-h-36 flex-col items-center justify-center rounded-2xl border border-border bg-card p-5 text-card-foreground shadow-sm outline-none transition-colors ${
+      ref={ref}
+      className={cx(
+        chip ? chipShellClass : cardShellClass,
+        "border-border bg-card text-card-foreground outline-none transition-colors",
+        !chip && "items-center justify-center border shadow-sm",
+        !chip && (compact ? "p-4" : "p-5"),
         interactive
           ? "cursor-pointer hover:border-primary/40 focus-visible:ring-2 focus-visible:ring-ring"
-          : ""
-      }`}
+          : "",
+      )}
     >
+      {chip ? (
+        <ChipFace title={name} status="Idle" icon={Speaker} />
+      ) : (
+      <>
       <div className="rounded-full bg-primary/10 p-3 text-primary">
         <Speaker className="h-5 w-5" />
       </div>
@@ -44,7 +57,7 @@ export function MediaIdleCard({
       <h3 className="mt-1 font-display text-base font-semibold tracking-tight">
         {name}
       </h3>
-      {interactive && powerAction === "turn_on" ? (
+      {interactive && powerAction === "turn_on" && !tight ? (
         <button
           type="button"
           disabled={pending}
@@ -55,6 +68,8 @@ export function MediaIdleCard({
           Power on
         </button>
       ) : null}
+      </>
+      )}
     </div>
   );
 }

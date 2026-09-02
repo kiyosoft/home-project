@@ -1,12 +1,17 @@
-import { deriveLock } from "@ethio/ha-sdk";
+import { deriveLock, formatAllOrFraction, type HassEntity } from "@ethio/ha-sdk";
 
 import type { MessageKey } from "@/i18n";
 import { useT } from "@/store/locale-store";
 import type { WidgetBodyProps } from "@/widgets/types";
+import { useGroupTally } from "@/widgets/use-group";
 import { useOptimistic } from "@/widgets/use-optimistic";
 import { useCallService } from "@/widgets/use-service";
 import { useTile } from "@/widgets/use-tile";
 import { WidgetTile } from "@/widgets/WidgetTile";
+
+function isLockedEntity(entity: HassEntity): boolean {
+  return entity.state === "locked" || entity.state === "locking";
+}
 
 const STATUS_KEYS: Record<string, MessageKey> = {
   locked: "widget.state.locked",
@@ -21,6 +26,15 @@ export function LockTile({ config, size }: WidgetBodyProps) {
   const callService = useCallService();
   const { entityId, entity, title, unavailable, openEntityDetail } = useTile(config);
   const lock = deriveLock(entity);
+  const { members, tally } = useGroupTally(config, entity, isLockedEntity);
+  const groupStatus =
+    members.length > 1
+      ? formatAllOrFraction(tally.active, tally.total, {
+          all: "All locked",
+          none: "Unlocked",
+          word: "locked",
+        })
+      : null;
 
   const [state, setOptimisticState] = useOptimistic(entity?.state ?? "unknown");
   const isLocked = state === "locked" || state === "locking";
@@ -41,9 +55,8 @@ export function LockTile({ config, size }: WidgetBodyProps) {
       status={
         unavailable
           ? t("widget.state.unavailable")
-          : statusKey
-            ? t(statusKey)
-            : state
+          : (groupStatus ??
+            (statusKey ? t(statusKey) : state))
       }
       icon={
         lock?.isJammed

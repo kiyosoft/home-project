@@ -2,112 +2,162 @@ import { CloudSun } from "lucide-react";
 import { z } from "zod";
 
 import {
+  compactTemperatureUnit,
+  deriveWeather,
+  joinFacts,
+  weatherSparklinePath,
+  WEATHER_SPARKLINE,
+} from "@ethio/ha-sdk";
+import {
   defineWidget,
   useEntity,
   useEntityDetail,
   type WidgetComponentProps,
 } from "@ethio/plugin-sdk";
 
+import { cardShellClass, chipShellClass, cx, useCardDensity } from "../ui";
+import { cardActivateProps } from "./card-activate";
+import { ChipFace } from "./ChipFace";
+import { friendlyName, widgetEntityId, widgetTitle } from "./names";
+import { WidgetPlaceholder } from "./WidgetPlaceholder";
+
 export const weatherConfigSchema = z.object({
   title: z.string().default(""),
   entity_id: z.string().min(1, "Entity is required"),
 });
 
-function getFriendlyName(entity: {
-  entity_id: string;
-  attributes: Record<string, unknown>;
-}): string {
-  const name = entity.attributes.friendly_name;
-  if (typeof name === "string" && name.trim()) return name;
-  return entity.entity_id;
+function formatHour(date: Date, index: number): string {
+  if (index === 0) return "Now";
+  return date
+    .toLocaleTimeString(undefined, { hour: "numeric" })
+    .replace(" ", "");
+}
+
+function WeatherSparkline({
+  points,
+  unit,
+}: {
+  points: { at: Date; temperature: number }[];
+  unit: string;
+}) {
+  const path = weatherSparklinePath(points);
+  if (!path) return null;
+
+  return (
+    <div className="mt-auto pt-3">
+      <svg
+        viewBox={`0 0 ${WEATHER_SPARKLINE.width} ${WEATHER_SPARKLINE.height}`}
+        className="h-9 w-full text-sky-400"
+        aria-hidden
+      >
+        <path
+          d={path}
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      </svg>
+      <div className="mt-1 flex justify-between text-[11px] text-muted-foreground">
+        {points.map((point, index) => (
+          <span key={`${point.at.getTime()}-${point.temperature}`}>
+            {formatHour(point.at, index)}
+            {index === points.length - 1 ? ` ${point.temperature}${unit}` : ""}
+          </span>
+        ))}
+      </div>
+    </div>
+  );
 }
 
 function WeatherWidget({ config, interactive }: WidgetComponentProps) {
-  const entityId =
-    typeof config.entity_id === "string" ? config.entity_id : "";
-  const customTitle = typeof config.title === "string" ? config.title.trim() : "";
+  const entityId = widgetEntityId(config);
+  const customTitle = widgetTitle(config);
   const entity = useEntity(entityId);
   const entityDetail = useEntityDetail();
+  const { ref, compact, tight, chip } = useCardDensity();
+  const weather = deriveWeather(entity);
 
-  if (!entityId) {
+  if (!entityId || !weather) {
     return (
-      <div className="flex h-full min-h-36 flex-col rounded-2xl border border-border bg-card p-5 text-card-foreground shadow-sm">
-        <h3 className="font-display text-base font-semibold">
-          {customTitle || "Weather"}
-        </h3>
-        <p className="mt-2 text-sm text-muted-foreground">
-          Pick a weather entity in settings.
-        </p>
-      </div>
+      <WidgetPlaceholder
+        title={customTitle || "Weather"}
+        message={
+          entityId ? "Entity unavailable" : "Pick a weather entity in settings."
+        }
+        dashed={Boolean(entityId)}
+      />
     );
   }
 
-  if (!entity) {
-    return (
-      <div className="flex h-full min-h-36 flex-col rounded-2xl border border-dashed border-border bg-card p-5">
-        <h3 className="font-display text-base font-semibold">
-          {customTitle || entityId}
-        </h3>
-        <p className="mt-2 text-sm text-muted-foreground">Entity unavailable</p>
-      </div>
-    );
-  }
-
-  const displayTitle = customTitle || getFriendlyName(entity);
-  const temp =
-    typeof entity.attributes.temperature === "number"
-      ? entity.attributes.temperature
-      : undefined;
-  const unit =
-    typeof entity.attributes.temperature_unit === "string"
-      ? entity.attributes.temperature_unit
-      : "°";
-  const humidity =
-    typeof entity.attributes.humidity === "number"
-      ? entity.attributes.humidity
-      : undefined;
+  const displayTitle = customTitle || friendlyName(entity, "Weather");
+  const unit = compactTemperatureUnit(weather.temperatureUnit);
+  const condition = weather.state.replace(/-/g, " ");
 
   return (
     <div
-      role={interactive ? "button" : undefined}
-      tabIndex={interactive ? 0 : undefined}
-      onClick={interactive ? () => entityDetail.open(entityId) : undefined}
-      onKeyDown={
-        interactive
-          ? (event) => {
-              if (event.key === "Enter" || event.key === " ") {
-                event.preventDefault();
-                entityDetail.open(entityId);
-              }
-            }
-          : undefined
-      }
-      className={`flex h-full min-h-36 flex-col rounded-2xl border border-border bg-card p-5 text-card-foreground shadow-sm outline-none transition-colors ${
+      ref={ref}
+      {...cardActivateProps(interactive, () => entityDetail.open(entityId))}
+      className={cx(
+        chip ? chipShellClass : cardShellClass,
+        "border-border bg-card text-card-foreground outline-none",
+        !chip && "border shadow-sm",
+        !chip && (compact ? "p-4" : "p-5"),
         interactive
           ? "cursor-pointer hover:border-primary/40 focus-visible:ring-2 focus-visible:ring-ring"
-          : ""
-      }`}
+          : "",
+      )}
     >
+      {chip ? (
+        <ChipFace
+          title={displayTitle}
+          status={
+            weather.temperature != null
+              ? `${weather.temperature}${unit}`
+              : condition
+          }
+          icon={CloudSun}
+          active
+        />
+      ) : (
+      <>
       <div className="flex items-start justify-between gap-3">
-        <div>
+        <div className="min-w-0">
           <p className="text-xs uppercase tracking-[0.14em] text-muted-foreground">
             Weather
           </p>
-          <h3 className="mt-1 font-display text-base font-semibold tracking-tight">
+          <h3 className="mt-1 truncate font-display text-base font-semibold tracking-tight">
             {displayTitle}
           </h3>
         </div>
-        <div className="rounded-full bg-primary/10 p-2 text-primary">
+        <div className="rounded-full bg-sky-400/15 p-2 text-sky-400 shadow-[0_0_16px_rgba(56,189,248,0.35)]">
           <CloudSun className="h-4 w-4" />
         </div>
       </div>
-      <p className="mt-4 font-display text-3xl font-semibold tracking-tight">
-        {temp != null ? `${temp}${unit}` : "—"}
+      <p
+        className={cx(
+          "mt-4 font-display font-semibold tracking-tight",
+          compact ? "text-3xl" : "text-4xl",
+        )}
+      >
+        {weather.temperature != null ? `${weather.temperature}${unit}` : "—"}
       </p>
-      <p className="mt-1 text-sm capitalize text-muted-foreground">
-        {entity.state.replace(/-/g, " ")}
-        {humidity != null ? ` · ${humidity}% humidity` : ""}
-      </p>
+      <p className="mt-1 text-sm capitalize text-muted-foreground">{condition}</p>
+      {compact ? null : (
+        <p className="mt-2 text-xs text-muted-foreground">
+          {joinFacts([
+            weather.apparent != null ? `Feels like ${weather.apparent}${unit}` : null,
+            weather.humidity != null ? `${weather.humidity}%` : null,
+            weather.windSpeed != null
+              ? `${weather.windSpeed} ${weather.windUnit}`
+              : null,
+          ])}
+        </p>
+      )}
+      {tight ? null : <WeatherSparkline points={weather.forecast} unit={unit} />}
+      </>
+      )}
     </div>
   );
 }
@@ -115,13 +165,13 @@ function WeatherWidget({ config, interactive }: WidgetComponentProps) {
 export const weatherWidget = defineWidget({
   id: "@ethio/core/weather",
   name: "Weather",
-  description: "Current condition and temperature",
+  description: "Current condition, feels like, and a short forecast",
   component: WeatherWidget,
   configSchema: weatherConfigSchema,
   defaultConfig: { title: "", entity_id: "" },
-  defaultSize: { w: 4, h: 3, minW: 3, minH: 2, maxW: 8, maxH: 5 },
-  minSize: { w: 3, h: 2 },
-  maxSize: { w: 8, h: 5 },
+  defaultSize: { w: 2, h: 2, minW: 2, minH: 1, maxW: 6, maxH: 5 },
+  minSize: { w: 2, h: 1 },
+  maxSize: { w: 6, h: 5 },
   entityDomains: ["weather"],
   capabilities: ["entity.read"],
 });

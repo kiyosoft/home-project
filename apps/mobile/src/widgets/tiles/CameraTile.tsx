@@ -64,6 +64,9 @@ export function CameraTile({ config, size }: WidgetBodyProps) {
           uri={unavailable ? null : camera.stillUrl}
           label={title}
           className="absolute inset-0"
+          emptyLabel={t("widget.camera.noSignal")}
+          retryLabel={t("widget.camera.retry")}
+          onRetry={camera.refreshImage}
         />
         <LinearGradient
           colors={WASH}

@@ -74,7 +74,8 @@ export const WidgetTile = memo(function WidgetTile({
       <div
         className={cn(
           "h-full",
-          mode === "edit" && "pointer-events-none select-none",
+          mode === "edit" &&
+            "pointer-events-none select-none [&_.ethio-card-chip]:pr-20",
         )}
       >
         <WidgetRenderer widget={widget} interactive={mode === "live"} />

@@ -1,4 +1,13 @@
-import { Plus, Trash2 } from "lucide-react";
+import {
+  Bed,
+  CloudSun,
+  Home,
+  Plus,
+  Settings,
+  Trash2,
+  Zap,
+  type LucideIcon,
+} from "lucide-react";
 import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -8,6 +17,14 @@ import { t } from "@/i18n";
 import { cn } from "@/lib/utils";
 import { useDashboardStore } from "@/store/dashboard-store";
 import { useLocaleStore } from "@/store/locale-store";
+
+function pageIcon(id: string, title: string): LucideIcon {
+  const key = `${id} ${title}`.toLowerCase();
+  if (key.includes("bed")) return Bed;
+  if (key.includes("energy") || key.includes("power")) return Zap;
+  if (key.includes("environ") || key.includes("weather")) return CloudSun;
+  return Home;
+}
 
 export function PageDock() {
   const locale = useLocaleStore((state) => state.locale);
@@ -37,15 +54,16 @@ export function PageDock() {
         <div className="pointer-events-auto flex max-w-full items-center gap-1 overflow-x-auto rounded-2xl border border-border bg-card/95 px-2 py-2 shadow-lg backdrop-blur">
           {dashboard.pages.map((page) => {
             const active = page.id === activePageId;
+            const Icon = pageIcon(page.id, page.title);
             return (
               <button
                 key={page.id}
                 type="button"
                 className={cn(
-                  "rounded-xl px-3 py-2 text-sm font-medium whitespace-nowrap transition-colors",
+                  "flex h-11 w-11 items-center justify-center rounded-full transition-colors sm:h-auto sm:w-auto sm:rounded-xl sm:px-3 sm:py-2",
                   active
-                    ? "bg-primary text-primary-foreground"
-                    : "text-foreground hover:bg-muted",
+                    ? "bg-primary/20 text-primary shadow-[0_0_16px_color-mix(in_srgb,var(--primary)_35%,transparent)]"
+                    : "text-muted-foreground hover:bg-muted hover:text-foreground",
                 )}
                 onClick={() => setActivePage(page.id)}
                 onDoubleClick={() => {
@@ -53,8 +71,13 @@ export function PageDock() {
                   setRenameId(page.id);
                   setRenameValue(page.title);
                 }}
+                aria-label={page.title}
+                aria-current={active ? "page" : undefined}
               >
-                {page.title}
+                <Icon className="h-5 w-5" />
+                <span className="ml-2 hidden text-sm font-medium sm:inline">
+                  {page.title}
+                </span>
               </button>
             );
           })}
@@ -82,7 +105,18 @@ export function PageDock() {
                 </Button>
               ) : null}
             </>
-          ) : null}
+          ) : (
+            <button
+              type="button"
+              className="flex h-11 w-11 items-center justify-center rounded-full text-muted-foreground hover:bg-muted hover:text-foreground"
+              aria-label={t(locale, "header.settingsAria")}
+              onClick={() =>
+                window.dispatchEvent(new Event("ethio:open-settings"))
+              }
+            >
+              <Settings className="h-5 w-5" />
+            </button>
+          )}
         </div>
       </nav>
 

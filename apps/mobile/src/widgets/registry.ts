@@ -3,18 +3,26 @@ import {
   isTeamTrackerEntity,
   type HassEntity,
 } from "@ethio/ha-sdk";
+import type { MobileWidget, TileSize } from "@ethio/mobile-schema";
 
 import { entityDomain } from "@/store/use-entity";
+import { AreaTile } from "@/widgets/tiles/AreaTile";
+import { BatteriesTile } from "@/widgets/tiles/BatteriesTile";
 import { CameraTile } from "@/widgets/tiles/CameraTile";
+import { ClimateSensorsTile } from "@/widgets/tiles/ClimateSensorsTile";
 import { ClimateTile } from "@/widgets/tiles/ClimateTile";
+import { ClockTile } from "@/widgets/tiles/ClockTile";
 import { CoverTile } from "@/widgets/tiles/CoverTile";
 import { EntityStateTile } from "@/widgets/tiles/EntityStateTile";
+import { FanTile } from "@/widgets/tiles/FanTile";
 import { LightTile } from "@/widgets/tiles/LightTile";
 import { LockTile } from "@/widgets/tiles/LockTile";
 import { MediaTile } from "@/widgets/tiles/MediaTile";
+import { SceneTile } from "@/widgets/tiles/SceneTile";
 import { SinksarTile } from "@/widgets/tiles/SinksarTile";
 import { TeamTrackerTile } from "@/widgets/tiles/TeamTrackerTile";
 import { ToggleTile } from "@/widgets/tiles/ToggleTile";
+import { WeatherTile } from "@/widgets/tiles/WeatherTile";
 import type { MobileWidgetDef } from "@/widgets/types";
 
 /**
@@ -24,16 +32,52 @@ import type { MobileWidgetDef } from "@/widgets/types";
  */
 export const MOBILE_WIDGETS: MobileWidgetDef[] = [
   {
+    id: "@ethio/core/clock",
+    component: ClockTile,
+    defaultSize: "lg",
+    domains: [],
+  },
+  {
+    id: "@ethio/core/batteries",
+    component: BatteriesTile,
+    defaultSize: "md",
+    domains: [],
+  },
+  {
+    id: "@ethio/core/area",
+    component: AreaTile,
+    defaultSize: "lg",
+    domains: [],
+  },
+  {
+    id: "@ethio/core/climate-sensors",
+    component: ClimateSensorsTile,
+    defaultSize: "md",
+    domains: [],
+  },
+  {
+    id: "@ethio/core/scene",
+    component: SceneTile,
+    defaultSize: "sm",
+    domains: ["scene", "script"],
+  },
+  {
     id: "@ethio/core/light",
     component: LightTile,
     defaultSize: "md",
     domains: ["light"],
   },
   {
+    id: "@ethio/core/fan",
+    component: FanTile,
+    defaultSize: "sm",
+    domains: ["fan"],
+  },
+  {
     id: "@ethio/core/toggle",
     component: ToggleTile,
     defaultSize: "sm",
-    domains: ["switch", "input_boolean", "fan"],
+    domains: ["switch", "input_boolean"],
   },
   {
     id: "@ethio/core/lock",
@@ -52,6 +96,12 @@ export const MOBILE_WIDGETS: MobileWidgetDef[] = [
     component: CoverTile,
     defaultSize: "md",
     domains: ["cover"],
+  },
+  {
+    id: "@ethio/core/weather",
+    component: WeatherTile,
+    defaultSize: "lg",
+    domains: ["weather"],
   },
   {
     id: "@ethio/core/camera",
@@ -102,4 +152,28 @@ export function widgetForEntity(
     if (!def.domains.includes(domain)) return false;
     return def.matches ? def.matches(entity) : true;
   });
+}
+
+export function newWidgetId(sectionId: string, key: string): string {
+  return `${sectionId}:${key}:${Date.now().toString(36)}`;
+}
+
+export function widgetFromType(
+  sectionId: string,
+  type: string,
+  config: Record<string, unknown>,
+  size?: TileSize,
+): MobileWidget | null {
+  const def = findWidget(type);
+  if (!def) return null;
+  const entityId =
+    typeof config.entity_id === "string" ? config.entity_id : "";
+  return {
+    id: entityId
+      ? `${sectionId}:${entityId}`
+      : newWidgetId(sectionId, type.split("/").pop() ?? type),
+    type,
+    config,
+    size: size ?? def.defaultSize,
+  };
 }

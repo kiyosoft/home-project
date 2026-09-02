@@ -31,7 +31,7 @@ function PersonWidget({ config, interactive }: WidgetComponentProps) {
 
   if (!entityId) {
     return (
-      <div className="flex h-full min-h-36 flex-col rounded-2xl border border-border bg-card p-5 text-card-foreground shadow-sm">
+      <div className="flex h-full min-h-0 flex-col overflow-hidden rounded-2xl border border-border bg-card p-5 text-card-foreground shadow-sm">
         <h3 className="font-display text-base font-semibold">
           {customTitle || "Person"}
         </h3>
@@ -44,7 +44,7 @@ function PersonWidget({ config, interactive }: WidgetComponentProps) {
 
   if (!entity) {
     return (
-      <div className="flex h-full min-h-36 flex-col rounded-2xl border border-dashed border-border bg-card p-5">
+      <div className="flex h-full min-h-0 flex-col overflow-hidden rounded-2xl border border-dashed border-border bg-card p-5">
         <h3 className="font-display text-base font-semibold">
           {customTitle || entityId}
         </h3>
@@ -75,7 +75,7 @@ function PersonWidget({ config, interactive }: WidgetComponentProps) {
             }
           : undefined
       }
-      className={`flex h-full min-h-36 flex-col items-center justify-center rounded-2xl border border-border bg-card p-5 text-card-foreground shadow-sm outline-none transition-colors ${
+      className={`flex h-full min-h-0 flex-col overflow-hidden items-center justify-center rounded-2xl border border-border bg-card p-5 text-card-foreground shadow-sm outline-none transition-colors ${
         interactive
           ? "cursor-pointer hover:border-primary/40 focus-visible:ring-2 focus-visible:ring-ring"
           : ""

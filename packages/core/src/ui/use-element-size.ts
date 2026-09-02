@@ -25,16 +25,24 @@ export function useElementSize<T extends HTMLElement>(): [
     observer.current = null;
     if (!node || typeof ResizeObserver === "undefined") return;
 
+    const read = (target: HTMLElement) => ({
+      width: target.offsetWidth,
+      height: target.offsetHeight,
+    });
+
     const next = new ResizeObserver((entries) => {
-      const box = entries[0]?.contentRect;
-      if (!box) return;
+      const target = entries[0]?.target;
+      if (!(target instanceof HTMLElement)) return;
+      const box = read(target);
       setSize((prev) =>
-        prev.width === box.width && prev.height === box.height
-          ? prev
-          : { width: box.width, height: box.height },
+        prev.width === box.width && prev.height === box.height ? prev : box,
       );
     });
     next.observe(node);
+    setSize((prev) => {
+      const box = read(node);
+      return prev.width === box.width && prev.height === box.height ? prev : box;
+    });
     observer.current = next;
   }, []);
 

@@ -2,7 +2,7 @@ import { z } from "zod";
 
 export const widgetTypeSchema = z.string().min(1);
 
-export const tileSizeSchema = z.enum(["sm", "md"]);
+export const tileSizeSchema = z.enum(["sm", "md", "lg"]);
 
 export const mobileWidgetSchema = z.object({
   id: z.string().min(1),

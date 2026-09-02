@@ -56,6 +56,12 @@ export const en = {
   "header.pillUnavailable": "unavailable",
   "header.pillActivated": "Activated",
   "header.welcomeHome": "Welcome home, {name}",
+  "header.greetingMorning": "Good morning",
+  "header.greetingAfternoon": "Good afternoon",
+  "header.greetingEvening": "Good evening",
+  "header.lightsOn": "{count} on",
+  "header.lightsOnOne": "1 on",
+  "header.lightsChipAria": "Lights currently on",
 
   "runtime.editHelp":
     "Edit mode — drag, resize, add, and configure widgets. Changes autosave.",
@@ -225,6 +231,9 @@ export const en = {
   "schema.apply": "Apply",
   "schema.title": "Title",
   "schema.titlePlaceholder": "Optional custom title",
+  "schema.ethiopianHours": "Ethiopian hours",
+  "schema.ethiopianHoursHelp":
+    "Count from 6:00 as 12-hour ቀን (day) and ሌሊት (night).",
   "textCard.placeholder":
     "Write text… use {{ states('sensor.temp') }} for live values",
   "textCard.templateHint":

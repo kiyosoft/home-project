@@ -1,7 +1,9 @@
+import { formatFraction, isOnState } from "@ethio/ha-sdk";
 import Ionicons from "@expo/vector-icons/Ionicons";
 
 import { entityDomain } from "@/store/use-entity";
 import { useT } from "@/store/locale-store";
+import { useGroupTally } from "@/widgets/use-group";
 import { useOptimistic } from "@/widgets/use-optimistic";
 import { useCallService } from "@/widgets/use-service";
 import { useTile } from "@/widgets/use-tile";
@@ -18,9 +20,16 @@ export function ToggleTile({ config, size }: WidgetBodyProps) {
   const t = useT();
   const callService = useCallService();
   const { entityId, entity, title, unavailable, openEntityDetail } = useTile(config);
-  const [isOn, setOptimisticOn] = useOptimistic(entity?.state === "on");
+  const { members, tally } = useGroupTally(config, entity, isOnState);
+  const grouped = members.length > 1;
+  const [isOn, setOptimisticOn] = useOptimistic(
+    grouped ? tally.active > 0 : entity?.state === "on",
+  );
 
   const domain = entityDomain(entityId);
+  const groupStatus = grouped
+    ? formatFraction(tally.active, tally.total, "on")
+    : null;
 
   const toggle = () => {
     if (unavailable) return;
@@ -34,9 +43,8 @@ export function ToggleTile({ config, size }: WidgetBodyProps) {
       status={
         unavailable
           ? t("widget.state.unavailable")
-          : isOn
-            ? t("widget.state.on")
-            : t("widget.state.off")
+          : (groupStatus ??
+            (isOn ? t("widget.state.on") : t("widget.state.off")))
       }
       icon={ICONS[domain] ?? "toggle-outline"}
       size={size}

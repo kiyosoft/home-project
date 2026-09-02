@@ -12,19 +12,12 @@ import { withUniwind } from "uniwind";
 
 import { useT } from "@/store/locale-store";
 import { FADE_MS, SETTLE_MS } from "@/ui/motion";
+import { TILE_GAP, tileColumn } from "@/widgets/tile-layout";
 import { TileColumnProvider } from "@/widgets/tile-metrics";
 import { WidgetRenderer } from "@/widgets/WidgetRenderer";
 import { WidgetTile } from "@/widgets/WidgetTile";
 
 const Icon = withUniwind(Ionicons);
-
-export const TILE_GAP = 16;
-const COLUMNS = 2;
-
-/** Width of a half tile inside a row of the given width. */
-export function tileColumn(width: number): number {
-  return (width - TILE_GAP * (COLUMNS - 1)) / COLUMNS;
-}
 
 function Badge({
   icon,
@@ -56,13 +49,13 @@ function Badge({
 }
 
 export interface TileRowProps {
-  /** One full-width tile, or up to two half-width ones. */
   widgets: MobileWidget[];
   /**
    * Row width. The screen measures it once and hands it down, because a row
    * inside a virtualized list has to know its height on the frame it mounts.
    */
   width: number;
+  columns: number;
   /** Edit mode's add tile, in this row's free slot or on its own. */
   withAdd?: boolean;
   /** Edit mode swaps tile controls for resize and remove badges. */
@@ -76,6 +69,7 @@ export interface TileRowProps {
 export function TileRow({
   widgets,
   width,
+  columns,
   withAdd = false,
   editing = false,
   onRemove,
@@ -83,19 +77,21 @@ export function TileRow({
   onAdd,
 }: TileRowProps) {
   const t = useT();
-  const column = tileColumn(width);
+  const column = tileColumn(width, columns);
 
   return (
     <TileColumnProvider column={column}>
       <View className="flex-row items-stretch" style={{ gap: TILE_GAP }}>
         {widgets.map((widget) => {
           const size: TileSize = widget.size ?? "sm";
+          const span = tileSpan(size);
           return (
             <Animated.View
               key={widget.id}
-              // A resize changes this width; without it the tile jumps size.
               layout={LinearTransition.duration(SETTLE_MS)}
-              style={{ width: tileSpan(size) === COLUMNS ? width : column }}
+              style={{
+                width: span * column + TILE_GAP * (span - 1),
+              }}
             >
               {/* Editing swallows taps so a resize never toggles the device. */}
               <View className="flex-1" pointerEvents={editing ? "none" : "auto"}>
@@ -114,9 +110,13 @@ export function TileRow({
                   }}
                 >
                   <Badge
-                    icon={size === "sm" ? "expand" : "contract"}
+                    icon={size === "lg" ? "contract" : "expand"}
                     label={t(
-                      size === "sm" ? "home.widthFull" : "home.widthHalf",
+                      size === "sm"
+                        ? "home.widthFull"
+                        : size === "md"
+                          ? "home.widthTall"
+                          : "home.widthHalf",
                     )}
                     onPress={() => onResize?.(widget.id)}
                   />

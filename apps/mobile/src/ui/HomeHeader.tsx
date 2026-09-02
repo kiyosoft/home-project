@@ -1,5 +1,7 @@
+import { countLightsOn } from "@ethio/ha-sdk";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { Button, Chip, Text, useThemeColor } from "heroui-native";
+import { useEffect, useMemo, useState } from "react";
 import { ScrollView, View } from "react-native";
 
 import { formatHomeSummary, useHomeSummary } from "@/dashboard/home-summary";
@@ -27,6 +29,42 @@ function greetingKey(hour: number): MessageKey {
   if (hour < 12) return "home.greetingMorning";
   if (hour < 18) return "home.greetingAfternoon";
   return "home.greetingEvening";
+}
+
+function pad(value: number): string {
+  return String(value).padStart(2,  "0");
+}
+
+function HeaderClock() {
+  const [now, setNow] = useState(() => new Date());
+  useEffect(() => {
+    const id = setInterval(() => setNow(new Date()), 1000);
+    return () => clearInterval(id);
+  }, []);
+  return (
+    <Text className="text-foreground text-lg font-semibold tabular-nums">
+      {pad(now.getHours())}:{pad(now.getMinutes())}
+    </Text>
+  );
+}
+
+function LightsChip() {
+  const t = useT();
+  const entities = useHaStore((state) => state.entities);
+  const count = useMemo(() => countLightsOn(entities), [entities]);
+  if (count <= 0) return null;
+  return (
+    <Chip
+      size="sm"
+      color="accent"
+      variant="soft"
+      accessibilityLabel={t("home.lightsChipAria")}
+    >
+      {count === 1
+        ? t("home.lightsOnOne")
+        : t("home.lightsOn", { count })}
+    </Chip>
+  );
 }
 
 /** A section shortcut that lights up while anything under it is on. */
@@ -76,7 +114,6 @@ export function HomeHeader({
   const foreground = useThemeColor("foreground");
   const accentForeground = useThemeColor("accent-foreground");
 
-  // A greeting wants what people call you, not your registered full name.
   const name = useHaStore((state) => state.userName).split(" ")[0] ?? "";
   const { welcome } = useArrivalWelcome();
   const greeting = t(welcome ? "home.greetingWelcome" : greetingKey(new Date().getHours()));
@@ -96,26 +133,30 @@ export function HomeHeader({
               </Text.Heading>
             </>
           ) : (
-            // No one to address, so the greeting carries the line itself
-            // rather than leaving a gap where a name would sit.
             <Text.Heading type="h1" numberOfLines={1}>
               {greeting}
             </Text.Heading>
           )}
         </View>
-        <Button
-          size="sm"
-          isIconOnly
-          variant={editing ? "primary" : "secondary"}
-          accessibilityLabel={editLabel}
-          onPress={onToggleEditing}
-        >
-          <Ionicons
-            name={editing ? "checkmark" : "pencil"}
-            size={18}
-            color={editing ? accentForeground : foreground}
-          />
-        </Button>
+        <View className="items-end gap-2">
+          <HeaderClock />
+          <View className="flex-row items-center gap-2">
+            <LightsChip />
+            <Button
+              size="sm"
+              isIconOnly
+              variant={editing ? "primary" : "secondary"}
+              accessibilityLabel={editLabel}
+              onPress={onToggleEditing}
+            >
+              <Ionicons
+                name={editing ? "checkmark" : "pencil"}
+                size={18}
+                color={editing ? accentForeground : foreground}
+              />
+            </Button>
+          </View>
+        </View>
       </View>
 
       <Text className="text-muted text-[15px]">
@@ -134,8 +175,6 @@ export function HomeHeader({
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
-          // The row bleeds into the screen's padding so chips can scroll to
-          // the very edge instead of stopping short of it.
           className="-mx-5"
           contentContainerClassName="gap-2 px-5"
         >
