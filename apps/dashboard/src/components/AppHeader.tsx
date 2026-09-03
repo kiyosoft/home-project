@@ -20,7 +20,7 @@ import type { TimeFormat } from "@/dashboard/types";
 import { useClock } from "@/hooks/useClock";
 import { useArrivalWelcome } from "@/hooks/useArrivalWelcome";
 import { t, type Locale, type MessageKey } from "@/i18n";
-import { formatHeaderDate, formatHeaderTime } from "@/lib/header-format";
+import { formatHeaderDateShort, formatHeaderTime } from "@/lib/header-format";
 import { useDashboardStore } from "@/store/dashboard-store";
 import { useHaStore } from "@/store/ha-store";
 import { useLocaleStore } from "@/store/locale-store";
@@ -96,18 +96,15 @@ export function AppHeader({
           <div className="flex items-start justify-between gap-4">
             <div className="min-w-0">
               {showTitle ? (
-                <h1 className="font-sans text-3xl font-semibold uppercase tracking-[0.08em] text-foreground sm:text-4xl md:text-[2.75rem] md:leading-none">
+                <h1 className="font-sans text-xl font-semibold uppercase tracking-[0.04em] text-foreground sm:text-2xl">
                   {title}
                 </h1>
               ) : null}
-              <HeaderGreeting locale={locale} />
-              {showDate ? (
-                <HeaderDate locale={locale} spaced />
-              ) : null}
+              <HeaderGreeting locale={locale} showDate={showDate} />
               {showWelcome ? (
                 <p
-                  className={`text-lg text-muted-foreground sm:text-xl ${
-                    showTitle || showDate ? "mt-2" : ""
+                  className={`text-sm text-muted-foreground ${
+                    showTitle || showDate ? "mt-1" : ""
                   }`}
                 >
                   {t(locale, "header.welcomeHome", { name: arrival.name })}
@@ -127,7 +124,7 @@ export function AppHeader({
         {showToolbar || showDisconnect ? (
           <div
             className={`flex flex-wrap items-center justify-end gap-2 ${
-              showHero ? "mt-4" : ""
+              showHero ? "mt-2" : ""
             }`}
           >
             {showToolbar ? <ThemeChooser /> : null}
@@ -256,7 +253,7 @@ function LightsChip({ locale }: { locale: Locale }) {
   if (count <= 0) return null;
   return (
     <span
-      className="inline-flex items-center gap-1.5 rounded-full border border-amber-400/30 bg-amber-400/10 px-2.5 py-1 text-xs font-medium text-amber-200"
+      className="inline-flex items-center gap-1.5 rounded-full border border-warning/40 bg-warning/15 px-2.5 py-1 text-xs font-medium text-amber-900 dark:border-warning/30 dark:bg-warning/10 dark:text-warning"
       aria-label={t(locale, "header.lightsChipAria")}
     >
       <Lightbulb className="h-3.5 w-3.5" />
@@ -264,19 +261,6 @@ function LightsChip({ locale }: { locale: Locale }) {
         ? t(locale, "header.lightsOnOne")
         : t(locale, "header.lightsOn", { count })}
     </span>
-  );
-}
-
-function HeaderDate({ locale, spaced }: { locale: Locale; spaced: boolean }) {
-  const now = useClock();
-  return (
-    <p
-      className={`text-xs font-medium uppercase tracking-[0.16em] text-muted-foreground sm:text-sm ${
-        spaced ? "mt-2" : ""
-      }`}
-    >
-      {formatHeaderDate(now, locale)}
-    </p>
   );
 }
 
@@ -291,19 +275,27 @@ function HeaderTime({
   return (
     <time
       dateTime={now.toISOString()}
-      className="shrink-0 font-sans text-3xl font-semibold tabular-nums tracking-tight text-foreground sm:text-4xl md:text-[2.75rem] md:leading-none"
+      className="shrink-0 font-sans text-xl font-semibold tabular-nums tracking-tight text-foreground sm:text-2xl"
     >
       {formatHeaderTime(now, timeFormat, locale)}
     </time>
   );
 }
 
-function HeaderGreeting({ locale }: { locale: Locale }) {
+function HeaderGreeting({
+  locale,
+  showDate,
+}: {
+  locale: Locale;
+  showDate: boolean;
+}) {
   const now = useClock();
-  const weekday = now.toLocaleDateString(undefined, { weekday: "short", day: "numeric", month: "short" });
+  const greeting = t(locale, greetingKey(now.getHours()));
   return (
-    <p className="mt-2 text-sm text-muted-foreground">
-      {t(locale, greetingKey(now.getHours()))} · {weekday}
+    <p className="mt-0.5 text-sm text-muted-foreground">
+      {showDate
+        ? `${greeting} · ${formatHeaderDateShort(now, locale)}`
+        : greeting}
     </p>
   );
 }

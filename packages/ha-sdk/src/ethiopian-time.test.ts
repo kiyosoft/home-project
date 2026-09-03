@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 
-import { secondProgress, clockFace, toEthiopianClock } from "./ethiopian-time";
+import {
+  clockFace,
+  secondProgress,
+  toEthiopianClock,
+} from "./ethiopian-time";
 
 function at(hours: number, minutes = 0, seconds = 0): Date {
   return new Date(2026, 8, 2, hours, minutes, seconds);

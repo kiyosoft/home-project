@@ -97,12 +97,8 @@ export function DashboardRuntime() {
           ) : null}
 
           {!kiosk ? (
-            <p className="mb-[var(--dash-gap)] text-sm text-muted-foreground">
-              {help}
-            </p>
-          ) : (
-            <div className="mb-[var(--dash-gap)]" />
-          )}
+            <p className="mb-2 text-sm text-muted-foreground">{help}</p>
+          ) : null}
 
           <DashboardGrid page={page} />
         </main>

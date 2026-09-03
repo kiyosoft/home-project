@@ -1,8 +1,4 @@
-import {
-  CLOCK_TICK_MS,
-  clockFace,
-  padClock,
-} from "@ethio/ha-sdk";
+import { CLOCK_TICK_MS, clockFace, padClock } from "@ethio/ha-sdk";
 import { Text } from "heroui-native";
 import { useEffect, useState } from "react";
 import { View } from "react-native";

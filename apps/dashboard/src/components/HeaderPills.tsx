@@ -261,7 +261,7 @@ export function HeaderPills({
 
   return (
     <>
-      <div className="mt-3 flex flex-wrap items-center gap-2">
+      <div className="mt-2 flex flex-wrap items-center gap-2">
         {pills.map((pill, index) => (
           <HeaderPill
             key={`${pill.entity_id ?? ""}:${pill.template ?? ""}:${index}`}

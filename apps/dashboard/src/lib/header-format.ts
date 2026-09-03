@@ -11,6 +11,17 @@ export function formatHeaderDate(date: Date, locale: Locale = "en"): string {
     .toUpperCase();
 }
 
+export function formatHeaderDateShort(
+  date: Date,
+  locale: Locale = "en",
+): string {
+  return new Intl.DateTimeFormat(toIntlLocale(locale), {
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+  }).format(date);
+}
+
 export function formatHeaderTime(
   date: Date,
   timeFormat: TimeFormat,

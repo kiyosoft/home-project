@@ -1,11 +1,7 @@
 import { useEffect, useState } from "react";
 import { z } from "zod";
 
-import {
-  CLOCK_TICK_MS,
-  clockFace,
-  padClock,
-} from "@ethio/ha-sdk";
+import { CLOCK_TICK_MS, clockFace, padClock } from "@ethio/ha-sdk";
 import { defineWidget, type WidgetComponentProps } from "@ethio/plugin-sdk";
 
 import { Clock } from "lucide-react";
@@ -94,51 +90,51 @@ function ClockWidget({ config }: WidgetComponentProps) {
           active
         />
       ) : (
-      <>
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-muted-foreground">
-            {customTitle || face.weekday}
-          </p>
-          <p className="mt-0.5 text-sm text-muted-foreground">{face.date}</p>
-        </div>
-        {face.periodLabel ? (
-          <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
-            {face.periodLabel}
-          </span>
-        ) : null}
-      </div>
+        <>
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-muted-foreground">
+                {customTitle || face.weekday}
+              </p>
+              <p className="mt-0.5 text-sm text-muted-foreground">{face.date}</p>
+            </div>
+            {face.periodLabel ? (
+              <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
+                {face.periodLabel}
+              </span>
+            ) : null}
+          </div>
 
-      <div className="mt-auto flex items-end justify-between gap-3 pt-3">
-        <div className="leading-none">
-          <p
-            className={cx(
-              "font-display font-semibold tabular-nums tracking-tighter",
-              compact ? "text-4xl" : "text-5xl sm:text-6xl",
+          <div className="mt-auto flex items-end justify-between gap-3 pt-3">
+            <div className="leading-none">
+              <p
+                className={cx(
+                  "font-display font-semibold tabular-nums tracking-tighter",
+                  compact ? "text-4xl" : "text-5xl sm:text-6xl",
+                )}
+              >
+                {padClock(face.hours)}
+              </p>
+              <p
+                className={cx(
+                  "mt-1 font-medium tabular-nums tracking-tight text-muted-foreground",
+                  compact ? "text-xl" : "text-2xl sm:text-3xl",
+                )}
+              >
+                {padClock(face.minutes)}
+              </p>
+            </div>
+            {tight ? null : (
+              <SecondsFace progress={face.progress} seconds={face.seconds} />
             )}
-          >
-            {padClock(face.hours)}
-          </p>
-          <p
-            className={cx(
-              "mt-1 font-medium tabular-nums tracking-tight text-muted-foreground",
-              compact ? "text-xl" : "text-2xl sm:text-3xl",
-            )}
-          >
-            {padClock(face.minutes)}
-          </p>
-        </div>
-        {tight ? null : (
-          <SecondsFace progress={face.progress} seconds={face.seconds} />
-        )}
-      </div>
+          </div>
 
-      {ethiopian && !tight ? (
-        <p className="mt-3 text-xs tabular-nums text-muted-foreground">
-          {face.western}
-        </p>
-      ) : null}
-      </>
+          {ethiopian && !tight ? (
+            <p className="mt-3 text-xs tabular-nums text-muted-foreground">
+              {face.western}
+            </p>
+          ) : null}
+        </>
       )}
     </div>
   );
