@@ -220,7 +220,7 @@ A plugin does **not** create pages, routes, or navigation.
 
 # Connection & Auth
 
-- Setup wizard: HA URL → OAuth (preferred) or long-lived token
+- Setup wizard: HA URL → username/password (preferred) or long-lived token
 - Demo mode with simulated entities when HA is unavailable
 - Validated session against the authenticated HA user for protected
   profile/settings APIs

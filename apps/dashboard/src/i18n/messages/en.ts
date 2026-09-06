@@ -234,6 +234,9 @@ export const en = {
   "schema.ethiopianHours": "Ethiopian hours",
   "schema.ethiopianHoursHelp":
     "Count from 6:00 as 12-hour ቀን (day) and ሌሊት (night).",
+  "schema.clockType": "Clock type",
+  "schema.clockTypeAnalog": "Analog",
+  "schema.clockTypeDigital": "Digital",
   "textCard.placeholder":
     "Write text… use {{ states('sensor.temp') }} for live values",
   "textCard.templateHint":

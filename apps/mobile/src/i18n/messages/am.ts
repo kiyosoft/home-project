@@ -8,27 +8,44 @@ export const am: Record<MessageKey, string> = {
 
   "setup.connectTitle": "ከሃቡ ጋር ይገናኙ",
   "setup.connectDescription":
-    "በሆም አሲስታንት በኩል ይግቡ። የኤንቲቲ ውሂብ በኔትዎርክዎ ውስጥ ይቆያል።",
+    "በሆም አሲስታንት መለያዎ ይግቡ። የኤንቲቲ ውሂብ በኔትዎርክዎ ውስጥ ይቆያል።",
+  "setup.connectManually": "አድራሻውን በእጅ ያስገቡ",
+  "setup.searching": "ሃብዎን በመፈለግ ላይ",
+  "setup.searchingBody": "በዚህ ኔትዎርክ ላይ ሆም አሲስታንትን እየፈለግን ነው።",
+  "setup.foundTitle": "ሃብዎ ተገኘ",
+  "setup.foundTitleMany": "ሃቦች በአቅራቢያ ተገኝተዋል",
+  "setup.foundBody": "ለመግባት ፒኑን ይንኩ።",
+  "setup.discoverHint": "ሃብዎ አልተገኘም?",
+  "setup.discoverEmptyBody":
+    "በቤት ዋይ-ፋይ ላይ ይሁኑ፣ እንደገና ይፈልጉ፣ ወይም አድራሻውን ያስገቡ።",
   "setup.urlLabel": "የሃብ URL",
   "setup.urlPlaceholder": "http://192.168.1.1",
+  "setup.usernameLabel": "የተጠቃሚ ስም",
+  "setup.passwordLabel": "የይለፍ ቃል",
   "setup.tokenLabel": "የረጅም ጊዜ የመዳረሻ ቶከን",
   "setup.tokenPlaceholder": "ቶከን ይለጥፉ",
   "setup.connect": "ተገናኙ",
   "setup.connecting": "በመገናኘት ላይ…",
   "setup.signIn": "ይግቡ",
-  "setup.signingIn": "ሆም አሲስታንት በመክፈት ላይ…",
   "setup.retry": "እንደገና ሞክር",
   "setup.paste": "ለጥፍ",
   "setup.showToken": "ቶከን አሳይ",
   "setup.hideToken": "ቶከን ደብቅ",
+  "setup.showPassword": "የይለፍ ቃል አሳይ",
+  "setup.hidePassword": "የይለፍ ቃል ደብቅ",
   "setup.language": "ቋንቋ",
 
   "setup.useToken": "በምትኩ የረጅም ጊዜ የመዳረሻ ቶከን ይጠቀሙ",
-  "setup.useSignIn": "በምትኩ በሆም አሲስታንት በኩል ይግቡ",
+  "setup.useSignIn": "በምትኩ በተጠቃሚ ስም እና በይለፍ ቃል ይግቡ",
+  "setup.mfaTitle": "ባለ ሁለት ደረጃ ማረጋገጫ",
+  "setup.mfaDescription": "ከአረጋጋጭ መተግበሪያዎ የተገኘውን ኮድ ያስገቡ።",
+  "setup.codeLabel": "የማረጋገጫ ኮድ",
+  "setup.codePlaceholder": "123456",
+  "setup.verify": "አረጋግጥ",
+  "setup.cancel": "ሰርዝ",
 
   "setup.discoverTitle": "በዚህ ኔትዎርክ ላይ",
-  "setup.discoverEmpty":
-    "ምንም አልተገኘም። አድራሻውን በእጅ ያስገቡ፣ ወይም ሃቡ በዚህ ኔትዎርክ ላይ መሆኑን ያረጋግጡ።",
+  "setup.discoverEmpty": "በዚህ ኔትዎርክ ላይ ምንም አልተገኘም።",
   "setup.discoverRescan": "እንደገና ፈልግ",
 
   "setup.addressReachable": "ይደረሳል",
@@ -36,7 +53,14 @@ export const am: Record<MessageKey, string> = {
   "setup.tokenRejected": "ተቀባይነት አላገኘም",
 
   "setup.errorRequired": "የሃብ URL እና የረጅም ጊዜ ቶከን ያስፈልጋሉ።",
+  "setup.errorCredentialsRequired": "የተጠቃሚ ስምዎን እና የይለፍ ቃልዎን ያስገቡ።",
+  "setup.errorUrlRequired": "የሃብ URL ያስገቡ።",
+  "setup.errorCodeRequired": "የማረጋገጫ ኮዱን ያስገቡ።",
   "setup.errorInvalidUrl": "ትክክለኛ URL ያስገቡ፣ ለምሳሌ http://192.168.1.1",
+  "setup.errorInvalidAuth": "የተጠቃሚ ስም ወይም የይለፍ ቃል ትክክል አይደለም።",
+  "setup.errorInvalidCode": "ኮዱ አልተቀበለም። ቀጣዩን ይሞክሩ።",
+  "setup.errorBlocked":
+    "ብዙ ሙከራዎች ስለተደረጉ ሆም አሲስታንት መግቢያውን አግዷል። ትንሽ ቆይተው እንደገና ይሞክሩ።",
   "setup.errorUnreachable":
     "በዚያ አድራሻ ምንም ምላሽ አልሰጠም። ሃቡ መብራቱን እና በዚህ ኔትዎርክ ላይ መሆኑን ያረጋግጡ።",
   "setup.errorTokenRejected":
@@ -44,8 +68,6 @@ export const am: Record<MessageKey, string> = {
   "setup.errorConnectionLost": "ማዋቀሩ ከመጠናቀቁ በፊት ግንኙነቱ ተቋርጧል።",
   "setup.errorNoAddress": "እስካሁን አድራሻ አልተቀመጠም። ለመገናኘት አንድ ያስገቡ።",
   "setup.errorSignedOut": "መግቢያዎ ከአገልግሎት ውጪ ሆኗል። እንደገና ይግቡ።",
-  "setup.errorSigninUnavailable":
-    "ይህ ሃብ እስካሁን ለመተግበሪያ መግቢያ አልተዘጋጀም። የEt Remote Access አክዖን ጫኑ፣ ከዚያ እንደገና ይሞክሩ።",
   "setup.errorGeneric": "ሃቡ ላይ መድረስ አልተቻለም።",
 
   "setup.demoTitle": "የሙከራ ሁነታን ይሞክሩ",

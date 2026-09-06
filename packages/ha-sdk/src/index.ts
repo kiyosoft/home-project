@@ -62,6 +62,16 @@ export { normalizeBaseUrl } from "./base-url";
 export { connectLive, connectLiveWithTokens } from "./live";
 export type { TokenConnectOptions } from "./live";
 export {
+  signInWithPassword,
+  submitMfaCode,
+} from "./login-flow";
+export type {
+  LoginFailure,
+  LoginStep,
+  MfaLogin,
+  PasswordLogin,
+} from "./login-flow";
+export {
   buildAuthorizeUrl,
   exchangeCode,
   HaOAuthError,
@@ -117,6 +127,7 @@ export type {
   NumericAverage,
 } from "./group";
 export {
+  analogHands,
   CLOCK_TICK_MS,
   clockFace,
   ethiopianPeriodLabel,
@@ -125,6 +136,7 @@ export {
   toEthiopianClock,
 } from "./ethiopian-time";
 export type {
+  AnalogHands,
   ClockFace,
   EthiopianClock,
   EthiopianPeriod,

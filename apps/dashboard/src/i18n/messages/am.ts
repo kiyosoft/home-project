@@ -212,6 +212,9 @@ export const am: Record<MessageKey, string> = {
   "schema.ethiopianHours": "የኢትዮጵያ ሰዓት",
   "schema.ethiopianHoursHelp":
     "ሰዓቱን ከ6:00 ጀምሮ በ12 ሰዓት ቀንና ሌሊት ያሳዩ።",
+  "schema.clockType": "የሰዓት ዓይነት",
+  "schema.clockTypeAnalog": "አናሎግ",
+  "schema.clockTypeDigital": "ዲጂታል",
   "textCard.placeholder":
     "ጽሑፍ ይጫፉ… ለቀጥታ እሴቶች {{ states('sensor.temp') }} ይጠቀሙ",
   "textCard.templateHint":

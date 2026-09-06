@@ -49,6 +49,26 @@ export interface ClockFace {
   western: string;
 }
 
+export interface AnalogHands {
+  hourDeg: number;
+  minuteDeg: number;
+  secondDeg: number;
+}
+
+/** Hand angles for a 12-hour dial. 0° is 12 o'clock, clockwise. */
+export function analogHands(date: Date, ethiopianHours: boolean): AnalogHands {
+  const seconds = date.getSeconds() + date.getMilliseconds() / 1000;
+  const minutes = date.getMinutes() + seconds / 60;
+  const hour12 = ethiopianHours
+    ? (toEthiopianClock(date).hours % 12) + minutes / 60
+    : (date.getHours() % 12) + minutes / 60;
+  return {
+    hourDeg: hour12 * 30,
+    minuteDeg: minutes * 6,
+    secondDeg: seconds * 6,
+  };
+}
+
 export function clockFace(date: Date, ethiopianHours: boolean): ClockFace {
   const ethiopian = toEthiopianClock(date);
   const minutes = date.getMinutes();

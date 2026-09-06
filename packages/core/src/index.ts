@@ -28,7 +28,12 @@ export { calendarConfigSchema } from "./widgets/CalendarWidget";
 export { cameraConfigSchema } from "./widgets/CameraWidget";
 export { climateConfigSchema } from "./widgets/ClimateWidget";
 export { climateSensorsConfigSchema } from "./widgets/ClimateSensorsWidget";
-export { clockConfigSchema } from "./widgets/ClockWidget";
+export {
+  CLOCK_TYPES,
+  clockConfigSchema,
+  readClockType,
+} from "./widgets/ClockWidget";
+export type { ClockType } from "./widgets/ClockWidget";
 export { coverConfigSchema } from "./widgets/CoverWidget";
 export { entityStateConfigSchema } from "./widgets/EntityStateWidget";
 export { fanConfigSchema } from "./widgets/FanWidget";

@@ -55,7 +55,7 @@ Bump `version` in `ethio-home/config.yaml`, commit, push, then update the add-on
 
 ## Mobile app sign-in
 
-Signing in from the Ethio Home mobile app needs a verification page that Home Assistant fetches to confirm the app may receive your login. That page is published by the **Et Remote Access** add-on, not this one. Install it and sign-in works on the local network and over the public URL.
+The mobile app signs in with your Home Assistant username and password on its own login page. Two-factor accounts get a second step asking for the code. You can still paste a long-lived access token instead.
 
 ## Mobile app notifications
 

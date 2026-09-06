@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  analogHands,
   clockFace,
   secondProgress,
   toEthiopianClock,
@@ -61,6 +62,29 @@ describe("secondProgress", () => {
 
   it("is half at 30 seconds", () => {
     expect(secondProgress(at(10, 0, 30))).toBeCloseTo(0.5);
+  });
+});
+
+describe("analogHands", () => {
+  it("points at 12 o'clock at noon", () => {
+    expect(analogHands(at(12), false)).toEqual({
+      hourDeg: 0,
+      minuteDeg: 0,
+      secondDeg: 0,
+    });
+  });
+
+  it("points at 3 o'clock", () => {
+    expect(analogHands(at(15), false).hourDeg).toBe(90);
+  });
+
+  it("uses Ethiopian hours on the same 12-hour dial", () => {
+    expect(analogHands(at(7), true).hourDeg).toBe(30);
+    expect(analogHands(at(6), true).hourDeg).toBe(0);
+  });
+
+  it("puts 15 seconds at 90°", () => {
+    expect(analogHands(at(10, 0, 15), false).secondDeg).toBe(90);
   });
 });
 

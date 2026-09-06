@@ -20,7 +20,9 @@ export type ConnectFailure =
   | { kind: "no-address" }
   /** The saved grant is gone or was revoked; only a fresh login fixes it. */
   | { kind: "signed-out" }
-  | { kind: "signin-unavailable" }
+  | { kind: "invalid-auth" }
+  | { kind: "invalid-code" }
+  | { kind: "blocked" }
   | { kind: "unknown"; detail?: string };
 
 export function classifyConnectError(error: unknown): ConnectFailure {
@@ -56,8 +58,12 @@ export function failureMessageKey(failure: ConnectFailure): MessageKey {
       return "setup.errorNoAddress";
     case "signed-out":
       return "setup.errorSignedOut";
-    case "signin-unavailable":
-      return "setup.errorSigninUnavailable";
+    case "invalid-auth":
+      return "setup.errorInvalidAuth";
+    case "invalid-code":
+      return "setup.errorInvalidCode";
+    case "blocked":
+      return "setup.errorBlocked";
     case "unknown":
       return "setup.errorGeneric";
   }
@@ -70,13 +76,17 @@ export function needsLogin(failure: ConnectFailure | null): boolean {
 /** Which field the screen should mark as the failing one. */
 export function failureField(
   failure: ConnectFailure | null,
-): "address" | "token" | null {
+): "address" | "token" | "credentials" | "code" | null {
   switch (failure?.kind) {
     case "unreachable":
     case "no-address":
       return "address";
     case "token-rejected":
       return "token";
+    case "invalid-auth":
+      return "credentials";
+    case "invalid-code":
+      return "code";
     default:
       return null;
   }

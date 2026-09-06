@@ -6,27 +6,44 @@ export const en = {
 
   "setup.connectTitle": "Connect your hub",
   "setup.connectDescription":
-    "Sign in through Home Assistant. Entity data stays on your network.",
+    "Sign in with your Home Assistant account. Entity data stays on your network.",
+  "setup.connectManually": "Enter address manually",
+  "setup.searching": "Looking for your hub",
+  "setup.searchingBody": "Searching this network for Home Assistant.",
+  "setup.foundTitle": "Found your hub",
+  "setup.foundTitleMany": "Found hubs nearby",
+  "setup.foundBody": "Tap the pin to sign in.",
+  "setup.discoverHint": "Not finding your hub?",
+  "setup.discoverEmptyBody":
+    "Stay on the home Wi-Fi, search again, or enter the address.",
   "setup.urlLabel": "Hub URL",
   "setup.urlPlaceholder": "http://192.168.1.1",
+  "setup.usernameLabel": "Username",
+  "setup.passwordLabel": "Password",
   "setup.tokenLabel": "Long-lived access token",
   "setup.tokenPlaceholder": "Paste token",
   "setup.connect": "Connect",
   "setup.connecting": "Connecting…",
   "setup.signIn": "Sign in",
-  "setup.signingIn": "Opening Home Assistant…",
   "setup.retry": "Retry",
   "setup.paste": "Paste",
   "setup.showToken": "Show token",
   "setup.hideToken": "Hide token",
+  "setup.showPassword": "Show password",
+  "setup.hidePassword": "Hide password",
   "setup.language": "Language",
 
   "setup.useToken": "Use a long-lived access token instead",
-  "setup.useSignIn": "Sign in through Home Assistant instead",
+  "setup.useSignIn": "Sign in with username and password instead",
+  "setup.mfaTitle": "Two-factor authentication",
+  "setup.mfaDescription": "Enter the code from your authenticator app.",
+  "setup.codeLabel": "Verification code",
+  "setup.codePlaceholder": "123456",
+  "setup.verify": "Verify",
+  "setup.cancel": "Cancel",
 
   "setup.discoverTitle": "On this network",
-  "setup.discoverEmpty":
-    "Nothing found. Enter the address by hand, or check the hub is on this network.",
+  "setup.discoverEmpty": "Nothing answered on this network.",
   "setup.discoverRescan": "Search again",
 
   // Field-level verdicts. The address and the token fail independently, so the
@@ -36,7 +53,14 @@ export const en = {
   "setup.tokenRejected": "Rejected",
 
   "setup.errorRequired": "Hub URL and long-lived access token are required.",
+  "setup.errorCredentialsRequired": "Enter your username and password.",
+  "setup.errorUrlRequired": "Enter your hub URL.",
+  "setup.errorCodeRequired": "Enter the verification code.",
   "setup.errorInvalidUrl": "Enter a valid URL, e.g. http://192.168.1.1",
+  "setup.errorInvalidAuth": "Wrong username or password.",
+  "setup.errorInvalidCode": "That code was not accepted. Try the next one.",
+  "setup.errorBlocked":
+    "Home Assistant blocked the sign-in after too many attempts. Wait a moment and try again.",
   "setup.errorUnreachable":
     "Nothing answered at that address. Check the hub is on and on this network.",
   "setup.errorTokenRejected":
@@ -44,8 +68,6 @@ export const en = {
   "setup.errorConnectionLost": "The connection dropped before setup finished.",
   "setup.errorNoAddress": "No address saved yet. Enter one to connect.",
   "setup.errorSignedOut": "Your sign-in is no longer valid. Sign in again.",
-  "setup.errorSigninUnavailable":
-    "This hub is not set up for app sign-in yet. Install the Et Remote Access add-on, then try again.",
   "setup.errorGeneric": "Could not reach the hub.",
 
   "setup.demoTitle": "Try demo mode",

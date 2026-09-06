@@ -45,7 +45,6 @@
     "expo-task-manager": "~57.0.14",
     "expo-updates": "~57.0.19",
     "expo-video": "~57.0.3",
-    "expo-web-browser": "~57.0.2",
     "expo-widgets": "~57.0.15",
     "heroui-native": "^1.0.8",
     "react": "19.2.3",

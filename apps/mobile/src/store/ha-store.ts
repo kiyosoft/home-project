@@ -19,7 +19,12 @@ import {
   type ConnectFailure,
 } from "@/lib/connection-error";
 import { clearLocationTargets } from "@/lib/location-report";
-import { loginWithHomeAssistant, type LoginFailure } from "@/lib/ha-auth";
+import {
+  signInWithPassword,
+  submitMfaCode,
+  type LoginFailure,
+  type LoginStep,
+} from "@/lib/ha-auth";
 import {
   clearRegistration,
   ensureRegistration,
@@ -77,7 +82,17 @@ interface HaState {
    * reconnect, so callers who discover a dead webhook come here.
    */
   recoverRegistration: () => Promise<StoredRegistration | null>;
-  login: (baseUrl: string, slot?: AddressSlot) => Promise<void>;
+  /** Non-null while Home Assistant is waiting on a second factor. */
+  mfaFlowId: string | null;
+  signIn: (
+    baseUrl: string,
+    username: string,
+    password: string,
+    slot?: AddressSlot,
+  ) => Promise<void>;
+  submitMfa: (code: string) => Promise<void>;
+  /** Drop a half-finished sign-in and its error so the form starts clean. */
+  resetLogin: () => void;
   connectWithToken: (
     baseUrl: string,
     token: string,
@@ -350,15 +365,16 @@ function toFailure(error: unknown, authMode: AuthMode): ConnectFailure {
   return failure;
 }
 
-const LOGIN_FAILURES: Record<
-  Exclude<LoginFailure, "cancelled">,
-  ConnectFailure
-> = {
+const LOGIN_FAILURES: Record<LoginFailure, ConnectFailure> = {
   unreachable: { kind: "unreachable" },
-  rejected: { kind: "signed-out" },
-  "no-client-id": { kind: "signin-unavailable" },
+  "invalid-auth": { kind: "invalid-auth" },
+  "invalid-code": { kind: "invalid-code" },
+  blocked: { kind: "blocked" },
   unknown: { kind: "unknown" },
 };
+
+/** Address and slot chosen before MFA, so the second factor lands on the same hub. */
+let pendingLogin: { address: string; slot: AddressSlot } | null = null;
 
 async function adoptInstanceAddresses(
   target: EntityClient,
@@ -421,6 +437,7 @@ export const useHaStore = create<HaState>((set, get) => ({
   activeUrl: "",
   hydrated: false,
   registration: null,
+  mfaFlowId: null,
 
   setRegistration(registration) {
     set({ registration });
@@ -447,31 +464,45 @@ export const useHaStore = create<HaState>((set, get) => ({
     return recovery;
   },
 
-  async login(baseUrl, slot = "external") {
+  async signIn(baseUrl, username, password, slot = "external") {
     const address = trimTrailingSlash(baseUrl);
-    set({ status: "connecting", failure: null, mode: "live" });
-
-    const result = await loginWithHomeAssistant(address);
-    if (!result.ok) {
-      if (result.failure === "cancelled") {
-        set({ status: "idle", failure: null, mode: null });
-        return;
-      }
-      set({ status: "error", failure: LOGIN_FAILURES[result.failure] });
-      return;
-    }
-
-    await beginLive(
-      {
-        mode: "live",
-        authMode: "oauth",
-        profile: withAddress(get().profile, address, slot),
-        token: "",
-        tokens: result.tokens,
-      },
+    pendingLogin = { address, slot };
+    set({
+      status: "connecting",
+      failure: null,
+      mode: "live",
+      mfaFlowId: null,
+    });
+    await applyLoginStep(
+      await signInWithPassword({ baseUrl: address, username, password }),
       address,
+      slot,
       set,
+      get,
     );
+  },
+
+  async submitMfa(code) {
+    const { mfaFlowId } = get();
+    const pending = pendingLogin;
+    if (!mfaFlowId || !pending) return;
+    set({ status: "connecting", failure: null });
+    await applyLoginStep(
+      await submitMfaCode({
+        baseUrl: pending.address,
+        flowId: mfaFlowId,
+        code,
+      }),
+      pending.address,
+      pending.slot,
+      set,
+      get,
+    );
+  },
+
+  resetLogin() {
+    pendingLogin = null;
+    set({ mfaFlowId: null, status: "idle", failure: null, mode: null });
   },
 
   async connectWithToken(baseUrl, token, slot = "external") {
@@ -581,6 +612,7 @@ export const useHaStore = create<HaState>((set, get) => ({
   },
 
   disconnect(options) {
+    pendingLogin = null;
     const previous = saved;
     const revokeUrl = get().activeUrl || previous?.profile.externalUrl;
     cleanupClient();
@@ -606,6 +638,7 @@ export const useHaStore = create<HaState>((set, get) => ({
       userId: "",
       status: "idle",
       failure: null,
+      mfaFlowId: null,
       mode: null,
       activeUrl: "",
       session: options?.clearSaved ? "signed-out" : get().session,
@@ -687,6 +720,45 @@ export const useHaStore = create<HaState>((set, get) => ({
   },
 }));
 
+async function applyLoginStep(
+  step: LoginStep,
+  address: string,
+  slot: AddressSlot,
+  set: (partial: Partial<HaState>) => void,
+  get: () => HaState,
+) {
+  if (step.kind === "mfa") {
+    pendingLogin = { address, slot };
+    set({ status: "idle", mfaFlowId: step.flowId, failure: null });
+    return;
+  }
+  if (step.kind === "failure") {
+    // A wrong second factor leaves the flow open for another try; every other
+    // failure has already burnt it.
+    if (step.failure !== "invalid-code") pendingLogin = null;
+    set({
+      status: "error",
+      failure: LOGIN_FAILURES[step.failure],
+      mode: null,
+      mfaFlowId: step.failure === "invalid-code" ? get().mfaFlowId : null,
+    });
+    return;
+  }
+
+  pendingLogin = null;
+  await beginLive(
+    {
+      mode: "live",
+      authMode: "oauth",
+      profile: withAddress(get().profile, address, slot),
+      token: "",
+      tokens: step.tokens,
+    },
+    address,
+    set,
+  );
+}
+
 async function beginLive(
   settings: ConnectionSettings,
   address: string,
@@ -696,6 +768,7 @@ async function beginLive(
   set({
     status: "connecting",
     failure: null,
+    mfaFlowId: null,
     mode: "live",
     authMode: settings.authMode,
     profile: settings.profile,

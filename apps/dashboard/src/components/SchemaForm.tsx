@@ -1,8 +1,9 @@
-import { Switch } from "@ethio/core";
+import { CLOCK_TYPES, readClockType, Switch } from "@ethio/core";
 import { useMemo, useState } from "react";
 import { z } from "zod";
 
 import { EntityPicker } from "@/components/EntityPicker";
+import { ClockTypePicker } from "@/components/ClockTypePicker";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { t } from "@/i18n";
@@ -39,6 +40,7 @@ function enumOptions(
 ): string[] | null {
   if (field === "home_side") return ["left", "right"];
   if (field === "artworkMode") return ["default", "cover"];
+  if (field === "clock_type") return [...CLOCK_TYPES];
   const sample = defaultConfig[field];
   if (typeof sample === "string") {
     const leftOk = fieldSchema.safeParse("left").success;
@@ -131,6 +133,22 @@ export function SchemaForm({ type, config, onSave, onCancel }: SchemaFormProps) 
                 }
               />
             </label>
+          );
+        }
+
+        if (field === "clock_type") {
+          return (
+            <div key={field} className="space-y-2">
+              <span className="block text-sm font-medium">
+                {t(locale, "schema.clockType")}
+              </span>
+              <ClockTypePicker
+                value={readClockType(draft)}
+                onChange={(clockType) =>
+                  setDraft((prev) => ({ ...prev, clock_type: clockType }))
+                }
+              />
+            </div>
           );
         }
 
