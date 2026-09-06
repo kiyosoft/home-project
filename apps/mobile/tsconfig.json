@@ -13,5 +13,5 @@
     "expo-env.d.ts",
     "src/uniwind-types.d.ts"
   ],
-  "exclude": ["node_modules"]
+  "exclude": ["node_modules", "**/*.test.ts"]
 }

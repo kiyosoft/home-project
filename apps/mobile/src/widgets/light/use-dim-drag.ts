@@ -65,6 +65,9 @@ export function useDimDrag({
       Gesture.Pan()
         .enabled(!isDisabled)
         .activateAfterLongPress(HOLD_MS)
+        // The tile also hosts a Switch. Cancelling native touches on attach
+        // swallows the tap, so the light never receives turn_on / turn_off.
+        .cancelsTouchesInView(false)
         .onStart(() => {
           start.value = latest.value;
         })

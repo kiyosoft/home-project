@@ -15,7 +15,7 @@ import {
 } from "@/store/notification-store";
 
 import ActivityGlance from "./ActivityWidget";
-import { dispatchWidgetTarget } from "./dispatch";
+import { dispatchWidgetTarget, targetFromWidgetEvent } from "./dispatch";
 import HomeGlance from "./HomeWidget";
 import {
   buildActivitySnapshot,
@@ -36,7 +36,7 @@ export function useHomeScreenSync(): void {
 
   useEffect(() => {
     const subscription = addUserInteractionListener((event) => {
-      dispatchWidgetTarget(event.target);
+      dispatchWidgetTarget(targetFromWidgetEvent(event));
     });
     return () => subscription.remove();
   }, []);

@@ -282,10 +282,10 @@ const HomeGlanceView = (
         </VStack>
       );
     }
+    // Buttons must not sit under widgetURL: that modifier wins the tap and
+    // the companion never receives the App Intent that actually toggles.
     return (
-      <VStack
-        modifiers={[padding({ all: 12 }), widgetURL("ethiohome://home")]}
-      >
+      <VStack modifiers={[padding({ all: 12 })]}>
         {tileGrid(grid, tileSize)}
       </VStack>
     );
@@ -296,9 +296,12 @@ const HomeGlanceView = (
       <VStack
         alignment="leading"
         spacing={12}
-        modifiers={[padding({ all: 14 }), widgetURL("ethiohome://home")]}
+        modifiers={[padding({ all: 14 })]}
       >
-        <HStack alignment="bottom">
+        <HStack
+          alignment="bottom"
+          modifiers={[widgetURL("ethiohome://home")]}
+        >
           {hero(38)}
           <Spacer />
           {props.unreadLine ? (
@@ -331,14 +334,15 @@ const HomeGlanceView = (
   }
 
   return (
-    <HStack
-      spacing={12}
-      modifiers={[padding({ all: 14 }), widgetURL("ethiohome://home")]}
-    >
+    <HStack spacing={12} modifiers={[padding({ all: 14 })]}>
       <VStack
         alignment="leading"
         spacing={4}
-        modifiers={[frame({ maxWidth: Infinity }), layoutPriority(1)]}
+        modifiers={[
+          frame({ maxWidth: Infinity }),
+          layoutPriority(1),
+          widgetURL("ethiohome://home"),
+        ]}
       >
         {hero(34)}
         <Spacer />

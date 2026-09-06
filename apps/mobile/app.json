@@ -8,6 +8,7 @@
     "userInterfaceStyle": "automatic",
     "ios": {
       "bundleIdentifier": "app.ethiohome.companion",
+      "appleTeamId": "33U636X6U6",
       "supportsTablet": false,
       "entitlements": {
         "com.apple.developer.networking.wifi-info": true,

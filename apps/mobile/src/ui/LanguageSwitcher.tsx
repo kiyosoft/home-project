@@ -3,15 +3,14 @@ import { Tabs } from "heroui-native";
 import { isLocale, type Locale } from "@/i18n";
 import { useLocaleStore, useT } from "@/store/locale-store";
 
-const OPTIONS: { locale: Locale; labelKey: "settings.langEn" | "settings.langAm" }[] = [
+const OPTIONS: {
+  locale: Locale;
+  labelKey: "settings.langEn" | "settings.langAm";
+}[] = [
   { locale: "en", labelKey: "settings.langEn" },
   { locale: "am", labelKey: "settings.langAm" },
 ];
 
-/**
- * The one place both scripts sit together, per the v1 UI spec. Tabs keep
- * English and Amharic on the same row so neither language is buried.
- */
 export function LanguageSwitcher() {
   const t = useT();
   const locale = useLocaleStore((state) => state.locale);

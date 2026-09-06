@@ -111,7 +111,8 @@ export function toggleTarget(entityId: string): string {
   return `toggle:${entityId}`;
 }
 
-export function parseWidgetAction(target: string): WidgetAction | null {
+export function parseWidgetAction(target: unknown): WidgetAction | null {
+  if (typeof target !== "string" || !target) return null;
   if (target.startsWith("scene:")) {
     const entityId = target.slice("scene:".length);
     return entityId ? { kind: "scene", entityId } : null;
@@ -121,6 +122,53 @@ export function parseWidgetAction(target: string): WidgetAction | null {
     return entityId ? { kind: "toggle", entityId } : null;
   }
   return null;
+}
+
+/**
+ * The companion maps a widget button `target` onto a Home Assistant service.
+ * Kept free of the store so a tap can be asserted without a live hub.
+ */
+export function serviceCallForTarget(
+  target: unknown,
+  states: Record<string, { state?: string } | undefined>,
+): { domain: string; service: string; entityId: string } | null {
+  const action = parseWidgetAction(target);
+  if (!action) return null;
+
+  const domain = domainOf(action.entityId);
+  if (action.kind === "scene") {
+    if (domain !== "scene" && domain !== "script") return null;
+    return { domain, service: "turn_on", entityId: action.entityId };
+  }
+
+  if (!isToggleDomain(domain)) return null;
+  const isOn = states[action.entityId]?.state === "on";
+  return {
+    domain,
+    service: isOn ? "turn_off" : "turn_on",
+    entityId: action.entityId,
+  };
+}
+
+function domainOf(entityId: string): string {
+  const index = entityId.indexOf(".");
+  return index > 0 ? entityId.slice(0, index) : "";
+}
+
+/**
+ * A widget tap arrives as `event.target` (`toggle:light.kitchen`). Older Expo
+ * builds nested that under `nativeEvent`.
+ */
+export function targetFromWidgetEvent(event: unknown): string {
+  if (!event || typeof event !== "object") return "";
+  const record = event as Record<string, unknown>;
+  if (typeof record.target === "string") return record.target;
+  const nested = record.nativeEvent;
+  if (nested && typeof nested === "object") {
+    const inner = (nested as { target?: unknown }).target;
+    if (typeof inner === "string") return inner;
+  }
+  return "";
 }
 
 export function favoriteSymbol(
