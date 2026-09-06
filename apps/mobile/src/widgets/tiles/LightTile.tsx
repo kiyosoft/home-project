@@ -1,10 +1,10 @@
 import { deriveLight, formatFraction, isOnState } from "@ethio/ha-sdk";
-import { Slider } from "heroui-native";
 import { useCallback } from "react";
 import { View } from "react-native";
 import { GestureDetector } from "react-native-gesture-handler";
 
 import { useT } from "@/store/locale-store";
+import { Slider } from "@/ui/haptic";
 import { LightDetailBody } from "@/widgets/detail/LightDetailBody";
 import { LampSwitch } from "@/widgets/light/LampSwitch";
 import { useLightWash } from "@/widgets/light/light-wash";

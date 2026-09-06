@@ -7,7 +7,7 @@ import {
   unanimousService,
 } from "@ethio/ha-sdk";
 import Ionicons from "@expo/vector-icons/Ionicons";
-import { PressableFeedback, Text } from "heroui-native";
+import { Text } from "heroui-native";
 import { useState } from "react";
 import { View } from "react-native";
 import { withUniwind } from "uniwind";
@@ -16,6 +16,7 @@ import { useHaStore } from "@/store/ha-store";
 import { useT } from "@/store/locale-store";
 import { GlassSurface } from "@/ui/GlassSurface";
 import { cn } from "@/ui/cn";
+import { PressableFeedback } from "@/ui/haptic";
 import { useTileMinHeight } from "@/widgets/tile-metrics";
 import { readString, type WidgetBodyProps } from "@/widgets/types";
 import { useCallService } from "@/widgets/use-service";

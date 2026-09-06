@@ -1,7 +1,6 @@
 import type { MobileWidget, TileSize } from "@ethio/mobile-schema";
 import { tileSpan } from "@ethio/mobile-schema";
 import Ionicons from "@expo/vector-icons/Ionicons";
-import { PressableFeedback } from "heroui-native";
 import { View } from "react-native";
 import Animated, {
   FadeIn,
@@ -11,6 +10,7 @@ import Animated, {
 import { withUniwind } from "uniwind";
 
 import { useT } from "@/store/locale-store";
+import { PressableFeedback } from "@/ui/haptic";
 import { FADE_MS, SETTLE_MS } from "@/ui/motion";
 import { TILE_GAP, tileColumn } from "@/widgets/tile-layout";
 import { TileColumnProvider } from "@/widgets/tile-metrics";
@@ -33,6 +33,7 @@ function Badge({
   return (
     <PressableFeedback
       onPress={onPress}
+      haptic={tone === "danger" ? "warn" : "tap"}
       accessibilityLabel={label}
       accessibilityRole="button"
       className={`size-8 items-center justify-center rounded-full ${

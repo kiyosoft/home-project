@@ -4,13 +4,14 @@ import {
   rgbaCss,
   type TeamTrackerView,
 } from "@ethio/ha-sdk";
-import { PressableFeedback, Text } from "heroui-native";
 import { LinearGradient } from "expo-linear-gradient";
+import { Text } from "heroui-native";
 import { useEffect } from "react";
 import { StyleSheet, View } from "react-native";
 
 import { useT } from "@/store/locale-store";
 import { GlassSurface } from "@/ui/GlassSurface";
+import { PressableFeedback } from "@/ui/haptic";
 import { TeamTrackerDetailBody } from "@/widgets/detail/TeamTrackerDetailBody";
 import { TeamCrest } from "@/widgets/team/TeamCrest";
 import { TeamMatchup } from "@/widgets/team/TeamMatchup";

@@ -1,8 +1,9 @@
 import { deriveSinksar } from "@ethio/ha-sdk";
-import { Chip, Text } from "heroui-native";
+import { Text } from "heroui-native";
 import { View } from "react-native";
 
 import { useT } from "@/store/locale-store";
+import { Chip } from "@/ui/haptic";
 import { SinksarDetailBody } from "@/widgets/detail/SinksarDetailBody";
 import { readString, type WidgetBodyProps } from "@/widgets/types";
 import { useTile } from "@/widgets/use-tile";

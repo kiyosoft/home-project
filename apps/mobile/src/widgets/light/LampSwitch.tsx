@@ -1,4 +1,6 @@
-import { Switch, useThemeColor } from "heroui-native";
+import { useThemeColor } from "heroui-native";
+
+import { Switch } from "@/ui/haptic";
 
 import type { LightWash } from "@/widgets/light/light-wash";
 

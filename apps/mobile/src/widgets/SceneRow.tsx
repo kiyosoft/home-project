@@ -1,6 +1,5 @@
 import { serviceForSceneEntity } from "@ethio/mobile-schema";
 import Ionicons from "@expo/vector-icons/Ionicons";
-import { Chip } from "heroui-native";
 import { useEffect, useRef, useState } from "react";
 import { ScrollView } from "react-native";
 import Animated, { LinearTransition } from "react-native-reanimated";
@@ -8,6 +7,7 @@ import { withUniwind } from "uniwind";
 
 import { useT } from "@/store/locale-store";
 import { entityDomain, entityName, useEntity } from "@/store/use-entity";
+import { Chip } from "@/ui/haptic";
 import { SETTLE_MS } from "@/ui/motion";
 import { useCallService } from "@/widgets/use-service";
 

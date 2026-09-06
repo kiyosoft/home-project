@@ -1,10 +1,11 @@
 import { router } from "expo-router";
-import { Button, Card, Spinner, Text } from "heroui-native";
+import { Card, Spinner, Text } from "heroui-native";
 import { View } from "react-native";
 
 import { failureMessageKey } from "@/lib/connection-error";
 import { useHaStore } from "@/store/ha-store";
 import { useT } from "@/store/locale-store";
+import { Button } from "@/ui/haptic";
 
 /**
  * Stands in for the dashboard until a cold start lands, in place of the sign-in

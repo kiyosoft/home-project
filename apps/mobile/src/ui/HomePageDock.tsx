@@ -1,11 +1,12 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
-import { PressableFeedback, Text } from "heroui-native";
+import { Text } from "heroui-native";
 import { View } from "react-native";
 import { withUniwind } from "uniwind";
 
 import { useT } from "@/store/locale-store";
 import { cn } from "@/ui/cn";
 import { GlassSurface } from "@/ui/GlassSurface";
+import { PressableFeedback } from "@/ui/haptic";
 
 const Icon = withUniwind(Ionicons);
 
@@ -46,6 +47,7 @@ export function HomePageDock({
             <PressableFeedback
               key={item.id}
               onPress={() => onSelect(item.id)}
+              haptic="select"
               accessibilityLabel={item.title}
               accessibilityRole="button"
               className="items-center"

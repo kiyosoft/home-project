@@ -1,7 +1,7 @@
 import { hexToRgb, rgbaCss } from "@ethio/ha-sdk";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import type { TileSize } from "@ethio/mobile-schema";
-import { PressableFeedback, Text, useThemeColor } from "heroui-native";
+import { Text, useThemeColor } from "heroui-native";
 import { useEffect, useRef, type ReactNode } from "react";
 import { StyleSheet, View } from "react-native";
 import Animated, {
@@ -14,6 +14,7 @@ import Animated, {
 import { withUniwind } from "uniwind";
 
 import { cn } from "@/ui/cn";
+import { PressableFeedback } from "@/ui/haptic";
 import { GlassSurface, GLASS_RADIUS } from "@/ui/GlassSurface";
 import { FADE_MS, PRESS_SCALE, SPRING, WASH } from "@/ui/motion";
 import { useTileMinHeight } from "@/widgets/tile-metrics";
@@ -203,6 +204,7 @@ export function WidgetTile({
               <PressableFeedback
                 onPress={onIconPress}
                 isDisabled={disabled}
+                haptic="toggle"
                 accessibilityLabel={iconLabel}
                 accessibilityRole="button"
               >

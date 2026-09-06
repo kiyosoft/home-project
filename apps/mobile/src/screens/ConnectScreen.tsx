@@ -1,10 +1,8 @@
 import * as Clipboard from "expo-clipboard";
 import {
-  Button,
   FieldError,
   Input,
   Label,
-  LinkButton,
   Spinner,
   Text,
   TextField,
@@ -22,10 +20,12 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useDiscovery } from "@/lib/discovery";
 import type { MessageKey } from "@/i18n";
 import { failureField, failureMessageKey } from "@/lib/connection-error";
+import { hapticError } from "@/lib/haptics";
 import { normalizeBaseUrl } from "@/lib/url";
 import { useHaStore, type AddressSlot } from "@/store/ha-store";
 import { useT } from "@/store/locale-store";
 import { DiscoveryRipple } from "@/ui/DiscoveryRipple";
+import { Button, LinkButton } from "@/ui/haptic";
 import { LanguageSwitcher } from "@/ui/LanguageSwitcher";
 
 type Step = "discover" | "sign-in";
@@ -216,14 +216,19 @@ function SignInForm({
   const credentialsInvalid = badField === "credentials";
   const codeInvalid = localError === "code-required" || badField === "code";
 
+  function fail(error: Exclude<LocalError, null>) {
+    hapticError();
+    setLocalError(error);
+  }
+
   function resolve(url: string): string | null {
     if (!url) {
-      setLocalError("url-required");
+      fail("url-required");
       return null;
     }
     const normalized = normalizeBaseUrl(url);
     if (!normalized) {
-      setLocalError("invalid-url");
+      fail("invalid-url");
       return null;
     }
     setLocalError(null);
@@ -235,7 +240,7 @@ function SignInForm({
     if (awaitingMfa) {
       const trimmedCode = code.trim();
       if (!trimmedCode) {
-        setLocalError("code-required");
+        fail("code-required");
         return;
       }
       setLocalError(null);
@@ -249,7 +254,7 @@ function SignInForm({
 
     const trimmedUsername = username.trim();
     if (!trimmedUsername || !password) {
-      setLocalError("credentials-required");
+      fail("credentials-required");
       return;
     }
     await signIn(url, trimmedUsername, password, slot.current);
@@ -259,7 +264,7 @@ function SignInForm({
   async function handleTokenConnect() {
     const trimmedToken = token.trim();
     if (!baseUrl.trim() || !trimmedToken) {
-      setLocalError("required");
+      fail("required");
       return;
     }
     const url = resolve(baseUrl.trim());

@@ -4,12 +4,13 @@ import {
   sinksarPrimaryIndex,
   sinksarStory,
 } from "@ethio/ha-sdk";
-import { Chip, Label, Separator, Surface, Text } from "heroui-native";
+import { Label, Separator, Surface, Text } from "heroui-native";
 import { useState } from "react";
 import { View } from "react-native";
 
 import { useT } from "@/store/locale-store";
 import { useEntity } from "@/store/use-entity";
+import { Chip } from "@/ui/haptic";
 
 export function SinksarDetailBody({ entityId }: { entityId: string }) {
   const t = useT();

@@ -1,10 +1,11 @@
 import { LinearGradient } from "expo-linear-gradient";
-import { PressableFeedback, Text } from "heroui-native";
+import { Text } from "heroui-native";
 import { StyleSheet, View } from "react-native";
 
 import type { MessageKey } from "@/i18n";
 import { useT } from "@/store/locale-store";
 import { GlassSurface } from "@/ui/GlassSurface";
+import { PressableFeedback } from "@/ui/haptic";
 import { CameraStill } from "@/widgets/camera/CameraStill";
 import { useCamera } from "@/widgets/camera/use-camera";
 import { CameraDetailBody } from "@/widgets/detail/CameraDetailBody";

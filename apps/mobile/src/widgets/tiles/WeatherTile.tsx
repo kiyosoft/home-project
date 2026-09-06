@@ -5,12 +5,13 @@ import {
   weatherSparklinePath,
   WEATHER_SPARKLINE,
 } from "@ethio/ha-sdk";
-import { PressableFeedback, Text } from "heroui-native";
+import { Text } from "heroui-native";
 import { View } from "react-native";
 import Svg, { Path } from "react-native-svg";
 
 import { useT } from "@/store/locale-store";
 import { GlassSurface } from "@/ui/GlassSurface";
+import { PressableFeedback } from "@/ui/haptic";
 import { useTileMinHeight } from "@/widgets/tile-metrics";
 import type { WidgetBodyProps } from "@/widgets/types";
 import { useTile } from "@/widgets/use-tile";

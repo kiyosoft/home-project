@@ -1,8 +1,8 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
-import { PressableFeedback } from "heroui-native";
 import { withUniwind } from "uniwind";
 
 import { cn } from "@/ui/cn";
+import { PressableFeedback } from "@/ui/haptic";
 
 const Icon = withUniwind(Ionicons);
 

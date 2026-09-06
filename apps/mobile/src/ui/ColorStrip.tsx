@@ -6,10 +6,10 @@ import {
   type Rgb,
 } from "@ethio/ha-sdk";
 import { LinearGradient } from "expo-linear-gradient";
-import { Slider } from "heroui-native";
 import { useMemo } from "react";
 import { StyleSheet } from "react-native";
 
+import { Slider } from "@/ui/haptic";
 import { singleSliderValue } from "@/widgets/types";
 
 /** expo-linear-gradient needs at least two stops, hence the tuple. */

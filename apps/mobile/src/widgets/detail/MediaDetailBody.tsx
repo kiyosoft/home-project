@@ -1,10 +1,11 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { deriveMedia } from "@ethio/ha-sdk";
-import { Button, Label, Slider, Surface, Switch, Text } from "heroui-native";
+import { Label, Surface, Text } from "heroui-native";
 import { View } from "react-native";
 import { withUniwind } from "uniwind";
 
 import { useT } from "@/store/locale-store";
+import { Button, Slider, Switch } from "@/ui/haptic";
 import { useEntity } from "@/store/use-entity";
 import { EntityDetailBody } from "@/widgets/EntityDetailBody";
 import { useArtworkUrl } from "@/widgets/media/artwork";

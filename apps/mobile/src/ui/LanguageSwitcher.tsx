@@ -1,7 +1,6 @@
-import { Tabs } from "heroui-native";
-
 import { isLocale, type Locale } from "@/i18n";
 import { useLocaleStore, useT } from "@/store/locale-store";
+import { Tabs } from "@/ui/haptic";
 
 const OPTIONS: {
   locale: Locale;

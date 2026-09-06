@@ -1,9 +1,9 @@
 import { numericAttr } from "@ethio/ha-sdk";
-import { Slider } from "heroui-native";
 import { View } from "react-native";
 
 import { useT } from "@/store/locale-store";
 import { isUnavailable } from "@/store/use-entity";
+import { Slider } from "@/ui/haptic";
 import {
   singleSliderValue,
   type WidgetBodyProps,

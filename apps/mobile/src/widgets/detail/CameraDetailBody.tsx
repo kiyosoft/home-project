@@ -4,11 +4,12 @@ import {
   type BufferOptions,
   type VideoSource,
 } from "expo-video";
-import { Button, Label, Spinner, Surface, Switch, Text } from "heroui-native";
+import { Label, Spinner, Surface, Text } from "heroui-native";
 import { useCallback, useState } from "react";
 import { View } from "react-native";
 
 import { useT } from "@/store/locale-store";
+import { Button, Switch } from "@/ui/haptic";
 import { CameraStill } from "@/widgets/camera/CameraStill";
 import { useCamera } from "@/widgets/camera/use-camera";
 import { EntityDetailBody } from "@/widgets/EntityDetailBody";

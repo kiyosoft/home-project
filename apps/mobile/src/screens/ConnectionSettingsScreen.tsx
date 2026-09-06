@@ -1,13 +1,10 @@
 import {
-  Button,
   Card,
   Description,
   FieldError,
   Input,
   Label,
-  LinkButton,
   Surface,
-  Switch,
   TagGroup,
   Text,
   TextField,
@@ -22,9 +19,11 @@ import {
   ensureSsidPermission,
   hasSsidPermission,
 } from "@/lib/home-network";
+import { hapticWarn } from "@/lib/haptics";
 import { normalizeBaseUrl } from "@/lib/url";
 import { useHaStore } from "@/store/ha-store";
 import { useT } from "@/store/locale-store";
+import { Button, LinkButton, Switch } from "@/ui/haptic";
 
 export function ConnectionSettingsScreen() {
   const t = useT();
@@ -238,6 +237,7 @@ export function ConnectionSettingsScreen() {
             size="sm"
             variant="surface"
             onRemove={(keys) => {
+              hapticWarn();
               void saveProfile({
                 homeNetworks: profile.homeNetworks.filter(
                   (name) => !keys.has(name),

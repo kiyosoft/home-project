@@ -1,8 +1,9 @@
 import { router } from "expo-router";
-import { Chip, Spinner } from "heroui-native";
+import { Spinner } from "heroui-native";
 
 import { useHaStore } from "@/store/ha-store";
 import { useT } from "@/store/locale-store";
+import { Chip } from "@/ui/haptic";
 
 export function ConnectionStatusChip() {
   const t = useT();

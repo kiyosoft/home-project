@@ -1,6 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef } from "react";
 import { Gesture, type PanGesture } from "react-native-gesture-handler";
-import { runOnJS, useSharedValue } from "react-native-reanimated";
+import { useSharedValue } from "react-native-reanimated";
+import { scheduleOnRN } from "react-native-worklets";
+
+import { hapticSelect, hapticToggle } from "@/lib/haptics";
 
 /**
  * The grid scrolls vertically, so a plain vertical pan on a tile would fight
@@ -48,6 +51,7 @@ export function useDimDrag({
   // brightness is mirrored across and the drag starts from that mirror.
   const start = useSharedValue(value);
   const latest = useSharedValue(value);
+  const tick = useSharedValue(-1);
   useEffect(() => {
     latest.value = value;
   }, [value, latest]);
@@ -60,6 +64,14 @@ export function useDimDrag({
     [onCommit],
   );
 
+  const onActivate = useCallback(() => {
+    hapticToggle();
+  }, []);
+
+  const onTick = useCallback(() => {
+    hapticSelect();
+  }, []);
+
   const gesture = useMemo(
     () =>
       Gesture.Pan()
@@ -70,17 +82,25 @@ export function useDimDrag({
         .cancelsTouchesInView(false)
         .onStart(() => {
           start.value = latest.value;
+          tick.value = -1;
+          scheduleOnRN(onActivate);
         })
         .onUpdate((event) => {
           // Up is brighter, so the travel is inverted against screen space.
           const next = start.value - (event.translationY / TRAVEL) * 100;
-          runOnJS(onChange)(Math.round(Math.min(100, Math.max(0, next))));
+          const percent = Math.round(Math.min(100, Math.max(0, next)));
+          const index = Math.round(percent / 10);
+          if (index !== tick.value) {
+            tick.value = index;
+            scheduleOnRN(onTick);
+          }
+          scheduleOnRN(onChange, percent);
         })
         .onEnd((event) => {
           const next = start.value - (event.translationY / TRAVEL) * 100;
-          runOnJS(finish)(Math.round(Math.min(100, Math.max(0, next))));
+          scheduleOnRN(finish, Math.round(Math.min(100, Math.max(0, next))));
         }),
-    [isDisabled, finish, onChange, start, latest],
+    [isDisabled, finish, onActivate, onChange, onTick, start, latest, tick],
   );
 
   const justDragged = useCallback(

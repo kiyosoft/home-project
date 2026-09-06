@@ -1,10 +1,11 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
-import { PressableFeedback, Text } from "heroui-native";
+import { Text } from "heroui-native";
 import { useState } from "react";
 import { Image, StyleSheet, View, type StyleProp, type ViewStyle } from "react-native";
 import { withUniwind } from "uniwind";
 
 import { cn } from "@/ui/cn";
+import { PressableFeedback } from "@/ui/haptic";
 
 const Icon = withUniwind(Ionicons);
 

@@ -7,7 +7,6 @@ import {
 } from "@legendapp/list/react-native";
 import {
   BottomSheet,
-  ListGroup,
   SearchField,
   Text,
   useBottomSheetAwareHandlers,
@@ -27,6 +26,7 @@ import { withUniwind } from "uniwind";
 import { useHaStore } from "@/store/ha-store";
 import { useT } from "@/store/locale-store";
 import { entityDomain, entityName } from "@/store/use-entity";
+import { ListGroup } from "@/ui/haptic";
 import { widgetForEntity } from "@/widgets/registry";
 
 const Icon = withUniwind(Ionicons);

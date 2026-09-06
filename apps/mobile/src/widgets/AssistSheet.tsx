@@ -2,7 +2,6 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 import { BottomSheetScrollView } from "@gorhom/bottom-sheet";
 import {
   BottomSheet,
-  Button,
   Input,
   Text,
   TextField,
@@ -16,6 +15,7 @@ import {
   type AssistBubble,
 } from "@/store/use-assist-session";
 import { useT } from "@/store/locale-store";
+import { Button } from "@/ui/haptic";
 
 interface AssistSheetProps {
   isOpen: boolean;

@@ -6,12 +6,13 @@ import {
   resolveKelvin,
   type Rgb,
 } from "@ethio/ha-sdk";
-import { Chip, Label, Slider, Surface, Text } from "heroui-native";
+import { Label, Surface, Text } from "heroui-native";
 import { View } from "react-native";
 
 import { useT } from "@/store/locale-store";
 import { useEntity } from "@/store/use-entity";
 import { ColorStrip } from "@/ui/ColorStrip";
+import { Chip, Slider } from "@/ui/haptic";
 import { EntityDetailBody } from "@/widgets/EntityDetailBody";
 import { LampSwitch } from "@/widgets/light/LampSwitch";
 import { useLightWash } from "@/widgets/light/light-wash";

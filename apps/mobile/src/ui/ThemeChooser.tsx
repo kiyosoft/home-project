@@ -1,8 +1,7 @@
-import { Tabs } from "heroui-native";
-
 import { isThemePreference, type ThemePreference } from "@/lib/settings";
 import { useT } from "@/store/locale-store";
 import { useThemeStore } from "@/store/theme-store";
+import { Tabs } from "@/ui/haptic";
 
 const OPTIONS: {
   preference: ThemePreference;

@@ -1,15 +1,12 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
-import {
-  BottomSheet,
-  ListGroup,
-  Text,
-} from "heroui-native";
+import { BottomSheet, Text } from "heroui-native";
 import { ScrollView, View } from "react-native";
 import { withUniwind } from "uniwind";
 
 import type { MessageKey } from "@/i18n";
 import { useHaStore } from "@/store/ha-store";
 import { useT } from "@/store/locale-store";
+import { ListGroup } from "@/ui/haptic";
 
 const Icon = withUniwind(Ionicons);
 

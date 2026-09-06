@@ -1,6 +1,6 @@
 import { countLightsOn } from "@ethio/ha-sdk";
 import Ionicons from "@expo/vector-icons/Ionicons";
-import { Button, Chip, Text, useThemeColor } from "heroui-native";
+import { Text, useThemeColor } from "heroui-native";
 import { useEffect, useMemo, useState } from "react";
 import { ScrollView, View } from "react-native";
 
@@ -11,6 +11,7 @@ import { useHaStore } from "@/store/ha-store";
 import { useT } from "@/store/locale-store";
 import { isActiveState } from "@/store/use-entity";
 import { ConnectionStatusChip } from "@/ui/ConnectionStatusChip";
+import { Button, Chip } from "@/ui/haptic";
 
 export interface HomeSectionChip {
   id: string;

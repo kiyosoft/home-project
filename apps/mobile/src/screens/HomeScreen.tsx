@@ -3,7 +3,7 @@ import {
   type LegendListRef,
   type LegendListRenderItemProps,
 } from "@legendapp/list/react-native";
-import { Button, Card, Chip, Text } from "heroui-native";
+import { Card, Text } from "heroui-native";
 import { useCallback, useMemo, useRef, useState } from "react";
 import { View, type LayoutChangeEvent } from "react-native";
 
@@ -32,6 +32,7 @@ import { useHaStore } from "@/store/ha-store";
 import { useT } from "@/store/locale-store";
 import { AmbientBackground } from "@/ui/AmbientBackground";
 import { ConnectionNotice } from "@/ui/ConnectionNotice";
+import { Button, Chip } from "@/ui/haptic";
 import { HomeHeader, type HomeSectionChip } from "@/ui/HomeHeader";
 import { HomePageDock, type HomeDockItem } from "@/ui/HomePageDock";
 import { Screen } from "@/ui/Screen";

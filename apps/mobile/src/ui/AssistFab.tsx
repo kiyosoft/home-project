@@ -3,6 +3,7 @@ import { useThemeColor } from "heroui-native";
 import { Pressable } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import { hapticTap } from "@/lib/haptics";
 import { GlassSurface } from "@/ui/GlassSurface";
 
 const SIZE = 56;
@@ -27,7 +28,10 @@ export function AssistFab({ label, onPress }: AssistFabProps) {
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={label}
-      onPress={onPress}
+      onPress={() => {
+        hapticTap();
+        onPress();
+      }}
       style={{
         position: "absolute",
         right: EDGE_GAP,

@@ -14,6 +14,7 @@ import Animated, {
 } from "react-native-reanimated";
 import { Text, useThemeColor } from "heroui-native";
 
+import { hapticSelect, hapticTap } from "@/lib/haptics";
 import { FADE_MS } from "@/ui/motion";
 
 const CANVAS = 300;
@@ -56,7 +57,14 @@ export function DiscoveryRipple({
       style={{ width: CANVAS, height: CANVAS }}
     >
       <Pressable
-        onPress={onPress}
+        onPress={
+          onPress
+            ? () => {
+                hapticTap();
+                onPress();
+              }
+            : undefined
+        }
         disabled={!onPress}
         accessibilityRole={onPress ? "button" : undefined}
         accessibilityLabel={accessibilityLabel}
@@ -90,7 +98,11 @@ export function DiscoveryRipple({
             }}
           >
             <Pressable
-              onPress={() => onSelectPin?.(pin.id)}
+              onPress={() => {
+                if (!onSelectPin) return;
+                hapticSelect();
+                onSelectPin(pin.id);
+              }}
               accessibilityRole="button"
               accessibilityLabel={pin.name}
               hitSlop={8}

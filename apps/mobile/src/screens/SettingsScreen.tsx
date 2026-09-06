@@ -3,12 +3,9 @@ import { useState } from "react";
 import { ScrollView, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
-  Button,
   Card,
-  Chip,
   Dialog,
   Label,
-  Switch,
   Text,
 } from "heroui-native";
 
@@ -17,6 +14,7 @@ import { useDashboardStore } from "@/store/dashboard-store";
 import { useHaStore } from "@/store/ha-store";
 import { useLocaleStore, useT } from "@/store/locale-store";
 import { ConnectionStatusChip } from "@/ui/ConnectionStatusChip";
+import { Button, Chip, Switch } from "@/ui/haptic";
 import { LanguageSwitcher } from "@/ui/LanguageSwitcher";
 import { ThemeChooser } from "@/ui/ThemeChooser";
 

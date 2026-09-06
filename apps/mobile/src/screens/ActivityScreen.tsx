@@ -6,7 +6,7 @@ import {
   LegendList,
   type LegendListRenderItemProps,
 } from "@legendapp/list/react-native";
-import { Button, Card, Chip, LinkButton, Text } from "heroui-native";
+import { Card, Text } from "heroui-native";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { AppState, Linking, View } from "react-native";
 
@@ -25,6 +25,7 @@ import {
 } from "@/store/notification-store";
 import { usePersistentNotifications } from "@/store/use-persistent-notifications";
 import { retryPushSync } from "@/store/use-push-token";
+import { Button, Chip, LinkButton } from "@/ui/haptic";
 import { Screen } from "@/ui/Screen";
 
 const ESTIMATED_ROW_HEIGHT = 96;

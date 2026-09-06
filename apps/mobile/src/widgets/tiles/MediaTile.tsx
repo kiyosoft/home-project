@@ -1,8 +1,9 @@
 import { deriveMedia } from "@ethio/ha-sdk";
-import { Slider, Text } from "heroui-native";
+import { Text } from "heroui-native";
 import { View } from "react-native";
 
 import { useT } from "@/store/locale-store";
+import { Slider } from "@/ui/haptic";
 import { MediaDetailBody } from "@/widgets/detail/MediaDetailBody";
 import { useArtworkUrl } from "@/widgets/media/artwork";
 import { MediaArtwork } from "@/widgets/media/MediaArtwork";
