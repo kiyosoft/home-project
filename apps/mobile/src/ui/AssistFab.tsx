@@ -1,10 +1,11 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { useThemeColor } from "heroui-native";
-import { Pressable } from "react-native";
+import { View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { hapticTap } from "@/lib/haptics";
 import { GlassSurface } from "@/ui/GlassSurface";
+import { PressableFeedback } from "@/ui/haptic";
+import { PRESS_SCALE } from "@/ui/motion";
 
 const SIZE = 56;
 const EDGE_GAP = 20;
@@ -25,13 +26,8 @@ export function AssistFab({ label, onPress }: AssistFabProps) {
   const accentForeground = useThemeColor("accent-foreground");
 
   return (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityLabel={label}
-      onPress={() => {
-        hapticTap();
-        onPress();
-      }}
+    <View
+      pointerEvents="box-none"
       style={{
         position: "absolute",
         right: EDGE_GAP,
@@ -40,15 +36,22 @@ export function AssistFab({ label, onPress }: AssistFabProps) {
         elevation: 10,
       }}
     >
-      <GlassSurface
-        level="chrome"
-        interactive
-        tintColor={accent}
-        className="items-center justify-center"
-        style={{ width: SIZE, height: SIZE, borderRadius: SIZE / 2 }}
+      <PressableFeedback
+        accessibilityRole="button"
+        accessibilityLabel={label}
+        animation={PRESS_SCALE}
+        onPress={onPress}
       >
-        <Ionicons name="sparkles" size={24} color={accentForeground} />
-      </GlassSurface>
-    </Pressable>
+        <GlassSurface
+          level="chrome"
+          interactive
+          tintColor={accent}
+          className="items-center justify-center"
+          style={{ width: SIZE, height: SIZE, borderRadius: SIZE / 2 }}
+        >
+          <Ionicons name="sparkles" size={24} color={accentForeground} />
+        </GlassSurface>
+      </PressableFeedback>
+    </View>
   );
 }

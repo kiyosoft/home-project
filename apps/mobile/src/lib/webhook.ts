@@ -1,4 +1,4 @@
-import { fireWebhookEvent } from "@ethio/ha-sdk";
+import { callServiceViaWebhook, fireWebhookEvent } from "@ethio/ha-sdk";
 
 import { orderedCandidates } from "@/lib/select-url";
 import { useHaStore } from "@/store/ha-store";
@@ -43,6 +43,35 @@ export async function fireNotificationAction(options: {
         webhookId: registration.webhookId,
         eventType: "mobile_app_notification_action",
         eventData,
+      });
+      return "sent";
+    } catch {
+      // Try the next address; the phone may have moved between networks.
+    }
+  }
+  return "unreachable";
+}
+
+/**
+ * Widget taps land here when the websocket is already dead (the usual case
+ * once the user has left the app for the Home Screen).
+ */
+export async function callServiceOnHub(options: {
+  domain: string;
+  service: string;
+  serviceData?: Record<string, unknown>;
+}): Promise<ActionDelivery> {
+  const { registration } = useHaStore.getState();
+  if (!registration) return "no-registration";
+
+  for (const baseUrl of await webhookTargets()) {
+    try {
+      await callServiceViaWebhook({
+        baseUrl,
+        webhookId: registration.webhookId,
+        domain: options.domain,
+        service: options.service,
+        serviceData: options.serviceData,
       });
       return "sent";
     } catch {

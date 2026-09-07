@@ -220,6 +220,7 @@ export {
   MobileAppError,
   parsePushNotification,
   postWebhook,
+  callServiceViaWebhook,
   registerMobileApp,
   registerSensor,
   subscribePushChannel,

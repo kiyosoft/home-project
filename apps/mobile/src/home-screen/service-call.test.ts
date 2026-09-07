@@ -1,5 +1,6 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
+import { sendWidgetServiceCall } from "./deliver";
 import {
   parseWidgetAction,
   serviceCallForTarget,
@@ -8,7 +9,7 @@ import {
 } from "./types";
 
 describe("home screen widget taps", () => {
-  it("turns a light on when the button target is off", () => {
+  it("asks Home Assistant to toggle, not to guess the current state", () => {
     const target = toggleTarget("light.kitchen");
     expect(parseWidgetAction(target)).toEqual({
       kind: "toggle",
@@ -18,19 +19,26 @@ describe("home screen widget taps", () => {
       serviceCallForTarget(target, { "light.kitchen": { state: "off" } }),
     ).toEqual({
       domain: "light",
-      service: "turn_on",
+      service: "toggle",
       entityId: "light.kitchen",
     });
-  });
-
-  it("turns a light off when the button target is on", () => {
     expect(
       serviceCallForTarget("toggle:light.kitchen", {
         "light.kitchen": { state: "on" },
       }),
     ).toEqual({
       domain: "light",
-      service: "turn_off",
+      service: "toggle",
+      entityId: "light.kitchen",
+    });
+  });
+
+  it("still flips an on light when the companion has no fresh state", () => {
+    // After the user leaves the app the entity cache is often empty. Sending
+    // turn_on against a light that is already on is a no-op on the hub.
+    expect(serviceCallForTarget("toggle:light.kitchen", {})).toEqual({
+      domain: "light",
+      service: "toggle",
       entityId: "light.kitchen",
     });
   });
@@ -54,8 +62,35 @@ describe("home screen widget taps", () => {
       ),
     ).toEqual({
       domain: "light",
-      service: "turn_on",
+      service: "toggle",
       entityId: "light.kitchen",
     });
+  });
+});
+
+describe("sendWidgetServiceCall", () => {
+  const call = {
+    domain: "light",
+    service: "toggle",
+    entityId: "light.kitchen",
+  };
+
+  it("uses the live socket when it is up", async () => {
+    const callService = vi.fn(async () => {});
+    const callViaWebhook = vi.fn(async () => {});
+    await sendWidgetServiceCall(call, { callService, callViaWebhook });
+    expect(callService).toHaveBeenCalledWith("light", "toggle", {
+      entity_id: "light.kitchen",
+    });
+    expect(callViaWebhook).not.toHaveBeenCalled();
+  });
+
+  it("falls through to the webhook when the socket is gone", async () => {
+    const callService = vi.fn(async () => {
+      throw new Error("Not connected");
+    });
+    const callViaWebhook = vi.fn(async () => {});
+    await sendWidgetServiceCall(call, { callService, callViaWebhook });
+    expect(callViaWebhook).toHaveBeenCalledWith(call);
   });
 });

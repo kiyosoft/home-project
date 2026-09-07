@@ -543,6 +543,37 @@ export async function fireWebhookEvent(options: {
   }
 }
 
+/**
+ * Call a Home Assistant service over the mobile_app webhook. Used when the
+ * websocket is down — home-screen widget taps land here after the user has
+ * left the app.
+ */
+export async function callServiceViaWebhook(options: {
+  baseUrl: string;
+  webhookId: string;
+  domain: string;
+  service: string;
+  serviceData?: Record<string, unknown>;
+}): Promise<void> {
+  const result = await postWebhook({
+    baseUrl: options.baseUrl,
+    webhookId: options.webhookId,
+    type: "call_service",
+    data: {
+      domain: options.domain,
+      service: options.service,
+      service_data: options.serviceData ?? {},
+    },
+  });
+
+  if (result === null) {
+    throw new MobileAppError(
+      "not-loaded",
+      "Home Assistant has no handler for this registration",
+    );
+  }
+}
+
 export function parsePushNotification(
   raw: unknown,
 ): MobileAppPushNotification | null {

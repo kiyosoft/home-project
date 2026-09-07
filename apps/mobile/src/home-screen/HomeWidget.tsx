@@ -11,6 +11,7 @@ import {
 import {
   background,
   buttonStyle,
+  containerBackground,
   font,
   foregroundStyle,
   frame,
@@ -45,6 +46,8 @@ const HomeGlanceView = (
   const fg = dark ? "#eef6f8" : "#1c1916";
   const muted = dark ? "#9db0b8" : "#6b645b";
   const accent = dark ? "#7dd3c0" : "#0f6b5c";
+  // iOS 17 hides the widget unless the root adopts containerBackground.
+  const canvas = containerBackground(dark ? "#1c1916" : "#F7F3EC", "widget");
   const family = environment.widgetFamily ?? "systemMedium";
   const allScenes = props.scenes ?? [];
   const allFavorites = props.favorites ?? [];
@@ -245,7 +248,7 @@ const HomeGlanceView = (
     return (
       <VStack
         spacing={10}
-        modifiers={[padding({ all: 14 }), widgetURL("ethiohome://home")]}
+        modifiers={[padding({ all: 14 }), widgetURL("ethiohome://home"), canvas]}
       >
         <ZStack>
           <Circle
@@ -275,7 +278,7 @@ const HomeGlanceView = (
         <VStack
           alignment="leading"
           spacing={4}
-          modifiers={[padding({ all: 14 }), widgetURL("ethiohome://home")]}
+          modifiers={[padding({ all: 14 }), widgetURL("ethiohome://home"), canvas]}
         >
           {hero(36)}
           <Spacer />
@@ -285,7 +288,7 @@ const HomeGlanceView = (
     // Buttons must not sit under widgetURL: that modifier wins the tap and
     // the companion never receives the App Intent that actually toggles.
     return (
-      <VStack modifiers={[padding({ all: 12 })]}>
+      <VStack modifiers={[padding({ all: 12 }), canvas]}>
         {tileGrid(grid, tileSize)}
       </VStack>
     );
@@ -296,12 +299,9 @@ const HomeGlanceView = (
       <VStack
         alignment="leading"
         spacing={12}
-        modifiers={[padding({ all: 14 })]}
+        modifiers={[padding({ all: 14 }), canvas]}
       >
-        <HStack
-          alignment="bottom"
-          modifiers={[widgetURL("ethiohome://home")]}
-        >
+        <HStack alignment="bottom">
           {hero(38)}
           <Spacer />
           {props.unreadLine ? (
@@ -334,14 +334,13 @@ const HomeGlanceView = (
   }
 
   return (
-    <HStack spacing={12} modifiers={[padding({ all: 14 })]}>
+    <HStack spacing={12} modifiers={[padding({ all: 14 }), canvas]}>
       <VStack
         alignment="leading"
         spacing={4}
         modifiers={[
           frame({ maxWidth: Infinity }),
           layoutPriority(1),
-          widgetURL("ethiohome://home"),
         ]}
       >
         {hero(34)}

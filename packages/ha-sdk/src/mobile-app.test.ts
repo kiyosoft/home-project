@@ -13,6 +13,7 @@ import {
   updateLocation,
   updateRegistration,
   updateSensorStates,
+  callServiceViaWebhook,
 } from "./mobile-app";
 
 /**
@@ -148,6 +149,49 @@ describe("updateRegistration", () => {
         update: UPDATE,
       }),
     ).rejects.toMatchObject({ kind: "not-loaded" });
+  });
+});
+
+describe("callServiceViaWebhook", () => {
+  it("posts domain, service, and service_data on the webhook", async () => {
+    const fetchMock = vi.fn(async () => new Response("{}", { status: 200 }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    await callServiceViaWebhook({
+      baseUrl: "http://ha.local",
+      webhookId: "hook",
+      domain: "light",
+      service: "toggle",
+      serviceData: { entity_id: "light.kitchen" },
+    });
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      "http://ha.local/api/webhook/hook",
+      expect.objectContaining({
+        method: "POST",
+        body: JSON.stringify({
+          type: "call_service",
+          data: {
+            domain: "light",
+            service: "toggle",
+            service_data: { entity_id: "light.kitchen" },
+          },
+        }),
+      }),
+    );
+  });
+
+  it("rejects an empty body, which means nobody handled it", async () => {
+    reply("");
+
+    await expect(
+      callServiceViaWebhook({
+        baseUrl: "http://ha.local",
+        webhookId: "hook",
+        domain: "light",
+        service: "toggle",
+      }),
+    ).rejects.toBeInstanceOf(MobileAppError);
   });
 });
 

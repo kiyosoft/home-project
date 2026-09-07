@@ -8,6 +8,7 @@ import {
   ZStack,
 } from "@expo/ui/swift-ui";
 import {
+  containerBackground,
   font,
   foregroundStyle,
   frame,
@@ -34,6 +35,8 @@ const ActivityGlanceView = (
   const fg = dark ? "#eef6f8" : "#1c1916";
   const muted = dark ? "#9db0b8" : "#6b645b";
   const accent = dark ? "#7dd3c0" : "#0f6b5c";
+  // iOS 17 hides the widget unless the root adopts containerBackground.
+  const canvas = containerBackground(dark ? "#1c1916" : "#F7F3EC", "widget");
   const family = environment.widgetFamily ?? "systemSmall";
   const unread = props.unread ?? 0;
   const unreadLabel = props.unreadLabel || "unread";
@@ -68,7 +71,7 @@ const ActivityGlanceView = (
     return (
       <VStack
         spacing={10}
-        modifiers={[padding({ all: 14 }), widgetURL("ethiohome://activity")]}
+        modifiers={[padding({ all: 14 }), widgetURL("ethiohome://activity"), canvas]}
       >
         {badge}
         <Text
@@ -100,7 +103,7 @@ const ActivityGlanceView = (
       <VStack
         alignment="leading"
         spacing={2}
-        modifiers={[padding({ all: 14 }), widgetURL("ethiohome://activity")]}
+        modifiers={[padding({ all: 14 }), widgetURL("ethiohome://activity"), canvas]}
       >
         <HStack>
           <Spacer />
@@ -117,7 +120,7 @@ const ActivityGlanceView = (
   return (
     <HStack
       spacing={12}
-      modifiers={[padding({ all: 14 }), widgetURL("ethiohome://activity")]}
+      modifiers={[padding({ all: 14 }), widgetURL("ethiohome://activity"), canvas]}
     >
       <VStack alignment="leading" spacing={2} modifiers={[frame({ maxWidth: Infinity })]}>
         {number}

@@ -127,10 +127,14 @@ export function parseWidgetAction(target: unknown): WidgetAction | null {
 /**
  * The companion maps a widget button `target` onto a Home Assistant service.
  * Kept free of the store so a tap can be asserted without a live hub.
+ *
+ * Toggles use `toggle` rather than guessing turn_on/turn_off from cached
+ * state: after the user leaves the app that cache is often empty or stale,
+ * and turn_on against a light that is already on is a no-op.
  */
 export function serviceCallForTarget(
   target: unknown,
-  states: Record<string, { state?: string } | undefined>,
+  _states: Record<string, { state?: string } | undefined>,
 ): { domain: string; service: string; entityId: string } | null {
   const action = parseWidgetAction(target);
   if (!action) return null;
@@ -142,10 +146,9 @@ export function serviceCallForTarget(
   }
 
   if (!isToggleDomain(domain)) return null;
-  const isOn = states[action.entityId]?.state === "on";
   return {
     domain,
-    service: isOn ? "turn_off" : "turn_on",
+    service: "toggle",
     entityId: action.entityId,
   };
 }

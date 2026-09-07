@@ -2,20 +2,34 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 import { BottomSheetScrollView } from "@gorhom/bottom-sheet";
 import {
   BottomSheet,
-  Input,
+  Chip,
+  InputGroup,
+  Spinner,
   Text,
-  TextField,
-  useThemeColor,
+  useBottomSheetAwareHandlers,
 } from "heroui-native";
-import { useEffect, useRef, type ComponentRef } from "react";
-import { View } from "react-native";
+import { useEffect, useRef, useState, type ComponentRef } from "react";
+import {
+  Keyboard,
+  Platform,
+  View,
+  type TextInput,
+} from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { withUniwind } from "uniwind";
 
 import {
   useAssistSession,
   type AssistBubble,
+  type AssistPhase,
 } from "@/store/use-assist-session";
 import { useT } from "@/store/locale-store";
 import { Button } from "@/ui/haptic";
+import { SETTLE_MS } from "@/ui/motion";
+
+const Icon = withUniwind(Ionicons);
+
+const SNAP_POINTS = ["90%"];
 
 interface AssistSheetProps {
   isOpen: boolean;
@@ -48,15 +62,160 @@ function bubbleClasses(kind: AssistBubble["kind"]): {
   };
 }
 
+function phaseLabel(
+  phase: AssistPhase,
+  t: ReturnType<typeof useT>,
+): string | null {
+  if (phase === "wake") return t("assist.wake");
+  if (phase === "listening") return t("assist.listening");
+  if (phase === "thinking") return t("assist.thinking");
+  return null;
+}
+
+/** Matches the sheet content's bottom padding so we do not double it. */
+const SHEET_PAD = 8;
+
+function AssistComposer({
+  draft,
+  setDraft,
+  listening,
+  sendText,
+  toggleMic,
+}: {
+  draft: string;
+  setDraft: (next: string) => void;
+  listening: boolean;
+  sendText: () => void | Promise<void>;
+  toggleMic: () => void | Promise<void>;
+}) {
+  const t = useT();
+  const insets = useSafeAreaInsets();
+  const inputRef = useRef<TextInput>(null);
+  const { onFocus, onBlur } = useBottomSheetAwareHandlers();
+  const [keyboardOpen, setKeyboardOpen] = useState(false);
+  const canSend = draft.trim().length > 0;
+
+  useEffect(() => {
+    const id = setTimeout(() => {
+      inputRef.current?.focus();
+    }, SETTLE_MS);
+    return () => clearTimeout(id);
+  }, []);
+
+  useEffect(() => {
+    const showEvent =
+      Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow";
+    const hideEvent =
+      Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide";
+    const show = Keyboard.addListener(showEvent, () => setKeyboardOpen(true));
+    const hide = Keyboard.addListener(hideEvent, () => setKeyboardOpen(false));
+    return () => {
+      show.remove();
+      hide.remove();
+    };
+  }, []);
+
+  return (
+    <View
+      className="pt-2"
+      style={{
+        paddingBottom: keyboardOpen
+          ? 4
+          : Math.max(insets.bottom - SHEET_PAD, 4),
+      }}
+    >
+      <InputGroup>
+        <InputGroup.Prefix className="px-1">
+          <Button
+            variant={listening ? "primary" : "ghost"}
+            size="sm"
+            isIconOnly
+            accessibilityLabel={
+              listening ? t("assist.micStop") : t("assist.micStart")
+            }
+            accessibilityState={{ selected: listening }}
+            onPress={() => void toggleMic()}
+          >
+            <Icon
+              name={listening ? "stop" : "mic"}
+              size={18}
+              className={
+                listening ? "text-accent-foreground" : "text-foreground"
+              }
+            />
+          </Button>
+        </InputGroup.Prefix>
+        <InputGroup.Input
+          ref={inputRef}
+          variant="secondary"
+          background={null}
+          value={draft}
+          onChangeText={setDraft}
+          placeholder={t("assist.placeholder")}
+          accessibilityLabel={t("assist.placeholder")}
+          returnKeyType="send"
+          enablesReturnKeyAutomatically
+          onSubmitEditing={() => void sendText()}
+          autoCapitalize="sentences"
+          onFocus={onFocus}
+          onBlur={onBlur}
+          className="rounded-full"
+        />
+        <InputGroup.Suffix className="px-1">
+          <Button
+            variant="primary"
+            size="sm"
+            isIconOnly
+            isDisabled={!canSend}
+            accessibilityLabel={t("assist.send")}
+            onPress={() => void sendText()}
+          >
+            <Icon
+              name="arrow-up"
+              size={18}
+              className="text-accent-foreground"
+            />
+          </Button>
+        </InputGroup.Suffix>
+      </InputGroup>
+    </View>
+  );
+}
+
+function AssistStatus({ phase }: { phase: AssistPhase }) {
+  const t = useT();
+  const status = phaseLabel(phase, t);
+  if (!status) return null;
+
+  if (phase === "thinking") {
+    return (
+      <View className="flex-row items-center gap-2 px-1 pt-1">
+        <Spinner size="sm" />
+        <Text className="text-muted text-xs">{status}</Text>
+      </View>
+    );
+  }
+
+  return (
+    <View className="flex-row items-center px-1 pt-1">
+      <Chip
+        size="sm"
+        variant="soft"
+        color={phase === "listening" ? "accent" : "default"}
+        pointerEvents="none"
+      >
+        <Chip.Label>{status}</Chip.Label>
+      </Chip>
+    </View>
+  );
+}
+
 /**
  * Kept in a child of the sheet so the pipeline subscription and the microphone
  * only exist while Assist is on screen.
  */
-function AssistConversation({ onClose }: { onClose: () => void }) {
+function AssistConversation() {
   const t = useT();
-  const muted = useThemeColor("muted");
-  const accentForeground = useThemeColor("accent-foreground");
-  const foreground = useThemeColor("foreground");
   const scrollRef = useRef<ComponentRef<typeof BottomSheetScrollView>>(null);
 
   const {
@@ -76,13 +235,16 @@ function AssistConversation({ onClose }: { onClose: () => void }) {
   }, [messages, phase]);
 
   const listening = phase === "listening";
-  const waking = phase === "wake";
-  const thinking = phase === "thinking";
-  const empty = messages.length === 0 && !listening && !thinking;
+  const emptyCopy = t(
+    wakeEnabled || phase === "wake" ? "assist.emptyWake" : "assist.empty",
+  );
 
   return (
     <View className="flex-1">
-      <View className="flex-row items-center gap-2 pb-2">
+      <View className="flex-row items-center gap-2 pb-3">
+        <View className="size-9 items-center justify-center rounded-full bg-accent/15">
+          <Icon name="sparkles" size={18} className="text-accent" />
+        </View>
         <BottomSheet.Title className="flex-1">
           {t("assist.title")}
         </BottomSheet.Title>
@@ -94,35 +256,38 @@ function AssistConversation({ onClose }: { onClose: () => void }) {
             accessibilityLabel={
               wakeEnabled ? t("assist.wakeOn") : t("assist.wakeOff")
             }
+            accessibilityState={{ selected: wakeEnabled }}
             onPress={toggleWake}
           >
-            <Ionicons
+            <Icon
               name="ear"
               size={18}
-              color={wakeEnabled ? accentForeground : foreground}
+              className={
+                wakeEnabled ? "text-accent-foreground" : "text-foreground"
+              }
             />
           </Button>
         ) : null}
-        <Button
-          variant="ghost"
-          size="sm"
-          isIconOnly
-          accessibilityLabel={t("assist.close")}
-          onPress={onClose}
-        >
-          <Ionicons name="close" size={18} color={foreground} />
-        </Button>
+        <BottomSheet.Close accessibilityLabel={t("assist.close")} />
       </View>
 
       <BottomSheetScrollView
         ref={scrollRef}
-        contentContainerClassName="gap-2 py-2"
+        contentContainerClassName="grow gap-2.5 py-2"
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="interactive"
         showsVerticalScrollIndicator={false}
       >
-        {empty ? (
-          <Text className="text-muted px-2 py-8 text-center text-sm">
-            {t(waking || wakeEnabled ? "assist.emptyWake" : "assist.empty")}
-          </Text>
+        {messages.length === 0 ? (
+          <View className="items-center justify-center gap-3 px-6 py-16">
+            <View className="size-16 items-center justify-center rounded-full bg-accent/15">
+              <Icon name="sparkles" size={28} className="text-accent" />
+            </View>
+            <Text className="text-muted text-center text-sm leading-6">
+              {emptyCopy}
+            </Text>
+            <AssistStatus phase={phase} />
+          </View>
         ) : (
           <>
             {messages.map((bubble) => {
@@ -130,66 +295,27 @@ function AssistConversation({ onClose }: { onClose: () => void }) {
               return (
                 <View key={bubble.id} className={styles.row}>
                   <View
-                    className={`max-w-[85%] rounded-2xl px-3 py-2 ${styles.bubble}`}
+                    className={`max-w-[85%] rounded-2xl px-3.5 py-2.5 ${styles.bubble}`}
                   >
-                    <Text className={`text-sm ${styles.text}`}>
+                    <Text className={`text-sm leading-5 ${styles.text}`}>
                       {bubble.text}
                     </Text>
                   </View>
                 </View>
               );
             })}
-            {waking || listening || thinking ? (
-              <Text className="text-muted px-1 text-xs">
-                {waking
-                  ? t("assist.wake")
-                  : listening
-                    ? t("assist.listening")
-                    : t("assist.thinking")}
-              </Text>
-            ) : null}
+            <AssistStatus phase={phase} />
           </>
         )}
       </BottomSheetScrollView>
 
-      <View className="flex-row items-center gap-2 pb-4 pt-2">
-        <Button
-          variant={listening ? "primary" : "secondary"}
-          size="md"
-          isIconOnly
-          accessibilityLabel={
-            listening ? t("assist.micStop") : t("assist.micStart")
-          }
-          onPress={() => void toggleMic()}
-        >
-          <Ionicons
-            name={listening ? "stop" : "mic"}
-            size={20}
-            color={listening ? accentForeground : foreground}
-          />
-        </Button>
-        <TextField className="flex-1">
-          <Input
-            value={draft}
-            onChangeText={setDraft}
-            placeholder={t("assist.placeholder")}
-            placeholderTextColor={muted}
-            returnKeyType="send"
-            onSubmitEditing={() => void sendText()}
-            autoCapitalize="sentences"
-          />
-        </TextField>
-        <Button
-          variant="primary"
-          size="md"
-          isIconOnly
-          isDisabled={!draft.trim()}
-          accessibilityLabel={t("assist.send")}
-          onPress={() => void sendText()}
-        >
-          <Ionicons name="arrow-up" size={20} color={accentForeground} />
-        </Button>
-      </View>
+      <AssistComposer
+        draft={draft}
+        setDraft={setDraft}
+        listening={listening}
+        sendText={sendText}
+        toggleMic={toggleMic}
+      />
     </View>
   );
 }
@@ -200,16 +326,17 @@ export function AssistSheet({ isOpen, onOpenChange }: AssistSheetProps) {
       <BottomSheet.Portal>
         <BottomSheet.Overlay />
         <BottomSheet.Content
-          snapPoints={["100%"]}
+          snapPoints={SNAP_POINTS}
           enableOverDrag={false}
           enableDynamicSizing={false}
-          keyboardBehavior="interactive"
+          keyboardBehavior="extend"
           keyboardBlurBehavior="restore"
+          android_keyboardInputMode="adjustResize"
+          enableBlurKeyboardOnGesture
           contentContainerClassName="h-full"
+          contentContainerProps={{ style: { paddingBottom: 8 } }}
         >
-          {isOpen ? (
-            <AssistConversation onClose={() => onOpenChange(false)} />
-          ) : null}
+          {isOpen ? <AssistConversation /> : null}
         </BottomSheet.Content>
       </BottomSheet.Portal>
     </BottomSheet>
