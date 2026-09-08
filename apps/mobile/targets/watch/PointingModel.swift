@@ -14,6 +14,13 @@ struct WatchPose {
   var y: Double
 }
 
+struct WatchStation: Codable, Equatable {
+  var x: Double
+  var y: Double
+  var headingMean: Double
+  var pitchMean: Double
+}
+
 struct WatchDeviceModel: Codable, Equatable {
   var entityId: String
   var areaId: String
@@ -24,6 +31,7 @@ struct WatchDeviceModel: Codable, Equatable {
   var y: Double?
   var sampleCount: Int
   var contested: Bool
+  var stations: [WatchStation]?
 }
 
 struct WatchInferResult {
@@ -40,6 +48,8 @@ enum PointingModel {
   static let headingGapDeg = 8.0
   static let pitchWeight = 0.25
   static let paintSeconds = 5.0
+  static let stationNearM = 1.6
+  static let stationMergeM = 0.4
 
   static func wrapDeg(_ deg: Double) -> Double {
     (deg.truncatingRemainder(dividingBy: 360) + 360).truncatingRemainder(dividingBy: 360)
@@ -113,7 +123,7 @@ enum PointingModel {
   }
 
   static func fitPoint(_ samples: [WatchSample]) -> (x: Double, y: Double)? {
-    guard samples.count >= 3, boundingSpan(samples) >= minSpanM else { return nil }
+    guard samples.count >= 2, boundingSpan(samples) >= minSpanM else { return nil }
     var a11 = 0.0
     var a12 = 0.0
     var a22 = 0.0
@@ -135,10 +145,44 @@ enum PointingModel {
     return ((a22 * b1 - a12 * b2) / det, (a11 * b2 - a12 * b1) / det)
   }
 
+  static func stations(of device: WatchDeviceModel) -> [WatchStation] {
+    if let stations = device.stations, !stations.isEmpty { return stations }
+    return [WatchStation(x: 0, y: 0, headingMean: device.headingMean, pitchMean: device.pitchMean)]
+  }
+
+  static func isRoomMapped(_ device: WatchDeviceModel) -> Bool {
+    (device.x != nil && device.y != nil) || stations(of: device).count >= 2
+  }
+
+  static func station(from samples: [WatchSample]) -> WatchStation? {
+    guard !samples.isEmpty else { return nil }
+    return WatchStation(
+      x: mean(samples.map(\.x)),
+      y: mean(samples.map(\.y)),
+      headingMean: circularMeanDeg(samples.map(\.headingDeg)),
+      pitchMean: mean(samples.map(\.pitchDeg))
+    )
+  }
+
+  static func mergeNearbyStations(_ stations: [WatchStation]) -> [WatchStation] {
+    var merged: [WatchStation] = []
+    for station in stations {
+      if let index = merged.firstIndex(where: {
+        hypot($0.x - station.x, $0.y - station.y) < stationMergeM
+      }) {
+        merged[index] = station
+      } else {
+        merged.append(station)
+      }
+    }
+    return merged
+  }
+
   static func paintDevice(entityId: String, areaId: String, samples: [WatchSample]) -> WatchDeviceModel {
     let headings = samples.map(\.headingDeg)
     let pitches = samples.map(\.pitchDeg)
     let point = fitPoint(samples)
+    let station = station(from: samples)
     return WatchDeviceModel(
       entityId: entityId,
       areaId: areaId,
@@ -148,24 +192,63 @@ enum PointingModel {
       x: point?.x,
       y: point?.y,
       sampleCount: samples.count,
-      contested: false
+      contested: false,
+      stations: station.map { [$0] }
+    )
+  }
+
+  static func mergePaint(existing: WatchDeviceModel?, next: WatchDeviceModel) -> WatchDeviceModel {
+    guard let existing, existing.areaId == next.areaId else { return next }
+    let stations = mergeNearbyStations(stations(of: existing) + self.stations(of: next))
+    let rays = stations.map {
+      WatchSample(headingDeg: $0.headingMean, pitchDeg: $0.pitchMean, x: $0.x, y: $0.y)
+    }
+    let fromStations = fitPoint(rays)
+    let point = fromStations ?? {
+      if let x = next.x, let y = next.y { return (x, y) }
+      if let x = existing.x, let y = existing.y { return (x, y) }
+      return nil
+    }()
+    return WatchDeviceModel(
+      entityId: next.entityId,
+      areaId: next.areaId,
+      headingMean: circularMeanDeg(stations.map(\.headingMean)),
+      headingKappa: circularKappa(stations.map(\.headingMean)),
+      pitchMean: mean(stations.map(\.pitchMean)),
+      x: point?.0,
+      y: point?.1,
+      sampleCount: existing.sampleCount + next.sampleCount,
+      contested: false,
+      stations: stations
     )
   }
 
   static func scoreDevice(pose: WatchPose, device: WatchDeviceModel) -> Double {
+    var scores: [Double] = []
     if let x = device.x, let y = device.y {
       let dx = x - pose.x
       let dy = y - pose.y
       let toHeading = wrapDeg(atan2(dx, dy) * 180 / .pi)
-      let headingErr = circularDistanceDeg(pose.headingDeg, toHeading)
-      return headingErr + abs(pose.pitchDeg - device.pitchMean) * pitchWeight
+      scores.append(
+        circularDistanceDeg(pose.headingDeg, toHeading)
+          + abs(pose.pitchDeg - device.pitchMean) * pitchWeight
+      )
     }
-    let headingErr = circularDistanceDeg(pose.headingDeg, device.headingMean)
-    return headingErr + abs(pose.pitchDeg - device.pitchMean) * pitchWeight
+    for station in stations(of: device) {
+      let dist = hypot(pose.x - station.x, pose.y - station.y)
+      guard dist < stationNearM else { continue }
+      scores.append(
+        circularDistanceDeg(pose.headingDeg, station.headingMean)
+          + abs(pose.pitchDeg - station.pitchMean) * pitchWeight
+      )
+    }
+    if let best = scores.min() { return best }
+    return circularDistanceDeg(pose.headingDeg, device.headingMean)
+      + abs(pose.pitchDeg - device.pitchMean) * pitchWeight
   }
 
   static func inferTarget(pose: WatchPose, devices: [WatchDeviceModel], areaId: String) -> WatchInferResult {
-    let pool = devices.filter { $0.areaId == areaId && $0.sampleCount > 0 }
+    let pool = devices.filter { $0.sampleCount > 0 && (areaId.isEmpty || $0.areaId == areaId) }
     guard !pool.isEmpty else {
       return WatchInferResult(entityId: nil, runnerUpId: nil, contested: false, score: .infinity)
     }

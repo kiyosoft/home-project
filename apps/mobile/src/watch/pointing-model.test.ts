@@ -8,7 +8,9 @@ import {
   circularDistanceDeg,
   circularMeanDeg,
   inferTarget,
+  isRoomMapped,
   markContested,
+  mergePaint,
   paintDevice,
   pdrStep,
   type DeviceModel,
@@ -135,5 +137,54 @@ describe("pointing model", () => {
 
   it("averages headings across the 0° wrap", () => {
     expect(circularMeanDeg([350, 10])).toBeCloseTo(0, 0);
+  });
+
+  it("keeps a second paint on the same spot as one station", () => {
+    const first = paintDevice("light.lamp", "den", [
+      { headingDeg: 90, pitchDeg: 0, x: 0, y: 0 },
+      { headingDeg: 90, pitchDeg: 0, x: 0, y: 0 },
+      { headingDeg: 91, pitchDeg: 0, x: 0, y: 0 },
+    ]);
+    const again = paintDevice("light.lamp", "den", [
+      { headingDeg: 92, pitchDeg: 0, x: 0.1, y: 0 },
+      { headingDeg: 90, pitchDeg: 0, x: 0.1, y: 0 },
+      { headingDeg: 91, pitchDeg: 0, x: 0.1, y: 0 },
+    ]);
+    const merged = mergePaint(first, again);
+    expect(merged.stations).toHaveLength(1);
+    expect(merged.x).toBeUndefined();
+    expect(isRoomMapped(merged)).toBe(false);
+  });
+
+  it("locates a lamp from a new spot after painting it from two places", () => {
+    const couch = paintDevice("light.lamp", "den", [
+      { headingDeg: 90, pitchDeg: 0, x: 0, y: 0 },
+      { headingDeg: 90, pitchDeg: 0, x: 0, y: 0 },
+      { headingDeg: 90, pitchDeg: 0, x: 0, y: 0 },
+    ]);
+    const door = paintDevice("light.lamp", "den", [
+      { headingDeg: 143.13, pitchDeg: 0, x: 0, y: 4 },
+      { headingDeg: 143.13, pitchDeg: 0, x: 0, y: 4 },
+      { headingDeg: 143.13, pitchDeg: 0, x: 0, y: 4 },
+    ]);
+    const mapped = mergePaint(couch, door);
+    expect(isRoomMapped(mapped)).toBe(true);
+    expect(mapped.x).toBeCloseTo(3, 0);
+    expect(mapped.y).toBeCloseTo(0, 0);
+
+    const fromMidroom = inferTarget(
+      { headingDeg: 123.69, pitchDeg: 0, x: 0, y: 2 },
+      [mapped],
+      "den",
+    );
+    expect(fromMidroom.entityId).toBe("light.lamp");
+    expect(fromMidroom.contested).toBe(false);
+
+    const stillCouch = inferTarget(
+      { headingDeg: 123.69, pitchDeg: 0, x: 0, y: 2 },
+      [couch],
+      "den",
+    );
+    expect(stillCouch.contested).toBe(true);
   });
 });

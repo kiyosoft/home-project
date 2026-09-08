@@ -5,6 +5,12 @@ module.exports = {
   displayName: "Ethio Home",
   bundleIdentifier: ".watchkitapp",
   deploymentTarget: "10.0",
+  icon: "./assets/icon.png",
+  entitlements: {
+    "com.apple.security.application-groups": [
+      "group.app.ethiohome.companion",
+    ],
+  },
   frameworks: [
     "SwiftUI",
     "WatchConnectivity",

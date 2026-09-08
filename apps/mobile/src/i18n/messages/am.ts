@@ -387,10 +387,12 @@ export const am: Record<MessageKey, string> = {
 
 
   "settings.watch": "ሰዓት",
-  "settings.watchDescription": "በእጅዎ ሰዓት ወደ መብራት ጠቁመው ያጣፉ፣ ይቀያየራል።",
+  "settings.watchDescription":
+    "ትዕይንት፣ መብራት እና መቆለፊያ በእጅዎ ሰዓት — ወይም በቤት ሳሉ ጠቁመው ያጣፉ።",
 
   "watch.title": "የእርስዎ ሰዓት",
-  "watch.description": "በእጅዎ ሰዓት ወደ መሳሪያው ጠቁመው ይሳሉ። ማጣፈፍ ወይም መንካት የሚያመለክቱን ይቀይራል።",
+  "watch.description":
+    "የሰዓቱ መነሻ ትዕይንት፣ መብራት እና መቆለፊያ ይሠራል። Snap እንዲያገኘው ከክፍሉ ጠቁመው ይሳሉ።",
   "watch.status": "ሰዓት",
   "watch.unavailable": "የሰዓት ጋደኛው በአይፎን ላይ ብቻ ይሠራል።",
   "watch.unpaired": "ከዚህ አይፎን ጋር የተጣመረ አፕል ሰዓት የለም።",
@@ -403,13 +405,23 @@ export const am: Record<MessageKey, string> = {
   "watch.atHome": "በቤት",
   "watch.away": "ውጪ",
   "watch.paint": "ሳል",
+  "watch.paintAgain": "እንደገና ሳል",
   "watch.painting": "ወደ እሱ ጠቁሙ…",
-  "watch.painted": "ተሳልቷል",
+  "watch.painted": "እዚህ ተሳልቷል",
+  "watch.mapped": "በክፍሉ ውስጥ ይሠራል",
   "watch.unpainted": "አልተሳለም",
   "watch.contested": "በተደጋጋሚ ይጋጫል",
-  "watch.noDevices": "በዚህ ሃብ ላይ መብራት፣ መቀየሪያ፣ ማራገቢያ ወይም ትዕይንት የለም።",
+  "watch.noDevices": "በዚህ ሃብ ላይ መብራት፣ መቀየሪያ፣ ማራገቢያ፣ መቆለፊያ ወይም ትዕይንት የለም።",
   "watch.devices": "መሳሪያዎች",
-  "watch.devicesHelp": "በእጅዎ ላይ የሚፈልጎቸውን ያብሩ። ከዚህ ይሳሉ፣ ከዚያ ወደ ነገሩ ይጠቁሙ።",
+  "watch.devicesHelp":
+    "መቀየሪያው መሳሪያውን በእጅዎ ላይ ያስቀምጣል። በሰዓቱ መነሻ ወይም ክፍሎች ይንኩት። ለSnap ይሳሉ። ከስልኩ ለመሞከር እዚህ ይንኩ።",
+  "watch.onWrist": "በሰዓት",
+  "watch.toggle": "ቀይር",
+  "watch.activate": "አስጀምር",
+  "watch.lock": "ቆልፍ",
   "watch.unassigned": "ያልተመደበ",
   "watch.demoHint": "የማሳየ ሁኔታ በአካባቢ ይሳላል። ወደ ሃብ ምንም አይላክም።",
+  "watch.gestures": "እንቅስቃሴዎች",
+  "watch.gesturesHelp":
+    "አንድ ጊዜ ማጣፈፍ አሁንም ወደ የተሳለ መሳሪያ ይጠቁማል። ሁለት ጊዜ ማጣፈፍ፣ መንቀጥቀጥ እና የእጅ ጠቅታ ethio_watch_gesture በሆም አሲስታንት ላይ ይልካሉ።",
 };

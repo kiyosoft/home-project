@@ -4,7 +4,7 @@ public class EthioWatchModule: Module {
   public func definition() -> ModuleDefinition {
     Name("EthioWatch")
 
-    Events("onToggle", "onModel", "onStatus")
+    Events("onToggle", "onCommand", "onGesture", "onModel", "onStatus")
 
     OnCreate {
       WatchBridge.shared.attach { [weak self] name, body in
@@ -18,6 +18,14 @@ public class EthioWatchModule: Module {
 
     Function("syncCatalog") { (catalog: [String: Any]) in
       WatchBridge.shared.syncCatalog(catalog)
+    }
+
+    Function("syncSnapshot") { (snapshot: [String: Any]) in
+      WatchBridge.shared.syncSnapshot(snapshot)
+    }
+
+    Function("sendResult") { (result: [String: Any]) in
+      WatchBridge.shared.sendResult(result)
     }
 
     Function("startPaint") { (entityId: String) in

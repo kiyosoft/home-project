@@ -8,6 +8,7 @@ final class WatchBridge: NSObject, WCSessionDelegate {
 
   private var sink: WatchEventSink?
   private var lastCatalog: [String: Any] = [:]
+  private var lastSnapshot: [String: Any] = [:]
   private var lastWatchStatus: [String: Any] = [:]
 
   func attach(sink: @escaping WatchEventSink) {
@@ -52,29 +53,38 @@ final class WatchBridge: NSObject, WCSessionDelegate {
 
   func syncCatalog(_ catalog: [String: Any]) {
     lastCatalog = catalog
-    send(catalog.merging(["type": "catalog"]) { _, incoming in incoming })
+    send(catalog.merging(["type": "catalog"]) { _, incoming in incoming }, context: false)
+  }
+
+  func syncSnapshot(_ snapshot: [String: Any]) {
+    lastSnapshot = snapshot
+    send(snapshot.merging(["type": "snapshot"]) { _, incoming in incoming }, context: true)
+  }
+
+  func sendResult(_ result: [String: Any]) {
+    send(result.merging(["type": "result"]) { _, incoming in incoming }, context: false)
   }
 
   func startPaint(entityId: String) {
-    send(["type": "startPaint", "entityId": entityId])
+    send(["type": "startPaint", "entityId": entityId], context: false)
   }
 
   func setAtHome(_ atHome: Bool) {
-    send(["type": "setAtHome", "atHome": atHome])
+    send(["type": "setAtHome", "atHome": atHome], context: false)
   }
 
   func setArea(_ areaId: String) {
-    send(["type": "setArea", "areaId": areaId])
+    send(["type": "setArea", "areaId": areaId], context: false)
   }
 
   func clearPaint(entityId: String) {
-    send(["type": "clearPaint", "entityId": entityId])
+    send(["type": "clearPaint", "entityId": entityId], context: false)
   }
 
-  private func send(_ message: [String: Any]) {
+  private func send(_ message: [String: Any], context: Bool) {
     guard WCSession.isSupported() else { return }
     let session = WCSession.default
-    if session.activationState == .activated {
+    if context, session.activationState == .activated {
       try? session.updateApplicationContext(message)
     }
     if session.isReachable {
@@ -100,6 +110,12 @@ final class WatchBridge: NSObject, WCSessionDelegate {
       if let entityId = message["entityId"] as? String {
         emit("onToggle", ["entityId": entityId])
       }
+    case "command":
+      emit("onCommand", message)
+    case "gesture":
+      if let gesture = message["gesture"] as? String {
+        emit("onGesture", ["gesture": gesture])
+      }
     case "model":
       emit("onModel", message)
     case "status":
@@ -117,6 +133,9 @@ final class WatchBridge: NSObject, WCSessionDelegate {
   ) {
     if !lastCatalog.isEmpty {
       syncCatalog(lastCatalog)
+    }
+    if !lastSnapshot.isEmpty {
+      syncSnapshot(lastSnapshot)
     }
     emit("onStatus", status())
   }

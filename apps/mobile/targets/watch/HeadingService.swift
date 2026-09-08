@@ -29,6 +29,7 @@ final class HeadingService: NSObject, CLLocationManagerDelegate {
     if hasCompass {
       location.startUpdatingHeading()
     }
+    startWalking()
     if motion.isDeviceMotionAvailable {
       motion.deviceMotionUpdateInterval = 0.1
       motion.startDeviceMotionUpdates(using: .xMagneticNorthZVertical, to: .main) { [weak self] data, _ in
@@ -48,7 +49,11 @@ final class HeadingService: NSObject, CLLocationManagerDelegate {
   func resetOrigin() {
     x = 0
     y = 0
-    lastStepCount = 0
+  }
+
+  func restorePose(x: Double, y: Double) {
+    self.x = x
+    self.y = y
   }
 
   func startWalking() {

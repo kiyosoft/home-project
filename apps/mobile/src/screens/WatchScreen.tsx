@@ -7,10 +7,12 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useDashboardStore } from "@/store/dashboard-store";
 import { useHaStore } from "@/store/ha-store";
 import { useT } from "@/store/locale-store";
-import { entityName } from "@/store/use-entity";
+import { entityDomain, entityName } from "@/store/use-entity";
 import { Button, Chip, LinkButton, Switch } from "@/ui/haptic";
-import { defaultWatchEntityIds, isSnappableEntityId } from "@/watch/catalog";
+import { defaultWatchEntityIds, isControllableEntityId } from "@/watch/catalog";
+import { dispatchWatchCommand } from "@/watch/dispatch";
 import { startWatchPaint } from "@/watch/native";
+import type { WatchCommand } from "@/watch/types";
 import { useWatchStore } from "@/watch/watch-store";
 
 export function WatchScreen() {
@@ -35,31 +37,41 @@ export function WatchScreen() {
 
   const selected = useMemo(() => new Set(resolvedIds), [resolvedIds]);
 
+  const paintById = useMemo(
+    () => new Map(model.map((entry) => [entry.entityId, entry])),
+    [model],
+  );
+  const areaNameById = useMemo(
+    () => new Map(areas.map((area) => [area.area_id, area.name])),
+    [areas],
+  );
+
   const candidates = useMemo(() => {
     const rows: {
       entityId: string;
       name: string;
+      domain: string;
       area: string;
       painted: boolean;
       contested: boolean;
+      mapped: boolean;
     }[] = [];
     for (const [entityId, entity] of Object.entries(entities)) {
-      if (!isSnappableEntityId(entityId)) continue;
-      const paint = model.find((entry) => entry.entityId === entityId);
+      if (!isControllableEntityId(entityId)) continue;
+      const paint = paintById.get(entityId);
       const areaId = areaByEntity[entityId];
-      const areaName =
-        areas.find((area) => area.area_id === areaId)?.name ??
-        t("watch.unassigned");
       rows.push({
         entityId,
         name: entityName(entity, entityId),
-        area: areaName,
+        domain: entityDomain(entityId),
+        area: areaNameById.get(areaId) ?? t("watch.unassigned"),
         painted: paint?.painted === true,
         contested: paint?.contested === true,
+        mapped: paint?.mapped === true,
       });
     }
     return rows.sort((left, right) => left.name.localeCompare(right.name));
-  }, [areaByEntity, areas, entities, model, t]);
+  }, [areaByEntity, areaNameById, entities, paintById, t]);
 
   return (
     <ScrollView
@@ -110,6 +122,13 @@ export function WatchScreen() {
       </Card>
 
       <Card>
+        <Card.Body className="gap-2">
+          <Label>{t("watch.gestures")}</Label>
+          <Card.Description>{t("watch.gesturesHelp")}</Card.Description>
+        </Card.Body>
+      </Card>
+
+      <Card>
         <Card.Body className="gap-3">
           <Label>{t("watch.devices")}</Label>
           <Card.Description>{t("watch.devicesHelp")}</Card.Description>
@@ -130,35 +149,58 @@ export function WatchScreen() {
                       {row.painted
                         ? row.contested
                           ? ` · ${t("watch.contested")}`
-                          : ` · ${t("watch.painted")}`
+                          : row.mapped
+                            ? ` · ${t("watch.mapped")}`
+                            : ` · ${t("watch.painted")}`
                         : ` · ${t("watch.unpainted")}`}
                     </Card.Description>
                     {on ? (
-                      <Button
-                        size="sm"
-                        variant="secondary"
-                        className="self-start"
-                        onPress={() => startWatchPaint(row.entityId)}
-                      >
-                        {t("watch.paint")}
-                      </Button>
+                      <View className="flex-row flex-wrap gap-2">
+                        <Button
+                          size="sm"
+                          variant="secondary"
+                          className="self-start"
+                          onPress={() => startWatchPaint(row.entityId)}
+                        >
+                          {row.painted ? t("watch.paintAgain") : t("watch.paint")}
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="secondary"
+                          className="self-start"
+                          onPress={() => {
+                            void dispatchWatchCommand(
+                              testCommand(row.entityId, row.domain, entities[row.entityId]?.state),
+                            );
+                          }}
+                        >
+                          {row.domain === "scene" || row.domain === "script"
+                            ? t("watch.activate")
+                            : row.domain === "lock"
+                              ? t("watch.lock")
+                              : t("watch.toggle")}
+                        </Button>
+                      </View>
                     ) : null}
                   </View>
-                  <Switch
-                    isSelected={on}
-                    onSelectedChange={(next) => {
-                      if (selectedIds === null) {
-                        const base = defaultWatchEntityIds(document, entities);
-                        setEntityIds(
-                          next
-                            ? unique([...base, row.entityId])
-                            : base.filter((id) => id !== row.entityId),
-                        );
-                        return;
-                      }
-                      toggleEntity(row.entityId, next);
-                    }}
-                  />
+                  <View className="items-end gap-1">
+                    <Switch
+                      isSelected={on}
+                      onSelectedChange={(next) => {
+                        if (selectedIds === null) {
+                          const base = defaultWatchEntityIds(document, entities);
+                          setEntityIds(
+                            next
+                              ? unique([...base, row.entityId])
+                              : base.filter((id) => id !== row.entityId),
+                          );
+                          return;
+                        }
+                        toggleEntity(row.entityId, next);
+                      }}
+                    />
+                    <Card.Description>{t("watch.onWrist")}</Card.Description>
+                  </View>
                 </View>
               );
             })
@@ -167,6 +209,23 @@ export function WatchScreen() {
       </Card>
     </ScrollView>
   );
+}
+
+function testCommand(
+  entityId: string,
+  domain: string,
+  state: string | undefined,
+): WatchCommand {
+  if (domain === "scene" || domain === "script") {
+    return { kind: "activate", entityId };
+  }
+  if (domain === "lock") {
+    return {
+      kind: state === "locked" || state === "locking" ? "unlock" : "lock",
+      entityId,
+    };
+  }
+  return { kind: "toggle", entityId };
 }
 
 function unique(ids: string[]): string[] {

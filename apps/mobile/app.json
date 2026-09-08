@@ -92,7 +92,7 @@
         }
       ],
       "@bacons/apple-targets",
-      "./modules/ethio-watch",
+      "./modules/ethio-watch/app.plugin.js",
       [
         "expo-widgets",
         {

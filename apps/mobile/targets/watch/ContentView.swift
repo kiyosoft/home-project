@@ -5,12 +5,15 @@ struct ContentView: View {
 
   var body: some View {
     TabView {
-      SnapFace()
-        .tag("snap")
+      HomeFace()
+        .tag("home")
       RoomsFace()
         .tag("rooms")
+      SnapFace()
+        .tag("snap")
     }
     .tabViewStyle(.verticalPage)
+    .modifier(UnlockConfirm())
   }
 }
 
@@ -34,10 +37,20 @@ struct SnapFace: View {
           .font(.caption)
           .foregroundStyle(.secondary)
       } else {
+        if !runtime.currentAreaName().isEmpty {
+          Text(runtime.currentAreaName())
+            .font(.caption2)
+            .foregroundStyle(.secondary)
+        }
         Text(runtime.aimedName())
           .font(.title3.weight(.semibold))
           .multilineTextAlignment(.center)
           .minimumScaleFactor(0.7)
+        if let aimed = runtime.aimed?.entityId, let entity = runtime.entity(id: aimed) {
+          Text(runtime.caption(for: entity))
+            .font(.caption2)
+            .foregroundStyle(.secondary)
+        }
         if runtime.aimed?.contested == true, let other = runtime.runnerUpName() {
           Text("or \(other)?")
             .font(.caption)
@@ -46,59 +59,32 @@ struct SnapFace: View {
               runtime.chooseRunnerUp()
             }
         }
-        Button("Tap to toggle") {
+        Button(snapActionLabel) {
           runtime.toggleAimed()
         }
         .buttonStyle(.borderedProminent)
+        .modifier(PrimaryHandGesture())
       }
     }
     .padding(.horizontal, 6)
   }
+
+  private var snapActionLabel: String {
+    guard let id = runtime.aimed?.entityId, let entity = runtime.entity(id: id) else {
+      return "Tap to toggle"
+    }
+    return runtime.actionLabel(for: entity)
+  }
 }
 
-struct RoomsFace: View {
-  @EnvironmentObject private var runtime: WatchRuntime
-
-  var body: some View {
-    List {
-      if runtime.areas.isEmpty {
-        Text("Open Ethio Home on iPhone to send rooms.")
-          .foregroundStyle(.secondary)
-      }
-      ForEach(runtime.areas) { area in
-        Button {
-          runtime.selectArea(area.id)
-        } label: {
-          HStack {
-            Text(area.name)
-            Spacer()
-            if runtime.currentAreaId == area.id {
-              Image(systemName: "checkmark")
-            }
-          }
-        }
-      }
-      ForEach(runtime.entities.filter { $0.areaId == runtime.currentAreaId || runtime.currentAreaId.isEmpty }) { entity in
-        let painted = runtime.devices.contains { $0.entityId == entity.id && $0.sampleCount > 0 }
-        let contested = runtime.devices.contains { $0.entityId == entity.id && $0.contested }
-        Button {
-          runtime.startPaint(entityId: entity.id)
-        } label: {
-          VStack(alignment: .leading) {
-            Text(entity.name)
-            Text(painted ? (contested ? "Often contested · hold to clear" : "Painted · hold to clear") : "Not painted")
-              .font(.caption2)
-              .foregroundStyle(contested ? .orange : .secondary)
-          }
-        }
-        .simultaneousGesture(
-          LongPressGesture().onEnded { _ in
-            runtime.clearPaint(entityId: entity.id)
-          }
-        )
-      }
+private struct PrimaryHandGesture: ViewModifier {
+  @ViewBuilder
+  func body(content: Content) -> some View {
+    if #available(watchOS 11.0, *) {
+      content.handGestureShortcut(.primaryAction)
+    } else {
+      content
     }
-    .navigationTitle("Rooms")
   }
 }
 

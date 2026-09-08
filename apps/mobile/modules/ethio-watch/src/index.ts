@@ -12,6 +12,12 @@ export interface WatchNativeStatus {
   atHome?: boolean;
 }
 
+export interface WatchEntityCapabilities {
+  brightness?: boolean;
+  color?: boolean;
+  lockCode?: boolean;
+}
+
 export interface WatchCatalogArea {
   id: string;
   name: string;
@@ -22,6 +28,8 @@ export interface WatchCatalogEntity {
   name: string;
   areaId: string;
   domain: string;
+  favorite: boolean;
+  capabilities: WatchEntityCapabilities;
 }
 
 export interface WatchCatalog {
@@ -31,11 +39,51 @@ export interface WatchCatalog {
   currentAreaId: string;
 }
 
+export interface WatchEntityState {
+  state: string;
+  brightness?: number;
+}
+
+export interface WatchAreaRollup {
+  lightsOn: number;
+  unlocked: number;
+}
+
+export interface WatchHomeSummary {
+  lightsOn: number;
+  lockCount: number;
+  unlocked: number;
+}
+
+export interface WatchSnapshot {
+  atHome: boolean;
+  connected: boolean;
+  summary: WatchHomeSummary;
+  areas: Record<string, WatchAreaRollup>;
+  states: Record<string, WatchEntityState>;
+}
+
+export interface WatchCommandPayload {
+  kind: string;
+  entityId?: string;
+  action?: string;
+  areaId?: string;
+  data?: Record<string, unknown>;
+}
+
+export interface WatchCommandResult {
+  ok: boolean;
+  entityId?: string;
+  state?: string;
+  gesture?: string;
+}
+
 export interface WatchModelDevice {
   entityId: string;
   areaId: string;
   painted: boolean;
   contested: boolean;
+  mapped?: boolean;
 }
 
 export interface WatchModelEvent {
@@ -44,6 +92,8 @@ export interface WatchModelEvent {
 
 type WatchEvents = {
   onToggle: (event: { entityId: string }) => void;
+  onCommand: (event: WatchCommandPayload) => void;
+  onGesture: (event: { gesture: string }) => void;
   onModel: (event: WatchModelEvent) => void;
   onStatus: (event: WatchNativeStatus) => void;
 };
@@ -51,6 +101,8 @@ type WatchEvents = {
 declare class EthioWatchModule extends NativeModule<WatchEvents> {
   getStatus(): WatchNativeStatus;
   syncCatalog(catalog: WatchCatalog): void;
+  syncSnapshot(snapshot: WatchSnapshot): void;
+  sendResult(result: WatchCommandResult): void;
   startPaint(entityId: string): void;
   setAtHome(atHome: boolean): void;
   setArea(areaId: string): void;
@@ -77,6 +129,14 @@ export function getWatchStatus(): WatchNativeStatus {
 
 export function syncWatchCatalog(catalog: WatchCatalog): void {
   EthioWatch?.syncCatalog(catalog);
+}
+
+export function syncWatchSnapshot(snapshot: WatchSnapshot): void {
+  EthioWatch?.syncSnapshot(snapshot);
+}
+
+export function sendWatchResult(result: WatchCommandResult): void {
+  EthioWatch?.sendResult(result);
 }
 
 export function startWatchPaint(entityId: string): void {

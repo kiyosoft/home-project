@@ -9,6 +9,6 @@
   <key>NSLocationWhenInUseUsageDescription</key>
   <string>Ethio Home uses the compass so a snap can aim at the lamp you are pointing at. Location stays on this watch.</string>
   <key>NSMotionUsageDescription</key>
-  <string>Ethio Home watches your wrist so a finger snap can toggle the lamp you are pointing at.</string>
+  <string>Ethio Home watches your wrist for a snap, and counts steps so a second paint from across the room can find the lamp from anywhere.</string>
 </dict>
 </plist>

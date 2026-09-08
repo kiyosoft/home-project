@@ -80,3 +80,26 @@ export async function callServiceOnHub(options: {
   }
   return "unreachable";
 }
+
+export async function fireEventOnHub(
+  eventType: string,
+  eventData: Record<string, unknown>,
+): Promise<ActionDelivery> {
+  const { registration } = useHaStore.getState();
+  if (!registration) return "no-registration";
+
+  for (const baseUrl of await webhookTargets()) {
+    try {
+      await fireWebhookEvent({
+        baseUrl,
+        webhookId: registration.webhookId,
+        eventType,
+        eventData,
+      });
+      return "sent";
+    } catch {
+      // Try the next address; the phone may have moved between networks.
+    }
+  }
+  return "unreachable";
+}

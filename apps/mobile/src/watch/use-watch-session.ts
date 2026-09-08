@@ -1,25 +1,28 @@
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useRef } from "react";
 
 import { useDashboardStore } from "@/store/dashboard-store";
 import { useHaStore } from "@/store/ha-store";
 
-import { buildWatchCatalog, defaultWatchEntityIds } from "./catalog";
-import { dispatchWatchToggle } from "./dispatch";
+import { buildWatchCatalog, buildWatchSnapshot, defaultWatchEntityIds } from "./catalog";
+import { dispatchWatchCommand, dispatchWatchToggle, parseWatchCommand } from "./dispatch";
+import { fireWatchGesture } from "./fire-gesture";
 import {
   EthioWatch,
   getWatchStatus,
+  sendWatchResult,
   setWatchAtHome,
   syncWatchCatalog,
+  syncWatchSnapshot,
 } from "./native";
 import { loadAtHome, saveAtHome, saveWatchAreaId } from "./settings";
 import { useWatchStore } from "./watch-store";
 
-/**
- * Keeps the wrist catalog in step with HA and turns watch snaps into the same
- * service calls the Home Screen widgets already use.
- */
+const SNAPSHOT_MS = 300;
+const EMPTY_FAVORITES: string[] = [];
+
 export function useWatchSession(): void {
   const mode = useHaStore((state) => state.mode);
+  const status = useHaStore((state) => state.status);
   const entities = useHaStore((state) => state.entities);
   const areas = useHaStore((state) => state.areas);
   const areaByEntity = useHaStore((state) => state.areaByEntity);
@@ -38,6 +41,46 @@ export function useWatchSession(): void {
     return defaultWatchEntityIds(document, entities);
   }, [document, entities, selectedIds]);
 
+  const favoriteIds = document?.favorites ?? EMPTY_FAVORITES;
+  const connected = mode === "demo" || status === "connected";
+
+  const catalog = useMemo(
+    () =>
+      buildWatchCatalog({
+        entities,
+        areas,
+        areaByEntity,
+        selectedIds: resolvedIds,
+        favoriteIds,
+        atHome,
+        currentAreaId,
+      }),
+    [
+      areaByEntity,
+      areas,
+      atHome,
+      currentAreaId,
+      entities,
+      favoriteIds,
+      resolvedIds,
+    ],
+  );
+
+  const snapshot = useMemo(
+    () =>
+      buildWatchSnapshot({
+        entities,
+        catalog,
+        atHome,
+        connected,
+      }),
+    [atHome, catalog, connected, entities],
+  );
+
+  const catalogKey = useRef("");
+  const snapshotKey = useRef("");
+  const snapshotTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   useEffect(() => {
     void hydrate();
   }, [hydrate]);
@@ -46,12 +89,31 @@ export function useWatchSession(): void {
     if (!EthioWatch) return;
     setStatus(getWatchStatus());
     const toggle = EthioWatch.addListener("onToggle", (event) => {
-      dispatchWatchToggle(event.entityId);
+      void dispatchWatchToggle(event.entityId).then((result) => {
+        sendWatchResult(result);
+      });
+    });
+    const command = EthioWatch.addListener("onCommand", (event) => {
+      const parsed = parseWatchCommand(event);
+      if (!parsed) return;
+      void dispatchWatchCommand(parsed).then((result) => {
+        sendWatchResult(result);
+      });
+    });
+    const gesture = EthioWatch.addListener("onGesture", (event) => {
+      const store = useWatchStore.getState();
+      void fireWatchGesture({
+        gesture: event.gesture,
+        atHome: store.atHome,
+        areaId: store.currentAreaId,
+      }).then((result) => {
+        sendWatchResult(result);
+      });
     });
     const model = EthioWatch.addListener("onModel", (event) => {
       setModel(event.devices ?? []);
     });
-    const status = EthioWatch.addListener("onStatus", (next) => {
+    const watchStatus = EthioWatch.addListener("onStatus", (next) => {
       setStatus(next);
       if (typeof next.atHome === "boolean") {
         void saveAtHome(next.atHome);
@@ -63,8 +125,10 @@ export function useWatchSession(): void {
     });
     return () => {
       toggle.remove();
+      command.remove();
+      gesture.remove();
       model.remove();
-      status.remove();
+      watchStatus.remove();
     };
   }, [setArea, setModel, setStatus]);
 
@@ -83,14 +147,29 @@ export function useWatchSession(): void {
 
   useEffect(() => {
     if (!EthioWatch) return;
-    const catalog = buildWatchCatalog({
-      entities,
-      areas,
-      areaByEntity,
-      selectedIds: resolvedIds,
-      atHome,
-      currentAreaId,
-    });
+    const key = JSON.stringify(catalog);
+    if (key === catalogKey.current) return;
+    catalogKey.current = key;
     syncWatchCatalog(catalog);
-  }, [areaByEntity, areas, atHome, currentAreaId, entities, resolvedIds]);
+  }, [catalog]);
+
+  useEffect(() => {
+    if (!EthioWatch) return;
+    const key = JSON.stringify(snapshot);
+    if (key === snapshotKey.current) return;
+    if (!snapshotKey.current) {
+      snapshotKey.current = key;
+      syncWatchSnapshot(snapshot);
+      return;
+    }
+    if (snapshotTimer.current) clearTimeout(snapshotTimer.current);
+    snapshotTimer.current = setTimeout(() => {
+      snapshotKey.current = key;
+      syncWatchSnapshot(snapshot);
+      snapshotTimer.current = null;
+    }, SNAPSHOT_MS);
+    return () => {
+      if (snapshotTimer.current) clearTimeout(snapshotTimer.current);
+    };
+  }, [snapshot]);
 }

@@ -5,7 +5,8 @@
   "main": "expo-router/entry",
   "scripts": {
     "start": "expo start",
-    "ios": "expo run:ios",
+    "ios": "node ./scripts/run-ios.mjs",
+    "watch:install": "node ./scripts/install-watch-companion.mjs",
     "android": "expo run:android",
     "prebuild": "expo prebuild",
     "doctor": "expo-doctor",

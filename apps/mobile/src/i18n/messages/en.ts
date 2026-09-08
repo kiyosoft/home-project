@@ -388,11 +388,12 @@ export const en = {
   "settings.themeSystem": "System",
 
   "settings.watch": "Watch",
-  "settings.watchDescription": "Point at a lamp on your wrist, then snap to toggle it.",
+  "settings.watchDescription":
+    "Scenes, lights, and locks on your wrist — or point and snap when you are home.",
 
   "watch.title": "Your watch",
   "watch.description":
-    "Paint a device by pointing at it on your wrist. A snap or tap toggles whatever you are aiming at.",
+    "The watch Home tab runs scenes, lights, and locks. Paint a device by pointing at it if you want Snap to find it from across the room.",
   "watch.status": "Watch",
   "watch.unavailable": "The Watch companion only runs on iPhone.",
   "watch.unpaired": "No Apple Watch is paired with this iPhone.",
@@ -406,16 +407,25 @@ export const en = {
   "watch.atHome": "At home",
   "watch.away": "Away",
   "watch.paint": "Paint",
+  "watch.paintAgain": "Paint again",
   "watch.painting": "Point at it…",
-  "watch.painted": "Painted",
+  "watch.painted": "Painted here",
+  "watch.mapped": "Works around the room",
   "watch.unpainted": "Not painted",
   "watch.contested": "Often contested",
-  "watch.noDevices": "No lights, switches, fans, or scenes on this hub yet.",
+  "watch.noDevices": "No lights, switches, fans, locks, or scenes on this hub yet.",
   "watch.devices": "Devices",
   "watch.devicesHelp":
-    "Turn on the ones you want on the wrist. Paint from here, then point at the thing.",
+    "The switch puts a device on the wrist. Tap it on the watch Home or Rooms tab to run it. Paint if you want Snap to aim at it. Try the action here to hit the hub from the phone.",
+  "watch.onWrist": "On watch",
+  "watch.toggle": "Toggle",
+  "watch.activate": "Activate",
+  "watch.lock": "Lock",
   "watch.unassigned": "Unassigned",
   "watch.demoHint": "Demo mode paints locally. Nothing is sent to a hub.",
+  "watch.gestures": "Gestures",
+  "watch.gesturesHelp":
+    "A single snap still aims at a painted device. Double snap, shake, and a wrist flick fire ethio_watch_gesture on Home Assistant.",
 } as const;
 
 export type MessageKey = keyof typeof en;
