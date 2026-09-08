@@ -63,6 +63,20 @@ export function SettingsScreen() {
         </Card.Body>
       </Card>
 
+      <Card>
+        <Card.Body className="gap-3">
+          <Label>{t("settings.watch")}</Label>
+          <Card.Description>{t("settings.watchDescription")}</Card.Description>
+          <Button
+            variant="secondary"
+            className="self-start"
+            onPress={() => router.push("/watch")}
+          >
+            {t("watch.title")}
+          </Button>
+        </Card.Body>
+      </Card>
+
       {mode === "live" ? (
         <Card>
           <Card.Body className="gap-3">

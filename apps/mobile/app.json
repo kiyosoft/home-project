@@ -91,6 +91,8 @@
           "defaultChannel": "default"
         }
       ],
+      "@bacons/apple-targets",
+      "./modules/ethio-watch",
       [
         "expo-widgets",
         {

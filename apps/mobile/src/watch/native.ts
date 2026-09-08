@@ -1,0 +1,16 @@
+export {
+  clearWatchPaint,
+  EMPTY_WATCH_STATUS,
+  EthioWatch,
+  getWatchStatus,
+  setWatchArea,
+  setWatchAtHome,
+  startWatchPaint,
+  syncWatchCatalog,
+  type WatchCatalog,
+  type WatchCatalogArea,
+  type WatchCatalogEntity,
+  type WatchModelDevice,
+  type WatchModelEvent,
+  type WatchNativeStatus,
+} from "../../modules/ethio-watch/src/index";

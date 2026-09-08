@@ -386,6 +386,36 @@ export const en = {
   "settings.themeLight": "Light",
   "settings.themeDark": "Dark",
   "settings.themeSystem": "System",
+
+  "settings.watch": "Watch",
+  "settings.watchDescription": "Point at a lamp on your wrist, then snap to toggle it.",
+
+  "watch.title": "Your watch",
+  "watch.description":
+    "Paint a device by pointing at it on your wrist. A snap or tap toggles whatever you are aiming at.",
+  "watch.status": "Watch",
+  "watch.unavailable": "The Watch companion only runs on iPhone.",
+  "watch.unpaired": "No Apple Watch is paired with this iPhone.",
+  "watch.notInstalled": "Install Ethio Home on the watch from the Watch app.",
+  "watch.unreachable": "Watch is not reachable. Open Ethio Home on your wrist.",
+  "watch.reachable": "Watch reachable",
+  "watch.noCompass":
+    "This watch has no compass. Point-and-snap needs Series 5 or later, any SE, or Ultra.",
+  "watch.noCompassChip": "No compass",
+  "watch.notHome": "Snaps are paused while you are away from home.",
+  "watch.atHome": "At home",
+  "watch.away": "Away",
+  "watch.paint": "Paint",
+  "watch.painting": "Point at it…",
+  "watch.painted": "Painted",
+  "watch.unpainted": "Not painted",
+  "watch.contested": "Often contested",
+  "watch.noDevices": "No lights, switches, fans, or scenes on this hub yet.",
+  "watch.devices": "Devices",
+  "watch.devicesHelp":
+    "Turn on the ones you want on the wrist. Paint from here, then point at the thing.",
+  "watch.unassigned": "Unassigned",
+  "watch.demoHint": "Demo mode paints locally. Nothing is sent to a hub.",
 } as const;
 
 export type MessageKey = keyof typeof en;

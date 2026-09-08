@@ -10,6 +10,7 @@ import {
   LOCATION_TRIGGER,
   reportDeviceLocation,
 } from "@/lib/location-report";
+import { noteHomePresence } from "@/watch/at-home";
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
@@ -31,6 +32,11 @@ TaskManager.defineTask(LOCATION_GEOFENCE_TASK, async ({ data, error }) => {
   const current = await Location.getLastKnownPositionAsync();
   const coords = current?.coords;
   const region = isRecord(data.region) ? data.region : undefined;
+  const identifier =
+    typeof region?.identifier === "string" ? region.identifier : "";
+  if (identifier === "zone.home") {
+    await noteHomePresence(eventType !== Location.GeofencingEventType.Exit);
+  }
   const latitude = coords?.latitude ?? num(region?.latitude);
   const longitude = coords?.longitude ?? num(region?.longitude);
   if (latitude === undefined || longitude === undefined) return;

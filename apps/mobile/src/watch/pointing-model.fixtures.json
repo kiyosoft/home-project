@@ -1,0 +1,84 @@
+{
+  "headingOnly": {
+    "devices": [
+      {
+        "entityId": "light.kitchen",
+        "areaId": "kitchen",
+        "headingMean": 0,
+        "headingKappa": 20,
+        "pitchMean": 0,
+        "sampleCount": 40,
+        "contested": false
+      },
+      {
+        "entityId": "light.sink",
+        "areaId": "kitchen",
+        "headingMean": 90,
+        "headingKappa": 20,
+        "pitchMean": 0,
+        "sampleCount": 40,
+        "contested": false
+      }
+    ],
+    "pose": { "headingDeg": 5, "pitchDeg": 0, "x": 0, "y": 0 },
+    "areaId": "kitchen",
+    "expect": { "entityId": "light.kitchen", "contested": false }
+  },
+  "contestedPair": {
+    "devices": [
+      {
+        "entityId": "light.left",
+        "areaId": "bedroom",
+        "headingMean": 0,
+        "headingKappa": 12,
+        "pitchMean": 0,
+        "sampleCount": 20,
+        "contested": false
+      },
+      {
+        "entityId": "light.right",
+        "areaId": "bedroom",
+        "headingMean": 10,
+        "headingKappa": 12,
+        "pitchMean": 0,
+        "sampleCount": 20,
+        "contested": false
+      }
+    ],
+    "pose": { "headingDeg": 5, "pitchDeg": 0, "x": 0, "y": 0 },
+    "areaId": "bedroom",
+    "expect": { "entityId": "light.left", "runnerUpId": "light.right", "contested": true }
+  },
+  "wrongRoom": {
+    "pose": { "headingDeg": 0, "pitchDeg": 0, "x": 0, "y": 0 },
+    "areaId": "hallway",
+    "expect": { "entityId": null }
+  },
+  "tooFar": {
+    "pose": { "headingDeg": 200, "pitchDeg": 0, "x": 0, "y": 0 },
+    "areaId": "kitchen",
+    "expect": { "entityId": null, "contested": true }
+  },
+  "paintStill": {
+    "samples": [
+      { "headingDeg": 44, "pitchDeg": -2, "x": 0, "y": 0 },
+      { "headingDeg": 46, "pitchDeg": 0, "x": 0, "y": 0 },
+      { "headingDeg": 45, "pitchDeg": 1, "x": 0, "y": 0 }
+    ],
+    "expectMean": 45,
+    "expectPoint": false
+  },
+  "paintWalk": {
+    "samples": [
+      { "headingDeg": 90, "pitchDeg": 0, "x": 0, "y": 0 },
+      { "headingDeg": 111.8, "pitchDeg": 0, "x": 0, "y": 0.8 },
+      { "headingDeg": 128.7, "pitchDeg": 0, "x": 0, "y": 1.6 }
+    ],
+    "expectPoint": true
+  },
+  "pdrEast": {
+    "from": { "headingDeg": 0, "pitchDeg": 0, "x": 0, "y": 0 },
+    "walkHeadingDeg": 90,
+    "expect": { "x": 0.7, "y": 0 }
+  }
+}

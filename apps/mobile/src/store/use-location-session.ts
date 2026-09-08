@@ -16,6 +16,8 @@ import {
 import { homeZoneFromConfig, zonesFromEntities } from "@/lib/location-zones";
 import { orderedCandidates } from "@/lib/select-url";
 import { useHaStore } from "@/store/ha-store";
+import { noteHomePresence } from "@/watch/at-home";
+import { isInsideRegion } from "@/watch/geo";
 
 async function webhookUrls(): Promise<string[]> {
   const { activeUrl, profile } = useHaStore.getState();
@@ -113,6 +115,7 @@ export function useLocationSession(): void {
       if (cancelled || reportedOpen.current) return;
       reportedOpen.current = true;
       await reportAppOpen();
+      await refreshAtHome();
     })();
 
     return () => {
@@ -130,4 +133,21 @@ export function useLocationSession(): void {
     const sub = AppState.addEventListener("change", onChange);
     return () => sub.remove();
   }, [mode]);
+}
+
+async function refreshAtHome(): Promise<void> {
+  const { entities } = useHaStore.getState();
+  const regions = zonesFromEntities(entities);
+  const home =
+    regions.find((zone) => zone.identifier === "zone.home") ?? regions[0];
+  if (!home) return;
+  const position = await Location.getLastKnownPositionAsync();
+  if (!position) return;
+  await noteHomePresence(
+    isInsideRegion(
+      position.coords.latitude,
+      position.coords.longitude,
+      home,
+    ),
+  );
 }

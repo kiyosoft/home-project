@@ -9,9 +9,11 @@
     "android": "expo run:android",
     "prebuild": "expo prebuild",
     "doctor": "expo-doctor",
-    "lint": "tsc --noEmit"
+    "lint": "tsc --noEmit",
+    "test": "vitest run"
   },
   "dependencies": {
+    "@bacons/apple-targets": "^5.0.0",
     "@ethio/dashboard-schema": "workspace:*",
     "@ethio/ha-sdk": "workspace:*",
     "@ethio/mobile-schema": "workspace:*",
@@ -28,6 +30,7 @@
     "expo-clipboard": "~57.0.1",
     "expo-constants": "~57.0.15",
     "expo-crypto": "~57.0.2",
+    "ethio-watch": "file:./modules/ethio-watch",
     "expo-dev-client": "~57.0.16",
     "expo-device": "~57.0.1",
     "expo-font": "~57.0.1",
@@ -68,6 +71,7 @@
     "babel-preset-expo": "~57.0.8",
     "eas-cli": "^22.6.0",
     "tailwindcss": "^4.1.11",
-    "typescript": "~6.0.3"
+    "typescript": "~6.0.3",
+    "vitest": "^4.1.11"
   }
 }

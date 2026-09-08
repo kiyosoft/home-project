@@ -20,6 +20,7 @@ import { useConnectionWatch } from "@/store/use-connection-watch";
 import { useLocationSession } from "@/store/use-location-session";
 import { useNotifySession } from "@/store/use-notify-session";
 import { usePushToken } from "@/store/use-push-token";
+import { useWatchSession } from "@/watch/use-watch-session";
 import { AssistHost } from "@/widgets/AssistHost";
 import { DetailSheetProvider } from "@/widgets/DetailSheet";
 
@@ -39,6 +40,7 @@ export default function RootLayout() {
   usePushToken();
   useHomeScreenSync();
   useLocationSession();
+  useWatchSession();
 
   useEffect(() => {
     // Locale first so the Connect screen never flashes the wrong script.
