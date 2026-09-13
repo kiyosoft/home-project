@@ -21,6 +21,7 @@ import { useClock } from "@/hooks/useClock";
 import { useArrivalWelcome } from "@/hooks/useArrivalWelcome";
 import { t, type Locale, type MessageKey } from "@/i18n";
 import { formatHeaderDateShort, formatHeaderTime } from "@/lib/header-format";
+import { isHassIngress } from "@/lib/ingress-session";
 import { useDashboardStore } from "@/store/dashboard-store";
 import { useHaStore } from "@/store/ha-store";
 import { useLocaleStore } from "@/store/locale-store";
@@ -191,7 +192,7 @@ export function AppHeader({
               </Button>
             ) : null}
 
-            {showDisconnect && !kiosk ? (
+            {showDisconnect && !kiosk && !isHassIngress() ? (
               <Button
                 variant="outline"
                 size="sm"

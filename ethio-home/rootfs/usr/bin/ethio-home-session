@@ -39,14 +39,46 @@ class SessionError(Exception):
     pass
 
 
-def _recvall(sock: socket.socket, size: int) -> bytes:
-    chunks = bytearray()
-    while len(chunks) < size:
-        piece = sock.recv(size - len(chunks))
-        if not piece:
-            raise SessionError("Home Assistant websocket closed")
-        chunks.extend(piece)
-    return bytes(chunks)
+class WsStream:
+    """Byte buffer so the handshake leftover is not dropped as the first frame."""
+
+    def __init__(self, sock: socket.socket) -> None:
+        self.sock = sock
+        self.buf = bytearray()
+
+    def read(self, size: int) -> bytes:
+        while len(self.buf) < size:
+            piece = self.sock.recv(max(size - len(self.buf), 4096))
+            if not piece:
+                raise SessionError("Home Assistant websocket closed")
+            self.buf.extend(piece)
+        data = bytes(self.buf[:size])
+        del self.buf[:size]
+        return data
+
+    def handshake(self) -> None:
+        key = base64.b64encode(os.urandom(16)).decode()
+        request = (
+            f"GET {WS_PATH} HTTP/1.1\r\n"
+            f"Host: {WS_HOST}\r\n"
+            "Upgrade: websocket\r\n"
+            "Connection: Upgrade\r\n"
+            f"Sec-WebSocket-Key: {key}\r\n"
+            "Sec-WebSocket-Version: 13\r\n"
+            "\r\n"
+        )
+        self.sock.sendall(request.encode())
+        response = b""
+        while b"\r\n\r\n" not in response:
+            piece = self.sock.recv(4096)
+            if not piece:
+                raise SessionError("Home Assistant websocket handshake failed")
+            response += piece
+        status = response.split(b"\r\n", 1)[0]
+        if b"101" not in status:
+            raise SessionError("Home Assistant websocket upgrade was refused")
+        _header, leftover = response.split(b"\r\n\r\n", 1)
+        self.buf.extend(leftover)
 
 
 def _ws_send(sock: socket.socket, text: str) -> None:
@@ -68,24 +100,24 @@ def _ws_send(sock: socket.socket, text: str) -> None:
     sock.sendall(header + masked)
 
 
-def _ws_recv(sock: socket.socket) -> str:
+def _ws_recv(stream: WsStream) -> str:
     while True:
-        header = _recvall(sock, 2)
+        header = stream.read(2)
         opcode = header[0] & 0x0F
         length = header[1] & 0x7F
         masked = bool(header[1] & 0x80)
         if length == 126:
-            length = struct.unpack(">H", _recvall(sock, 2))[0]
+            length = struct.unpack(">H", stream.read(2))[0]
         elif length == 127:
-            length = struct.unpack(">Q", _recvall(sock, 8))[0]
-        mask = _recvall(sock, 4) if masked else b""
-        payload = _recvall(sock, length)
+            length = struct.unpack(">Q", stream.read(8))[0]
+        mask = stream.read(4) if masked else b""
+        payload = stream.read(length)
         if masked:
             payload = bytes(b ^ mask[i % 4] for i, b in enumerate(payload))
         if opcode == 0x8:
             raise SessionError("Home Assistant websocket closed")
         if opcode == 0x9:
-            sock.sendall(b"\x8a" + bytes([len(payload)]) + payload)
+            stream.sock.sendall(b"\x8a" + bytes([len(payload)]) + payload)
             continue
         if opcode == 0xA:
             continue
@@ -94,81 +126,90 @@ def _ws_recv(sock: socket.socket) -> str:
         return payload.decode()
 
 
-def _ws_handshake(sock: socket.socket) -> None:
-    key = base64.b64encode(os.urandom(16)).decode()
-    request = (
-        f"GET {WS_PATH} HTTP/1.1\r\n"
-        f"Host: {WS_HOST}\r\n"
-        "Upgrade: websocket\r\n"
-        "Connection: Upgrade\r\n"
-        f"Sec-WebSocket-Key: {key}\r\n"
-        "Sec-WebSocket-Version: 13\r\n"
-        "\r\n"
-    )
-    sock.sendall(request.encode())
-    response = b""
-    while b"\r\n\r\n" not in response:
-        piece = sock.recv(4096)
-        if not piece:
-            raise SessionError("Home Assistant websocket handshake failed")
-        response += piece
-    status = response.split(b"\r\n", 1)[0]
-    if b"101" not in status:
-        raise SessionError("Home Assistant websocket upgrade was refused")
-
-
-def _read_json(sock: socket.socket) -> dict[str, Any]:
-    message = json.loads(_ws_recv(sock))
+def _read_json(stream: WsStream) -> dict[str, Any]:
+    message = json.loads(_ws_recv(stream))
     if not isinstance(message, dict):
         raise SessionError("Home Assistant sent a non-object websocket message")
     return message
 
 
-def mint_long_lived_token(supervisor_token: str) -> str:
-    if not supervisor_token:
-        raise SessionError("SUPERVISOR_TOKEN is missing")
+def _exchange_for_token(send, recv_json) -> str:
+    required = recv_json()
+    if required.get("type") != "auth_required":
+        raise SessionError("Home Assistant did not ask for websocket auth")
 
+    send({"type": "auth", "access_token": SUPERVISOR_TOKEN})
+    authed = recv_json()
+    if authed.get("type") != "auth_ok":
+        raise SessionError("Supervisor token was rejected by Home Assistant")
+
+    send(
+        {
+            "id": 1,
+            "type": "auth/long_lived_access_token",
+            "client_name": CLIENT_NAME,
+            "lifespan": TOKEN_LIFESPAN_DAYS,
+        }
+    )
+    while True:
+        result = recv_json()
+        if result.get("type") == "result" and result.get("id") == 1:
+            break
+
+    if not result.get("success"):
+        error = result.get("error") or {}
+        message = error.get("message") if isinstance(error, dict) else None
+        raise SessionError(message or "Could not mint a Home Assistant token")
+
+    token = result.get("result")
+    if not isinstance(token, str) or not token:
+        raise SessionError("Home Assistant returned an empty access token")
+    return token
+
+
+def mint_with_client() -> str:
+    import websocket
+
+    ws = websocket.create_connection(f"ws://{WS_HOST}{WS_PATH}", timeout=10)
+    try:
+
+        def recv_json() -> dict[str, Any]:
+            message = json.loads(ws.recv())
+            if not isinstance(message, dict):
+                raise SessionError("Home Assistant sent a non-object websocket message")
+            return message
+
+        return _exchange_for_token(
+            lambda payload: ws.send(json.dumps(payload)),
+            recv_json,
+        )
+    finally:
+        ws.close()
+
+
+def mint_with_stdlib() -> str:
     with socket.create_connection((WS_HOST, 80), timeout=10) as sock:
         sock.settimeout(10)
-        _ws_handshake(sock)
-
-        required = _read_json(sock)
-        if required.get("type") != "auth_required":
-            raise SessionError("Home Assistant did not ask for websocket auth")
-
-        _ws_send(
-            sock,
-            json.dumps({"type": "auth", "access_token": supervisor_token}),
+        stream = WsStream(sock)
+        stream.handshake()
+        return _exchange_for_token(
+            lambda payload: _ws_send(sock, json.dumps(payload)),
+            lambda: _read_json(stream),
         )
-        authed = _read_json(sock)
-        if authed.get("type") != "auth_ok":
-            raise SessionError("Supervisor token was rejected by Home Assistant")
 
-        _ws_send(
-            sock,
-            json.dumps(
-                {
-                    "id": 1,
-                    "type": "auth/long_lived_access_token",
-                    "client_name": CLIENT_NAME,
-                    "lifespan": TOKEN_LIFESPAN_DAYS,
-                }
-            ),
-        )
-        while True:
-            result = _read_json(sock)
-            if result.get("type") == "result" and result.get("id") == 1:
-                break
 
-        if not result.get("success"):
-            error = result.get("error") or {}
-            message = error.get("message") if isinstance(error, dict) else None
-            raise SessionError(message or "Could not mint a Home Assistant token")
-
-        token = result.get("result")
-        if not isinstance(token, str) or not token:
-            raise SessionError("Home Assistant returned an empty access token")
-        return token
+def mint_long_lived_token() -> str:
+    if not SUPERVISOR_TOKEN:
+        raise SessionError("SUPERVISOR_TOKEN is missing")
+    try:
+        return mint_with_client()
+    except ImportError:
+        return mint_with_stdlib()
+    except SessionError:
+        raise
+    except Exception as error:
+        print(f"[ethio-home-session] websocket-client failed, using stdlib: {error}")
+        return mint_with_stdlib()
 
 
 def token_is_valid(token: str) -> bool:
@@ -207,7 +248,7 @@ def get_access_token() -> str:
         stored = load_stored_token()
         if stored and token_is_valid(stored):
             return stored
-        token = mint_long_lived_token(SUPERVISOR_TOKEN)
+        token = mint_long_lived_token()
         save_stored_token(token)
         return token
 
@@ -245,19 +286,24 @@ class Handler(BaseHTTPRequestHandler):
             self._send(404, {"ok": False, "error": "not-found"})
             return
 
-        user = ingress_user(self.headers)
-        if user is None:
-            self._send(401, {"ok": False, "error": "not-ingress"})
-            return
-
         try:
             token = get_access_token()
         except SessionError as error:
             print(f"[ethio-home-session] {error}")
-            self._send(503, {"ok": False, "error": "unavailable"})
+            self._send(
+                503,
+                {"ok": False, "error": "unavailable", "message": str(error)},
+            )
+            return
+        except Exception as error:
+            print(f"[ethio-home-session] {error}")
+            self._send(
+                503,
+                {"ok": False, "error": "unavailable", "message": str(error)},
+            )
             return
 
-        self._send(200, {"ok": True, "token": token, "user": user})
+        self._send(200, {"ok": True, "token": token, "user": ingress_user(self.headers)})
 
 
 def main() -> None:

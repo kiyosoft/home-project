@@ -20,6 +20,11 @@ import {
   type LoginStep,
 } from "@/lib/ha-auth";
 import {
+  loadHassFrontendAuth,
+  saveHassFrontendAuth,
+  type HassFrontendGrant,
+} from "@/lib/hass-frontend-auth";
+import {
   fetchIngressSession,
   isHassIngress,
 } from "@/lib/ingress-session";
@@ -75,8 +80,8 @@ interface HaState {
 let client: EntityClient | null = null;
 let unsubscribe: (() => void) | null = null;
 let savedCredentials: ConnectionSettings | null = null;
-/** Stays in memory so Disconnect can show setup until the next full load. */
-let skipIngressAuth = false;
+/** True only when the grant came from Home Assistant's own frontend session. */
+let persistFrontendGrant = false;
 
 function cleanupClient() {
   unsubscribe?.();
@@ -142,8 +147,31 @@ function openClient(settings: ConnectionSettings): Promise<EntityClient> {
     onTokens: (next) => {
       if (savedCredentials) savedCredentials.tokens = next;
       saveConnectionTokens(next);
+      if (persistFrontendGrant) saveHassFrontendAuth(next);
     },
   });
+}
+
+function settingsFromFrontendGrant(
+  grant: HassFrontendGrant,
+  origin: string,
+): ConnectionSettings {
+  if (grant.kind === "oauth") {
+    return {
+      mode: "live",
+      authMode: "oauth",
+      baseUrl: origin,
+      token: "",
+      tokens: grant.tokens,
+    };
+  }
+  return {
+    mode: "live",
+    authMode: "token",
+    baseUrl: origin,
+    token: grant.token,
+    tokens: null,
+  };
 }
 
 /** Saved credentials that are too incomplete to be worth a connection attempt. */
@@ -204,24 +232,53 @@ export const useHaStore = create<HaState>((set, get) => ({
   },
 
   async connectIngress() {
-    skipIngressAuth = false;
-    const session = await fetchIngressSession();
-    if (!session) return false;
-    try {
-      await beginLive(
-        {
-          mode: "live",
-          authMode: "token",
-          baseUrl: window.location.origin,
-          token: session.token,
-          tokens: null,
-        },
-        set,
-      );
-      return true;
-    } catch {
-      return false;
+    const origin = window.location.origin;
+    set({
+      status: "connecting",
+      error: null,
+      loginFailure: null,
+      mode: "live",
+      baseUrl: origin,
+    });
+
+    const grant = loadHassFrontendAuth(origin);
+    if (grant) {
+      try {
+        await beginLive(settingsFromFrontendGrant(grant, origin), set, {
+          persistFrontend: grant.kind === "oauth",
+        });
+        return true;
+      } catch {
+        // Fall through to the add-on session mint.
+      }
     }
+
+    const session = await fetchIngressSession();
+    if (session) {
+      try {
+        await beginLive(
+          {
+            mode: "live",
+            authMode: "token",
+            baseUrl: origin,
+            token: session.token,
+            tokens: null,
+          },
+          set,
+          { persistFrontend: false },
+        );
+        return true;
+      } catch {
+        // Use the connection error already stored by beginLive.
+        return false;
+      }
+    }
+
+    set({
+      status: "error",
+      error: null,
+    });
+    return false;
   },
 
   async connectDemo() {
@@ -261,22 +318,41 @@ export const useHaStore = create<HaState>((set, get) => ({
   },
 
   async reconnect() {
+    if (isHassIngress()) {
+      await get().connectIngress();
+      return;
+    }
     const settings = savedCredentials ?? loadConnectionSettings();
     if (settings?.mode === "demo") {
       await get().connectDemo();
       return;
-    }
-    if (!skipIngressAuth && isHassIngress()) {
-      const connected = await get().connectIngress();
-      if (connected) return;
     }
     if (!settings || !isConnectable(settings)) return;
     await beginLive(settings, set);
   },
 
   disconnect(options) {
+    if (isHassIngress()) {
+      cleanupClient();
+      persistFrontendGrant = false;
+      set({
+        entities: {},
+        areas: [],
+        areaByEntity: {},
+        status: "connecting",
+        error: null,
+        loginFailure: null,
+        mfaFlowId: null,
+        mode: null,
+        baseUrl: "",
+        userName: "",
+        userId: "",
+      });
+      void get().connectIngress();
+      return;
+    }
+
     const previous = savedCredentials;
-    skipIngressAuth = true;
     cleanupClient();
     if (options?.clearSaved) {
       if (previous?.authMode === "oauth" && previous.tokens && previous.baseUrl) {
@@ -335,15 +411,15 @@ export const useHaStore = create<HaState>((set, get) => ({
   },
 
   async bootstrap() {
+    if (isHassIngress()) {
+      await get().connectIngress();
+      return;
+    }
     const settings = loadConnectionSettings();
     if (settings?.mode === "demo") {
       savedCredentials = settings;
       await get().connectDemo();
       return;
-    }
-    if (!skipIngressAuth && isHassIngress()) {
-      const connected = await get().connectIngress();
-      if (connected) return;
     }
     if (!settings) return;
     savedCredentials = settings;
@@ -397,7 +473,9 @@ async function applyLoginStep(
 async function beginLive(
   settings: ConnectionSettings,
   set: (partial: Partial<HaState>) => void,
+  options?: { persistFrontend?: boolean },
 ) {
+  persistFrontendGrant = options?.persistFrontend === true;
   set({
     status: "connecting",
     error: null,
@@ -413,6 +491,7 @@ async function beginLive(
     saveConnectionSettings(settings);
     await attachClient(next, set);
   } catch (error) {
+    persistFrontendGrant = false;
     cleanupClient();
     const message =
       error instanceof Error

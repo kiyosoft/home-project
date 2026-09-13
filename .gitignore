@@ -10,3 +10,5 @@ ethio-home/www
 !.env.example
 .vite
 *.tsbuildinfo
+__pycache__/
+*.pyc

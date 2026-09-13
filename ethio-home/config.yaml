@@ -1,5 +1,5 @@
 name: Ethio Home
-version: "0.6.0"
+version: "0.6.1"
 slug: ethio-home
 description: Plugin-driven Home Assistant dashboard (Ethio Home)
 url: https://github.com/kiyosoft/home-project

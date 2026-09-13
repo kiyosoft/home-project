@@ -41,12 +41,9 @@ export const am: Record<MessageKey, string> = {
   "setup.demoDescription": "ሆም አሲስታንት ሳያስፈልግ በናሙና ዳሽቦርድ ላይ የተመሰሉ መብራቶችን፣ ማብሪያ/ማጥፊያዎችን እና ሴንሰሮችን ይመልከቱ።",
   "setup.startDemo": "ሙከራ ጀምር",
   "setup.language": "ቋንቋ",
-  "setup.ingressDescription":
-    "ከ ሆም አሲስታንት ተከፍቷል። በዚህ ክፍለ ጊዜ ይቀጥሉ፣ ወይም ከዚህ በታች በሌላ መንገድ ይግቡ።",
-  "setup.ingressContinue": "በ ሆም አሲስታንት ይቀጥሉ",
-  "setup.ingressOther": "ወይም በይለፍ ቃል ወይም በቶከን ይግቡ",
   "setup.errorIngressSession":
-    "ሆም አሲስታንት ክፍለ ጊዜ አላስተላለፈም። ይግቡ ወይም ቶከን ይጠቀሙ።",
+    "ከ ሆም አሲስታንት ክፍለ ጊዜ ጋር መገናኘት አልተቻለም።",
+  "setup.ingressRetry": "እንደገና ሞክር",
   "header.add": "አክል",
   "header.done": "ተጠናቋል",
   "header.edit": "አርትዕ",

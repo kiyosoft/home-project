@@ -1,6 +1,7 @@
 import { defineCommand } from "@ethio/plugin-sdk";
 
 import { t } from "@/i18n";
+import { isHassIngress } from "@/lib/ingress-session";
 import { THEME_IDS, type ThemeMode } from "@/lib/themes";
 import { useDashboardStore } from "@/store/dashboard-store";
 import { useHaStore } from "@/store/ha-store";
@@ -62,15 +63,19 @@ export function createPlatformCommands() {
         setTheme(next);
       },
     }),
-    defineCommand({
-      id: "platform.disconnect",
-      title: t(locale, "commands.disconnect"),
-      subtitle: t(locale, "commands.disconnectSub"),
-      keywords: ["logout", "disconnect", "setup"],
-      run: () => {
-        useHaStore.getState().disconnect({ clearSaved: true });
-      },
-    }),
+    ...(isHassIngress()
+      ? []
+      : [
+          defineCommand({
+            id: "platform.disconnect",
+            title: t(locale, "commands.disconnect"),
+            subtitle: t(locale, "commands.disconnectSub"),
+            keywords: ["logout", "disconnect", "setup"],
+            run: () => {
+              useHaStore.getState().disconnect({ clearSaved: true });
+            },
+          }),
+        ]),
     defineCommand({
       id: "platform.picker",
       title: t(locale, "commands.addWidget"),

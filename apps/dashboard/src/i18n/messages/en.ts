@@ -44,12 +44,9 @@ export const en = {
     "Explore a sample dashboard with simulated lights, switches, and sensors — no Home Assistant required.",
   "setup.startDemo": "Start demo",
   "setup.language": "Language",
-  "setup.ingressDescription":
-    "Opened from Home Assistant. Continue to use this session, or sign in another way below.",
-  "setup.ingressContinue": "Continue with Home Assistant",
-  "setup.ingressOther": "Or sign in with a password or token",
   "setup.errorIngressSession":
-    "Home Assistant did not hand off a session. Sign in or use a token.",
+    "Could not connect with your Home Assistant session.",
+  "setup.ingressRetry": "Try again",
 
   "header.add": "Add",
   "header.done": "Done",

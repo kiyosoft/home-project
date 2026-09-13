@@ -5,8 +5,10 @@ import { useEffect, useState } from "react";
 import { DashboardRuntime } from "@/components/DashboardRuntime";
 import { DetailModalHost } from "@/components/DetailModalHost";
 import { EntityDetailSheet } from "@/components/EntityDetailSheet";
+import { IngressSplash } from "@/components/IngressSplash";
 import { SetupScreen } from "@/components/SetupScreen";
 import { t } from "@/i18n";
+import { isHassIngress } from "@/lib/ingress-session";
 import { bootstrapPlugins } from "@/plugins/bootstrap";
 import { useDashboardStore } from "@/store/dashboard-store";
 import { useHaStore } from "@/store/ha-store";
@@ -48,7 +50,8 @@ export default function App() {
     return useHaStore.subscribe(tryHydrate);
   }, [ready, status, hydrateDashboard, resetSession]);
 
-  if (!ready) {
+  const ingress = isHassIngress();
+  if (!ready || (ingress && status === "connecting")) {
     return (
       <div className="flex min-h-screen items-center justify-center text-sm text-muted-foreground">
         {t(locale, "app.starting")}
@@ -60,7 +63,13 @@ export default function App() {
     <LazyMotion features={domAnimation} strict>
       <DetailModalProvider>
         <EntityDetailProvider>
-          {status === "connected" ? <DashboardRuntime /> : <SetupScreen />}
+          {status === "connected" ? (
+            <DashboardRuntime />
+          ) : ingress ? (
+            <IngressSplash />
+          ) : (
+            <SetupScreen />
+          )}
           <DetailModalHost />
           <EntityDetailSheet />
         </EntityDetailProvider>
