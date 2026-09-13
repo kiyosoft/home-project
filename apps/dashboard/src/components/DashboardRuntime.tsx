@@ -13,6 +13,7 @@ import type { Breakpoint } from "@/dashboard/types";
 import { breakpointFromWidth } from "@/dashboard/types";
 import { useLongPress } from "@/hooks/useLongPress";
 import { t } from "@/i18n";
+import { setHassParentKiosk } from "@/lib/hass-parent-kiosk";
 import { useDashboardStore } from "@/store/dashboard-store";
 import { useHaStore } from "@/store/ha-store";
 import { useLocaleStore } from "@/store/locale-store";
@@ -53,6 +54,12 @@ export function DashboardRuntime() {
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [kiosk, exitKiosk]);
+
+  useEffect(() => {
+    if (!kiosk) return;
+    setHassParentKiosk(true);
+    return () => setHassParentKiosk(false);
+  }, [kiosk]);
 
   useEffect(() => {
     if (!banner) return;

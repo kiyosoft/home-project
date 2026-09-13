@@ -13,6 +13,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { t, type MessageKey } from "@/i18n";
 import { type LoginFailure } from "@/lib/ha-auth";
+import { isHassIngress } from "@/lib/ingress-session";
 import { loadConnectionSettings } from "@/lib/settings";
 import { useHaStore } from "@/store/ha-store";
 import { useLocaleStore } from "@/store/locale-store";
@@ -22,7 +23,8 @@ type LocalError =
   | "credentials-required"
   | "url-required"
   | "invalid-url"
-  | "code-required";
+  | "code-required"
+  | "ingress-unavailable";
 
 const LOCAL_ERROR_KEYS: Record<LocalError, MessageKey> = {
   "token-required": "setup.errorRequired",
@@ -30,6 +32,7 @@ const LOCAL_ERROR_KEYS: Record<LocalError, MessageKey> = {
   "url-required": "setup.errorUrlRequired",
   "invalid-url": "setup.errorInvalidUrl",
   "code-required": "setup.errorCodeRequired",
+  "ingress-unavailable": "setup.errorIngressSession",
 };
 
 const LOGIN_ERROR_KEYS: Record<LoginFailure, MessageKey> = {
@@ -47,9 +50,7 @@ const LOGIN_ERROR_KEYS: Record<LoginFailure, MessageKey> = {
  */
 function defaultBaseUrl(saved: string): string {
   if (saved) return saved;
-  return window.location.pathname.includes("/api/hassio_ingress/")
-    ? window.location.origin
-    : "";
+  return isHassIngress() ? window.location.origin : "";
 }
 
 export function SetupScreen() {
@@ -73,6 +74,7 @@ export function SetupScreen() {
   const submitMfa = useHaStore((state) => state.submitMfa);
   const resetLogin = useHaStore((state) => state.resetLogin);
   const connectLive = useHaStore((state) => state.connectLive);
+  const connectIngress = useHaStore((state) => state.connectIngress);
   const connectDemo = useHaStore((state) => state.connectDemo);
 
   const busy = status === "connecting";
@@ -133,6 +135,12 @@ export function SetupScreen() {
     setPassword("");
   }
 
+  async function handleIngress() {
+    setLocalError(null);
+    const connected = await connectIngress();
+    if (!connected) setLocalError("ingress-unavailable");
+  }
+
   async function handleDemo() {
     setLocalError(null);
     try {
@@ -178,7 +186,9 @@ export function SetupScreen() {
                   ? "setup.mfaDescription"
                   : manual
                     ? "setup.tokenDescription"
-                    : "setup.connectDescription",
+                    : isHassIngress()
+                      ? "setup.ingressDescription"
+                      : "setup.connectDescription",
               )}
             </CardDescription>
           </CardHeader>
@@ -189,6 +199,25 @@ export function SetupScreen() {
                 void handleSubmit(event);
               }}
             >
+              {isHassIngress() && !awaitingMfa ? (
+                <>
+                  <Button
+                    type="button"
+                    className="w-full"
+                    disabled={busy}
+                    onClick={() => {
+                      void handleIngress();
+                    }}
+                  >
+                    {busy
+                      ? t(locale, "setup.connecting")
+                      : t(locale, "setup.ingressContinue")}
+                  </Button>
+                  <p className="text-center text-xs text-muted-foreground">
+                    {t(locale, "setup.ingressOther")}
+                  </p>
+                </>
+              ) : null}
               {awaitingMfa ? (
                 <label className="block space-y-2 text-sm">
                   <span className="font-medium">{t(locale, "setup.codeLabel")}</span>
@@ -266,7 +295,12 @@ export function SetupScreen() {
                 </p>
               ) : null}
 
-              <Button type="submit" className="w-full" disabled={busy}>
+              <Button
+                type="submit"
+                className="w-full"
+                variant={isHassIngress() && !awaitingMfa ? "secondary" : "default"}
+                disabled={busy}
+              >
                 {busy ? t(locale, "setup.connecting") : t(locale, submitLabel)}
               </Button>
 

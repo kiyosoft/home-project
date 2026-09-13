@@ -1,6 +1,6 @@
 # Ethio Home
 
-Plugin-driven dashboard for Home Assistant. This add-on serves the Ethio Home web UI through **ingress** (sidebar panel). Entity traffic stays in your browser: you sign in with your Home Assistant account, and the dashboard talks to it directly.
+Plugin-driven dashboard for Home Assistant. This add-on serves the Ethio Home web UI through **ingress** (sidebar panel). Entity traffic stays in your browser: the add-on hands the dashboard a Home Assistant access token, and the dashboard talks to Home Assistant directly.
 
 ## Installation (GitHub)
 
@@ -14,20 +14,13 @@ Plugin-driven dashboard for Home Assistant. This add-on serves the Ethio Home we
 3. Find **Ethio Home** in the store, install, and start it.
 4. Open it from the sidebar (or **Open Web UI**).
 
-The repository root contains `repository.yaml` and the `ethio-home/` add-on folder. Built UI files live in `ethio-home/www/` and are included in the repo so Supervisor can build without Node.
-
-## Installation (local copy)
-
-1. From the monorepo: `pnpm prepare:addon` (refreshes `ethio-home/www/`).
-2. Copy `ethio-home/` into your Home Assistant local add-ons directory (for example `/addons/ethio-home` on HAOS).
-3. Refresh the Add-on store, install, and start.
+The repository root contains `repository.yaml` and the `ethio-home/` add-on folder. Supervisor pulls `ghcr.io/kiyosoft/ethio-home` (the `image` in `config.yaml`) instead of building on the Home Assistant machine.
 
 ## First connection
 
-1. Open Ethio Home from the sidebar. The Home Assistant URL is filled in for you.
-2. Enter your Home Assistant username and password, then click **Sign in**.
+Open Ethio Home from the sidebar. Because Home Assistant is already serving the page, the dashboard continues that session and skips the login screen.
 
-Your session refreshes itself, so there is nothing to paste and nothing to rotate by hand. Two-factor accounts get a second step asking for the code.
+Disconnect still returns to setup so you can start **demo** mode or paste a long-lived access token. Refreshing the sidebar panel signs you back in.
 
 ### Long-lived access token instead
 
@@ -42,16 +35,17 @@ Settings and dashboard layout are stored in the browser (`localStorage`) for tha
 
 Use **Start demo** on the setup screen to explore sample widgets without connecting to Home Assistant.
 
-## Updating the UI (maintainers)
+## Publishing the add-on (maintainers)
 
-After dashboard changes:
+The dashboard UI is not committed. GitHub Actions builds it and publishes the add-on image on push to `main` (workflow: `.github/workflows/publish-addon.yaml`).
 
-```bash
-pnpm prepare:addon
-git add ethio-home/www
-```
+1. Bump `version` in `ethio-home/config.yaml` when Home Assistant should treat this as a new add-on release.
+2. Push to `main`.
+3. Wait for **Publish add-on** to finish.
+4. If this is the first publish, set these GHCR packages to **public** so Supervisor can pull them: `ethio-home`, `amd64-ethio-home`, `aarch64-ethio-home`.
+5. Update the add-on in Home Assistant.
 
-Bump `version` in `ethio-home/config.yaml`, commit, push, then update the add-on in Home Assistant.
+Switching the workflow from `push` to `release` can happen later without changing this layout.
 
 ## Mobile app sign-in
 
@@ -66,5 +60,7 @@ Reaching the phone once the app has been closed is a separate path: Home Assista
 ## Notes
 
 - Ingress only allows traffic from the Supervisor ingress proxy.
+- Kiosk mode also hides the Home Assistant sidebar while the add-on is open in the sidebar panel. Exit kiosk (Esc or long-press) to get it back.
+- The sidebar panel is limited to Home Assistant admins. The add-on mints a Home Assistant access token through Supervisor and never exposes `SUPERVISOR_TOKEN` to the browser.
 - Home Assistant only accepts its login API from pages it serves itself, which is why signing in works here but not from a dashboard hosted elsewhere. Use a long-lived access token in that case.
-- Rebuild/reinstall after pulling UI updates that change `ethio-home/www/`.
+- Supervisor installs the matching image tag from `config.yaml` `version`. Bump that version when you want updates to roll out.

@@ -10,16 +10,8 @@ In Home Assistant: **Settings → Add-ons → Add-on store → ⋮ → Repositor
 https://github.com/kiyosoft/home-project
 ```
 
-Install **Ethio Home**, start it, open from the sidebar, then sign in with your Home Assistant username and password.
+Install **Ethio Home**, start it, open from the sidebar. The dashboard uses your current Home Assistant session.
 
-## Refresh built UI (maintainers)
-
-From the monorepo root (requires Node 20+ and pnpm):
-
-```bash
-pnpm prepare:addon
-```
-
-This builds the dashboard and copies `apps/dashboard/dist` into `ethio-home/www/`. Commit `www/` when publishing so GitHub installs stay current.
+Home Assistant pulls a pre-built image from GHCR (`ghcr.io/kiyosoft/ethio-home`). That image is published by GitHub Actions on push to `main`.
 
 See [DOCS.md](./DOCS.md) for details.

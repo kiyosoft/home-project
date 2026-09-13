@@ -6,7 +6,6 @@
   "scripts": {
     "dev": "pnpm --filter @ethio/dashboard dev",
     "build": "pnpm --filter @ethio/dashboard-schema build && pnpm --filter @ethio/ha-sdk build && pnpm --filter @ethio/plugin-sdk build && pnpm --filter @ethio/core build && pnpm --filter @ethio/teamtracker build && pnpm --filter @ethio/sinksar build && pnpm --filter @ethio/dashboard build",
-    "prepare:addon": "bash scripts/prepare-addon.sh",
     "lint": "pnpm -r lint",
     "test": "pnpm -r --if-present test",
     "preview": "pnpm --filter @ethio/dashboard preview"

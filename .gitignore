@@ -1,6 +1,7 @@
 node_modules
 dist
 dist-ssr
+ethio-home/www
 *.local
 .DS_Store
 *.log

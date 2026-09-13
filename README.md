@@ -18,7 +18,7 @@ Open [http://localhost:5180](http://localhost:5180) (Vite falls back to the next
 
 ## Connect to Home Assistant
 
-Opened from the HA sidebar, the [add-on](./ethio-home/DOCS.md) lets you sign in with your Home Assistant username and password.
+Opened from the HA sidebar, the [add-on](./ethio-home/DOCS.md) signs you in with the Home Assistant session you already have.
 
 On the dev server — or anywhere else Home Assistant is not serving the page itself — HA refuses the login API cross-origin, so use a token:
 
@@ -80,9 +80,9 @@ Serves the production dashboard over HA **ingress** (sidebar panel). Because Hom
    ```
 
 3. Install **Ethio Home**, start it, open from the sidebar
-4. Sign in with your Home Assistant username and password
+4. The dashboard connects with your current Home Assistant session
 
-Maintainers: run `pnpm prepare:addon` after UI changes, then commit `ethio-home/www/` and bump `ethio-home/config.yaml` `version`.
+Pushing to `main` builds the dashboard and publishes the add-on image to GHCR. Bump `version` in `ethio-home/config.yaml` when you want Home Assistant to pick up a new image.
 
 Details: [ethio-home/DOCS.md](./ethio-home/DOCS.md).
 
@@ -104,10 +104,9 @@ docs/mobile-push.md      Mobile notifications + push credential setup
 
 | Command              | Description                                   |
 | -------------------- | --------------------------------------------- |
-| `pnpm dev`           | Start the dashboard dev server                |
-| `pnpm build`         | Build packages and the dashboard              |
-| `pnpm prepare:addon` | Build and sync UI into `ethio-home/www`       |
-| `pnpm preview`       | Preview the production dashboard build        |
+| `pnpm dev`     | Start the dashboard dev server           |
+| `pnpm build`   | Build packages and the dashboard         |
+| `pnpm preview` | Preview the production dashboard build   |
 
 ## Themes
 

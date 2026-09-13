@@ -3,5 +3,34 @@ set -eu
 
 mkdir -p /data /run/nginx
 
+echo "[ethio-home] starting session server"
+python3 /usr/bin/ethio-home-session &
+SESSION_PID=$!
+
+wait_for_session() {
+  python3 - <<'PY'
+from urllib.request import urlopen
+urlopen("http://127.0.0.1:8098/health", timeout=1).read()
+PY
+}
+
+i=0
+while [ "$i" -lt 50 ]; do
+  if wait_for_session 2>/dev/null; then
+    break
+  fi
+  i=$((i + 1))
+  sleep 0.1
+done
+
+if ! kill -0 "$SESSION_PID" 2>/dev/null; then
+  echo "[ethio-home] session server failed to start" >&2
+  exit 1
+fi
+
 echo "[ethio-home] starting nginx (ingress :8099)"
-exec nginx -g "daemon off;error_log /dev/stdout info;"
+nginx -g "daemon off;error_log /dev/stdout info;" &
+NGINX_PID=$!
+
+trap 'kill "$SESSION_PID" "$NGINX_PID" 2>/dev/null || true' EXIT INT TERM
+wait "$NGINX_PID"

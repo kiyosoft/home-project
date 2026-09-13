@@ -1,0 +1,270 @@
+#!/usr/bin/env python3
+"""Mint a Home Assistant access token for the ingress sidebar session.
+
+Never returns SUPERVISOR_TOKEN. The Supervisor websocket is used only inside
+this process to create a long-lived Home Assistant token, which the SPA then
+uses on Home Assistant's own websocket (same as a pasted token).
+"""
+from __future__ import annotations
+
+import base64
+import json
+import os
+import socket
+import struct
+import threading
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from pathlib import Path
+from typing import Any
+from urllib.error import HTTPError, URLError
+from urllib.request import Request, urlopen
+
+HOST = "127.0.0.1"
+PORT = 8098
+TOKEN_PATH = Path(os.environ.get("ETHIO_TOKEN_PATH", "/data/ha_llat"))
+SUPERVISOR_TOKEN = os.environ.get("SUPERVISOR_TOKEN", "")
+WS_HOST = os.environ.get("ETHIO_HA_WS_HOST", "supervisor")
+WS_PATH = os.environ.get("ETHIO_HA_WS_PATH", "/core/websocket")
+VALIDATE_URL = os.environ.get("ETHIO_HA_VALIDATE_URL", "http://homeassistant:8123/api/")
+CLIENT_NAME = "Ethio Home"
+TOKEN_LIFESPAN_DAYS = 3650
+INGRESS_USER_ID = "X-Remote-User-Id"
+INGRESS_USER_NAME = "X-Remote-User-Name"
+INGRESS_DISPLAY_NAME = "X-Remote-User-Display-Name"
+
+_lock = threading.Lock()
+
+
+class SessionError(Exception):
+    pass
+
+
+def _recvall(sock: socket.socket, size: int) -> bytes:
+    chunks = bytearray()
+    while len(chunks) < size:
+        piece = sock.recv(size - len(chunks))
+        if not piece:
+            raise SessionError("Home Assistant websocket closed")
+        chunks.extend(piece)
+    return bytes(chunks)
+
+
+def _ws_send(sock: socket.socket, text: str) -> None:
+    payload = text.encode()
+    header = bytearray([0x81])
+    length = len(payload)
+    mask_bit = 0x80
+    if length < 126:
+        header.append(mask_bit | length)
+    elif length < 65536:
+        header.append(mask_bit | 126)
+        header.extend(struct.pack(">H", length))
+    else:
+        header.append(mask_bit | 127)
+        header.extend(struct.pack(">Q", length))
+    mask = os.urandom(4)
+    header.extend(mask)
+    masked = bytes(b ^ mask[i % 4] for i, b in enumerate(payload))
+    sock.sendall(header + masked)
+
+
+def _ws_recv(sock: socket.socket) -> str:
+    while True:
+        header = _recvall(sock, 2)
+        opcode = header[0] & 0x0F
+        length = header[1] & 0x7F
+        masked = bool(header[1] & 0x80)
+        if length == 126:
+            length = struct.unpack(">H", _recvall(sock, 2))[0]
+        elif length == 127:
+            length = struct.unpack(">Q", _recvall(sock, 8))[0]
+        mask = _recvall(sock, 4) if masked else b""
+        payload = _recvall(sock, length)
+        if masked:
+            payload = bytes(b ^ mask[i % 4] for i, b in enumerate(payload))
+        if opcode == 0x8:
+            raise SessionError("Home Assistant websocket closed")
+        if opcode == 0x9:
+            sock.sendall(b"\x8a" + bytes([len(payload)]) + payload)
+            continue
+        if opcode == 0xA:
+            continue
+        if opcode != 0x1:
+            continue
+        return payload.decode()
+
+
+def _ws_handshake(sock: socket.socket) -> None:
+    key = base64.b64encode(os.urandom(16)).decode()
+    request = (
+        f"GET {WS_PATH} HTTP/1.1\r\n"
+        f"Host: {WS_HOST}\r\n"
+        "Upgrade: websocket\r\n"
+        "Connection: Upgrade\r\n"
+        f"Sec-WebSocket-Key: {key}\r\n"
+        "Sec-WebSocket-Version: 13\r\n"
+        "\r\n"
+    )
+    sock.sendall(request.encode())
+    response = b""
+    while b"\r\n\r\n" not in response:
+        piece = sock.recv(4096)
+        if not piece:
+            raise SessionError("Home Assistant websocket handshake failed")
+        response += piece
+    status = response.split(b"\r\n", 1)[0]
+    if b"101" not in status:
+        raise SessionError("Home Assistant websocket upgrade was refused")
+
+
+def _read_json(sock: socket.socket) -> dict[str, Any]:
+    message = json.loads(_ws_recv(sock))
+    if not isinstance(message, dict):
+        raise SessionError("Home Assistant sent a non-object websocket message")
+    return message
+
+
+def mint_long_lived_token(supervisor_token: str) -> str:
+    if not supervisor_token:
+        raise SessionError("SUPERVISOR_TOKEN is missing")
+
+    with socket.create_connection((WS_HOST, 80), timeout=10) as sock:
+        sock.settimeout(10)
+        _ws_handshake(sock)
+
+        required = _read_json(sock)
+        if required.get("type") != "auth_required":
+            raise SessionError("Home Assistant did not ask for websocket auth")
+
+        _ws_send(
+            sock,
+            json.dumps({"type": "auth", "access_token": supervisor_token}),
+        )
+        authed = _read_json(sock)
+        if authed.get("type") != "auth_ok":
+            raise SessionError("Supervisor token was rejected by Home Assistant")
+
+        _ws_send(
+            sock,
+            json.dumps(
+                {
+                    "id": 1,
+                    "type": "auth/long_lived_access_token",
+                    "client_name": CLIENT_NAME,
+                    "lifespan": TOKEN_LIFESPAN_DAYS,
+                }
+            ),
+        )
+        while True:
+            result = _read_json(sock)
+            if result.get("type") == "result" and result.get("id") == 1:
+                break
+
+        if not result.get("success"):
+            error = result.get("error") or {}
+            message = error.get("message") if isinstance(error, dict) else None
+            raise SessionError(message or "Could not mint a Home Assistant token")
+
+        token = result.get("result")
+        if not isinstance(token, str) or not token:
+            raise SessionError("Home Assistant returned an empty access token")
+        return token
+
+
+def token_is_valid(token: str) -> bool:
+    request = Request(
+        VALIDATE_URL,
+        headers={"Authorization": f"Bearer {token}", "Accept": "application/json"},
+        method="GET",
+    )
+    try:
+        with urlopen(request, timeout=5) as response:
+            return 200 <= response.status < 300
+    except HTTPError as error:
+        if error.code in {401, 403}:
+            return False
+        return True
+    except URLError:
+        return True
+
+
+def load_stored_token() -> str | None:
+    try:
+        raw = TOKEN_PATH.read_text(encoding="utf-8").strip()
+    except OSError:
+        return None
+    return raw or None
+
+
+def save_stored_token(token: str) -> None:
+    TOKEN_PATH.parent.mkdir(parents=True, exist_ok=True)
+    TOKEN_PATH.write_text(token, encoding="utf-8")
+    os.chmod(TOKEN_PATH, 0o600)
+
+
+def get_access_token() -> str:
+    with _lock:
+        stored = load_stored_token()
+        if stored and token_is_valid(stored):
+            return stored
+        token = mint_long_lived_token(SUPERVISOR_TOKEN)
+        save_stored_token(token)
+        return token
+
+
+def ingress_user(headers: Any) -> dict[str, str] | None:
+    user_id = headers.get(INGRESS_USER_ID)
+    if not user_id:
+        return None
+    return {
+        "id": user_id,
+        "username": headers.get(INGRESS_USER_NAME, ""),
+        "name": headers.get(INGRESS_DISPLAY_NAME, ""),
+    }
+
+
+class Handler(BaseHTTPRequestHandler):
+    def log_message(self, format: str, *args: object) -> None:
+        print(f"[ethio-home-session] {self.address_string()} {format % args}")
+
+    def _send(self, status: int, body: dict[str, object]) -> None:
+        payload = json.dumps(body).encode()
+        self.send_response(status)
+        self.send_header("Content-Type", "application/json")
+        self.send_header("Cache-Control", "no-store")
+        self.send_header("Content-Length", str(len(payload)))
+        self.end_headers()
+        self.wfile.write(payload)
+
+    def do_GET(self) -> None:
+        path = self.path.split("?", 1)[0]
+        if path == "/health":
+            self._send(200, {"ok": True})
+            return
+        if path != "/session":
+            self._send(404, {"ok": False, "error": "not-found"})
+            return
+
+        user = ingress_user(self.headers)
+        if user is None:
+            self._send(401, {"ok": False, "error": "not-ingress"})
+            return
+
+        try:
+            token = get_access_token()
+        except SessionError as error:
+            print(f"[ethio-home-session] {error}")
+            self._send(503, {"ok": False, "error": "unavailable"})
+            return
+
+        self._send(200, {"ok": True, "token": token, "user": user})
+
+
+def main() -> None:
+    server = ThreadingHTTPServer((HOST, PORT), Handler)
+    print(f"[ethio-home-session] listening on {HOST}:{PORT}")
+    server.serve_forever()
+
+
+if __name__ == "__main__":
+    main()

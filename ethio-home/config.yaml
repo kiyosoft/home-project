@@ -1,5 +1,5 @@
 name: Ethio Home
-version: "0.4.0"
+version: "0.6.0"
 slug: ethio-home
 description: Plugin-driven Home Assistant dashboard (Ethio Home)
 url: https://github.com/kiyosoft/home-project
@@ -10,7 +10,10 @@ init: false
 startup: application
 ingress: true
 ingress_port: 8099
+panel_admin: true
 panel_icon: mdi:view-dashboard-variant
 panel_title: Ethio Home
+homeassistant_api: true
+image: ghcr.io/kiyosoft/ethio-home
 options: {}
 schema: {}

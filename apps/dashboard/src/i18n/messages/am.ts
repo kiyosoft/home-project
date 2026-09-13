@@ -41,6 +41,12 @@ export const am: Record<MessageKey, string> = {
   "setup.demoDescription": "ሆም አሲስታንት ሳያስፈልግ በናሙና ዳሽቦርድ ላይ የተመሰሉ መብራቶችን፣ ማብሪያ/ማጥፊያዎችን እና ሴንሰሮችን ይመልከቱ።",
   "setup.startDemo": "ሙከራ ጀምር",
   "setup.language": "ቋንቋ",
+  "setup.ingressDescription":
+    "ከ ሆም አሲስታንት ተከፍቷል። በዚህ ክፍለ ጊዜ ይቀጥሉ፣ ወይም ከዚህ በታች በሌላ መንገድ ይግቡ።",
+  "setup.ingressContinue": "በ ሆም አሲስታንት ይቀጥሉ",
+  "setup.ingressOther": "ወይም በይለፍ ቃል ወይም በቶከን ይግቡ",
+  "setup.errorIngressSession":
+    "ሆም አሲስታንት ክፍለ ጊዜ አላስተላለፈም። ይግቡ ወይም ቶከን ይጠቀሙ።",
   "header.add": "አክል",
   "header.done": "ተጠናቋል",
   "header.edit": "አርትዕ",
@@ -99,7 +105,7 @@ export const am: Record<MessageKey, string> = {
   "settings.setPin": "PIN አዘጋጅ",
   "settings.clearPin": "PIN አጽዳ",
   "settings.kiosk": "ኪዮስክ",
-  "settings.kioskHint": "ለግድግዳ ጡባዊዎች የአርትዖት መሳሪያዎችን ደብቅ። በ Esc ወይም ባዶ ሸራን በረጅም መጫን ይውጡ። ራስጌ እና የገጽ መቀያየሪያ ይቆያሉ።",
+  "settings.kioskHint": "ለግድግዳ ጡባዊዎች የአርትዖት መሳሪያዎችን ደብቅ። በ Esc ወይም ባዶ ሸራን በረጅም መጫን ይውጡ። ራስጌ እና የገጽ መቀያየሪያ ይቆያሉ። እንደ ሆም አሲስታንት አድ-ኦን ሲከፈት የHA የጎን አሞሌም ይደበቃል።",
   "settings.kioskOn": "ኪዮስክ በርቷል",
   "settings.enableKiosk": "ኪዮስክ አንቃ",
   "settings.cardsOnly": "ካርዶች ብቻ",

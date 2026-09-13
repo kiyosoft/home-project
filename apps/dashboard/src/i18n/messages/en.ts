@@ -44,6 +44,12 @@ export const en = {
     "Explore a sample dashboard with simulated lights, switches, and sensors — no Home Assistant required.",
   "setup.startDemo": "Start demo",
   "setup.language": "Language",
+  "setup.ingressDescription":
+    "Opened from Home Assistant. Continue to use this session, or sign in another way below.",
+  "setup.ingressContinue": "Continue with Home Assistant",
+  "setup.ingressOther": "Or sign in with a password or token",
+  "setup.errorIngressSession":
+    "Home Assistant did not hand off a session. Sign in or use a token.",
 
   "header.add": "Add",
   "header.done": "Done",
@@ -111,7 +117,7 @@ export const en = {
   "settings.clearPin": "Clear PIN",
   "settings.kiosk": "Kiosk",
   "settings.kioskHint":
-    "Hide edit chrome for wall tablets. Exit with Esc or long-press empty canvas. Header and page switcher stay available.",
+    "Hide edit chrome for wall tablets. Exit with Esc or long-press empty canvas. Header and page switcher stay available. Opened as a Home Assistant add-on, this also hides the HA sidebar.",
   "settings.kioskOn": "Kiosk on",
   "settings.enableKiosk": "Enable kiosk",
   "settings.cardsOnly": "Cards only",

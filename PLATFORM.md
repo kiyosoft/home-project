@@ -159,7 +159,7 @@ Never sits in the HA data path. Local use does not require an account.
 
 ## Packaging
 
-- Home Assistant add-on (MVP in `ethio-home/`: static SPA via ingress; install from GitHub monorepo; LLAT setup unchanged; supervisor auto-auth later)
+- Home Assistant add-on (MVP in `ethio-home/`: static SPA via ingress; GHCR image published from `main`; supervisor auto-auth on sidebar open; LLAT/demo remain for non-ingress)
 - Docker Compose / standalone container
 - Local Vite dev for contributors
 

@@ -20,6 +20,10 @@ import {
   type LoginStep,
 } from "@/lib/ha-auth";
 import {
+  fetchIngressSession,
+  isHassIngress,
+} from "@/lib/ingress-session";
+import {
   clearConnectionSettings,
   loadConnectionSettings,
   saveConnectionSettings,
@@ -48,6 +52,7 @@ interface HaState {
   /** Drop a half-finished sign-in and its error so the form starts clean. */
   resetLogin: () => void;
   connectLive: (baseUrl: string, token: string) => Promise<void>;
+  connectIngress: () => Promise<boolean>;
   connectDemo: () => Promise<void>;
   reconnect: () => Promise<void>;
   disconnect: (options?: { clearSaved?: boolean }) => void;
@@ -70,6 +75,8 @@ interface HaState {
 let client: EntityClient | null = null;
 let unsubscribe: (() => void) | null = null;
 let savedCredentials: ConnectionSettings | null = null;
+/** Stays in memory so Disconnect can show setup until the next full load. */
+let skipIngressAuth = false;
 
 function cleanupClient() {
   unsubscribe?.();
@@ -196,6 +203,27 @@ export const useHaStore = create<HaState>((set, get) => ({
     );
   },
 
+  async connectIngress() {
+    skipIngressAuth = false;
+    const session = await fetchIngressSession();
+    if (!session) return false;
+    try {
+      await beginLive(
+        {
+          mode: "live",
+          authMode: "token",
+          baseUrl: window.location.origin,
+          token: session.token,
+          tokens: null,
+        },
+        set,
+      );
+      return true;
+    } catch {
+      return false;
+    }
+  },
+
   async connectDemo() {
     set({
       status: "connecting",
@@ -234,17 +262,21 @@ export const useHaStore = create<HaState>((set, get) => ({
 
   async reconnect() {
     const settings = savedCredentials ?? loadConnectionSettings();
-    if (!settings) return;
-    if (settings.mode === "demo") {
+    if (settings?.mode === "demo") {
       await get().connectDemo();
       return;
     }
-    if (!isConnectable(settings)) return;
+    if (!skipIngressAuth && isHassIngress()) {
+      const connected = await get().connectIngress();
+      if (connected) return;
+    }
+    if (!settings || !isConnectable(settings)) return;
     await beginLive(settings, set);
   },
 
   disconnect(options) {
     const previous = savedCredentials;
+    skipIngressAuth = true;
     cleanupClient();
     if (options?.clearSaved) {
       if (previous?.authMode === "oauth" && previous.tokens && previous.baseUrl) {
@@ -304,12 +336,17 @@ export const useHaStore = create<HaState>((set, get) => ({
 
   async bootstrap() {
     const settings = loadConnectionSettings();
-    if (!settings) return;
-    savedCredentials = settings;
-    if (settings.mode === "demo") {
+    if (settings?.mode === "demo") {
+      savedCredentials = settings;
       await get().connectDemo();
       return;
     }
+    if (!skipIngressAuth && isHassIngress()) {
+      const connected = await get().connectIngress();
+      if (connected) return;
+    }
+    if (!settings) return;
+    savedCredentials = settings;
     if (!isConnectable(settings)) return;
     try {
       await beginLive(settings, set);
