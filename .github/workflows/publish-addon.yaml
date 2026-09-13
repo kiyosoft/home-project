@@ -39,14 +39,26 @@ jobs:
 
       - name: Normalize add-on information
         id: normalize
+        # Pass info-helper outputs via env (NOT inlined into the script): yq -o=json
+        # wraps scalars in quotes, and the description contains parentheses, which
+        # would otherwise break the shell parser.
+        env:
+          INFO_IMAGE: ${{ steps.info.outputs.image }}
+          INFO_VERSION: ${{ steps.info.outputs.version }}
+          INFO_NAME: ${{ steps.info.outputs.name }}
+          INFO_DESCRIPTION: ${{ steps.info.outputs.description }}
+          INFO_URL: ${{ steps.info.outputs.url }}
         run: |
-          image=${{ steps.info.outputs.image }}
+          # The info helper preserves the literal quotes from quoted config.yaml
+          # scalars (e.g. version: "0.6.0"), so strip them where the value flows
+          # into an image reference / tag.
+          image="${INFO_IMAGE//\"/}"
           echo "image_name=${image##*/}" >> "$GITHUB_OUTPUT"
           echo "registry_prefix=${image%/*}" >> "$GITHUB_OUTPUT"
-          echo "version=${{ steps.info.outputs.version }}" >> "$GITHUB_OUTPUT"
-          echo "name=${{ steps.info.outputs.name }}" >> "$GITHUB_OUTPUT"
-          echo "description=${{ steps.info.outputs.description }}" >> "$GITHUB_OUTPUT"
-          url=${{ steps.info.outputs.url }}
+          echo "version=${INFO_VERSION//\"/}" >> "$GITHUB_OUTPUT"
+          echo "name=${INFO_NAME//\"/}" >> "$GITHUB_OUTPUT"
+          echo "description=${INFO_DESCRIPTION//\"/}" >> "$GITHUB_OUTPUT"
+          url="${INFO_URL//\"/}"
           if [[ -n "$url" && "$url" != "null" ]]; then
             echo "url=${url}" >> "$GITHUB_OUTPUT"
           fi
