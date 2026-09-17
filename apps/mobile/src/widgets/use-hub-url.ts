@@ -22,6 +22,7 @@ function offHub(path: string): boolean {
 export function useHubUrl(
   path: string | null | undefined,
   refreshKey = 0,
+  expiresSeconds = SIGNATURE_TTL_SECONDS,
 ): string | null {
   const activeUrl = useHaStore((state) => state.activeUrl);
   const mode = useHaStore((state) => state.mode);
@@ -55,7 +56,7 @@ export function useHubUrl(
     }
 
     let current = true;
-    void signPath(sendMessagePromise, relative, SIGNATURE_TTL_SECONDS)
+    void signPath(sendMessagePromise, relative, expiresSeconds)
       .then((signed) => {
         if (current) setUrl(`${base}${signed}`);
       })
@@ -66,7 +67,7 @@ export function useHubUrl(
     return () => {
       current = false;
     };
-  }, [path, activeUrl, mode, sendMessagePromise, refreshKey]);
+  }, [path, activeUrl, mode, sendMessagePromise, refreshKey, expiresSeconds]);
 
   return url;
 }

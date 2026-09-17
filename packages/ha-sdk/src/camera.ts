@@ -1,3 +1,5 @@
+import { entityImageUrl, withAuthToken } from "./media-auth";
+import { carriesCredential, signPath } from "./signed-path";
 import type { HassEntity } from "./types";
 
 /** Bit flags from homeassistant.components.camera.CameraEntityFeature */
@@ -85,6 +87,17 @@ export function cameraMjpegPath(entityId: string): string {
   return `/api/camera_proxy_stream/${entityId}`;
 }
 
+/** Absolute MJPEG URL, with the camera's rotating `access_token` when present. */
+export function cameraMjpegUrl(
+  entityId: string,
+  baseUrl: string,
+  accessToken?: string | null,
+): string | null {
+  const resolved = entityImageUrl(cameraMjpegPath(entityId), baseUrl);
+  if (!resolved) return null;
+  return accessToken ? withAuthToken(resolved, accessToken) : resolved;
+}
+
 function parseStreamUrl(result: unknown): string {
   if (!result || typeof result !== "object" || !("url" in result)) {
     throw new Error("Camera stream response had no url");
@@ -111,4 +124,31 @@ export async function requestCameraStream(
     format: "hls",
   });
   return parseStreamUrl(result);
+}
+
+/**
+ * HLS playlist URL for a STREAM camera, signed when the hub path has no
+ * credential of its own. MJPEG has no audio; this is the feed that does.
+ */
+export async function requestCameraHlsUrl(
+  sendMessagePromise: <T>(message: Record<string, unknown>) => Promise<T>,
+  entityId: string,
+  baseUrl: string,
+  expiresSeconds = 3600,
+): Promise<string> {
+  const path = await requestCameraStream(sendMessagePromise, entityId);
+  const trimmed = path.trim();
+  if (trimmed.startsWith("http://") || trimmed.startsWith("https://")) {
+    return trimmed;
+  }
+  const base = baseUrl.replace(/\/+$/, "");
+  if (!base) throw new Error("Camera stream URL could not be resolved");
+  const relative = trimmed.startsWith("/") ? trimmed : `/${trimmed}`;
+  if (carriesCredential(relative)) return `${base}${relative}`;
+  try {
+    const signed = await signPath(sendMessagePromise, relative, expiresSeconds);
+    return `${base}${signed}`;
+  } catch {
+    return `${base}${relative}`;
+  }
 }

@@ -210,6 +210,9 @@ export const am: Record<MessageKey, string> = {
   "widget.camera.still": "ምስል አሳይ",
   "widget.camera.power": "ኃይል",
   "widget.camera.liveFailed": "ቀጥታ ስርጭቱን ማስጀመር አልተቻለም።",
+  "widget.camera.soundOn": "ድምጽ ክፈት",
+  "widget.camera.soundOff": "ድምጽ ዝጋ",
+  "widget.camera.soundFailed": "የካሜራ ድምጽ ማስጀመር አልተቻለም።",
   "widget.camera.noSignal": "ምልክት የለም",
   "widget.camera.retry": "እንደገና ይሞክሩ",
 

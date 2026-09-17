@@ -210,6 +210,9 @@ export const en = {
   "widget.camera.still": "Show still",
   "widget.camera.power": "Power",
   "widget.camera.liveFailed": "Could not start the live stream.",
+  "widget.camera.soundOn": "Sound on",
+  "widget.camera.soundOff": "Mute",
+  "widget.camera.soundFailed": "Could not start camera audio.",
   "widget.camera.noSignal": "No signal",
   "widget.camera.retry": "Tap to retry",
 

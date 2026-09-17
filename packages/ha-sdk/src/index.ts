@@ -43,9 +43,11 @@ export { normalizeHassError } from "./hass-error";
 export {
   CAMERA_FEATURE,
   cameraMjpegPath,
+  cameraMjpegUrl,
   cameraStillPath,
   cameraSupportsFeature,
   deriveCamera,
+  requestCameraHlsUrl,
   requestCameraStream,
 } from "./camera";
 export type { CameraView } from "./camera";

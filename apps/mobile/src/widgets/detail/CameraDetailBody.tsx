@@ -1,113 +1,74 @@
-import {
-  useVideoPlayer,
-  VideoView,
-  type BufferOptions,
-  type VideoSource,
-} from "expo-video";
 import { Label, Spinner, Surface, Text } from "heroui-native";
-import { useCallback, useState } from "react";
+import { useState } from "react";
 import { View } from "react-native";
 
 import { useT } from "@/store/locale-store";
 import { Button, Switch } from "@/ui/haptic";
+import { CameraFeed } from "@/widgets/camera/CameraFeed";
 import { CameraStill } from "@/widgets/camera/CameraStill";
-import { useCamera } from "@/widgets/camera/use-camera";
+import { useLiveCamera } from "@/widgets/camera/use-camera";
 import { EntityDetailBody } from "@/widgets/EntityDetailBody";
 import { useOptimistic } from "@/widgets/use-optimistic";
 
-type LiveState =
-  | { kind: "idle" }
-  | { kind: "starting" }
-  | { kind: "playing"; uri: string }
-  | { kind: "failed" };
-
-/**
- * A camera feed is worth more fresh than smooth, so trade rebuffer resistance
- * for latency. The defaults are tuned for on-demand video: Android stacks up
- * 20s of lookahead, and iOS holds playback back until it judges a stall
- * unlikely, which together put the picture several seconds behind the door.
- */
-const LIVE_BUFFER: BufferOptions = {
-  preferredForwardBufferDuration: 2,
-  minBufferForPlayback: 0.5,
-  prioritizeTimeOverSizeThreshold: true,
-  waitsToMinimizeStalling: false,
-};
-
-function LivePlayer({ uri, label }: { uri: string; label: string }) {
-  const source: VideoSource = { uri, contentType: "hls" };
-  const player = useVideoPlayer(source, (next) => {
-    next.muted = true;
-    next.bufferOptions = LIVE_BUFFER;
-    next.play();
-  });
-
-  return (
-    <VideoView
-      player={player}
-      nativeControls
-      contentFit="cover"
-      accessibilityLabel={label}
-      style={{ width: "100%", aspectRatio: 16 / 9 }}
-    />
-  );
-}
-
 export function CameraDetailBody({ entityId }: { entityId: string }) {
   const t = useT();
-  const camera = useCamera(entityId);
-  const [live, setLive] = useState<LiveState>({ kind: "idle" });
+  const [streaming, setStreaming] = useState(false);
+  const camera = useLiveCamera(entityId, { pollStills: !streaming });
   const [isOn, setOptimisticOn] = useOptimistic(camera.view?.isOn ?? false);
-
-  const stopLive = useCallback(() => {
-    setLive({ kind: "idle" });
-  }, []);
-
-  const startLive = async () => {
-    if (live.kind === "starting") return;
-    setLive({ kind: "starting" });
-    try {
-      const uri = await camera.startLive();
-      setLive((current) =>
-        current.kind === "starting" ? { kind: "playing", uri } : current,
-      );
-    } catch {
-      setLive((current) =>
-        current.kind === "starting" ? { kind: "failed" } : current,
-      );
-    }
-  };
 
   if (!camera.view) {
     return <Text className="text-muted">{t("widget.entityMissing")}</Text>;
   }
 
-  const playing = live.kind === "playing";
-  const starting = live.kind === "starting";
+  const showLive =
+    streaming &&
+    camera.canLive &&
+    (Boolean(camera.streamUrl) || (camera.sound && Boolean(camera.hlsUri)));
+  const waitingForUrl =
+    streaming &&
+    ((camera.sound && camera.hlsLoading && !camera.hlsUri) ||
+      (!camera.sound && !camera.streamUrl && !camera.mjpegFailed));
 
   return (
     <View className="gap-6">
       <Surface variant="secondary" className="rounded-inner overflow-hidden">
-        {playing ? (
-          <LivePlayer uri={live.uri} label={camera.view.entityId} />
-        ) : (
-          <View className="relative">
-            <CameraStill
-              uri={camera.stillUrl}
+        <View className="relative">
+          <CameraStill
+            uri={camera.stillUrl}
+            label={camera.view.entityId}
+            style={{ width: "100%", aspectRatio: 16 / 9 }}
+          />
+          {showLive ? (
+            <CameraFeed
+              mjpegUri={camera.mjpegFailed ? null : camera.streamUrl}
+              hlsUri={camera.hlsUri}
+              sound={camera.sound}
               label={camera.view.entityId}
-              style={{ width: "100%", aspectRatio: 16 / 9 }}
+              fill
+              nativeControls={camera.sound}
+              onMjpegFailed={() => camera.setMjpegFailed(true)}
+              onHlsFailed={() => {
+                camera.setHlsFailed(true);
+                camera.mute();
+              }}
+              onMjpegReady={() => camera.setMjpegReady(true)}
             />
-            {starting ? (
-              <View className="absolute inset-0 items-center justify-center bg-black/40">
-                <Spinner />
-              </View>
-            ) : null}
-          </View>
-        )}
+          ) : null}
+          {waitingForUrl ? (
+            <View className="absolute inset-0 items-center justify-center bg-black/40">
+              <Spinner />
+            </View>
+          ) : null}
+        </View>
       </Surface>
 
-      {live.kind === "failed" ? (
+      {camera.mjpegFailed && streaming ? (
         <Text className="text-danger text-sm">{t("widget.camera.liveFailed")}</Text>
+      ) : null}
+      {camera.hlsFailed ? (
+        <Text className="text-danger text-sm">
+          {t("widget.camera.soundFailed")}
+        </Text>
       ) : null}
 
       <View className="flex-row flex-wrap gap-2">
@@ -115,22 +76,40 @@ export function CameraDetailBody({ entityId }: { entityId: string }) {
           size="sm"
           variant="secondary"
           onPress={camera.refreshImage}
-          isDisabled={playing || starting}
+          isDisabled={streaming}
         >
           {t("widget.camera.refresh")}
         </Button>
         {camera.canLive ? (
           <Button
             size="sm"
-            variant={playing || starting ? "secondary" : "primary"}
+            variant={streaming ? "secondary" : "primary"}
             onPress={() => {
-              if (playing || starting) stopLive();
-              else void startLive();
+              if (streaming) {
+                setStreaming(false);
+                camera.setMjpegReady(false);
+                if (camera.sound) camera.mute();
+                return;
+              }
+              camera.setMjpegFailed(false);
+              setStreaming(true);
             }}
           >
-            {playing || starting
-              ? t("widget.camera.still")
-              : t("widget.camera.live")}
+            {streaming ? t("widget.camera.still") : t("widget.camera.live")}
+          </Button>
+        ) : null}
+        {camera.canAudio && streaming ? (
+          <Button
+            size="sm"
+            variant={camera.sound ? "primary" : "secondary"}
+            isDisabled={camera.hlsLoading}
+            onPress={() => {
+              void camera.toggleSound();
+            }}
+          >
+            {camera.sound
+              ? t("widget.camera.soundOff")
+              : t("widget.camera.soundOn")}
           </Button>
         ) : null}
       </View>

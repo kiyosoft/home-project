@@ -20,7 +20,11 @@
         ],
         "NSLocalNetworkUsageDescription": "Ethio Home looks for your Home Assistant on this network so you can connect without typing an address.",
         "UIBackgroundModes": ["location"],
-        "ITSAppUsesNonExemptEncryption": false
+        "ITSAppUsesNonExemptEncryption": false,
+        "NSAppTransportSecurity": {
+          "NSAllowsLocalNetworking": true,
+          "NSAllowsArbitraryLoadsInWebContent": true
+        }
       }
     },
     "android": {

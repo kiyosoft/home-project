@@ -69,6 +69,12 @@ export function isLocalHost(host: string): boolean {
   return /^(?:10\.|127\.|192\.168\.|172\.(?:1[6-9]|2\d|3[01])\.)/.test(lower);
 }
 
+/** True when `url` points at a LAN hub, not a tunnel or public proxy. */
+export function isLocalUrl(url: string): boolean {
+  const origin = parseOrigin(url);
+  return origin !== null && isLocalHost(origin.host);
+}
+
 export function trimTrailingSlash(url: string): string {
   return url.trim().replace(/\/+$/, "");
 }
