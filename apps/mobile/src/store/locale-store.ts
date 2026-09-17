@@ -19,29 +19,25 @@ interface LocaleState {
   ethiopianHours: boolean;
   setLocale: (locale: Locale) => void;
   setEthiopianHours: (value: boolean) => void;
-  hydrate: () => Promise<void>;
+  hydrate: () => void;
 }
 
 export const useLocaleStore = create<LocaleState>((set) => ({
-  locale: "en",
-  ethiopianHours: false,
+  locale: loadLocale(),
+  ethiopianHours: loadEthiopianHours(),
 
   setLocale(locale) {
     set({ locale });
-    void saveLocale(locale);
+    saveLocale(locale);
   },
 
   setEthiopianHours(ethiopianHours) {
     set({ ethiopianHours });
-    void saveEthiopianHours(ethiopianHours);
+    saveEthiopianHours(ethiopianHours);
   },
 
-  async hydrate() {
-    const [locale, ethiopianHours] = await Promise.all([
-      loadLocale(),
-      loadEthiopianHours(),
-    ]);
-    set({ locale, ethiopianHours });
+  hydrate() {
+    set({ locale: loadLocale(), ethiopianHours: loadEthiopianHours() });
   },
 }));
 

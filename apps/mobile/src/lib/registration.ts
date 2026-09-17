@@ -5,7 +5,6 @@ import {
   updateRegistration,
   type MobileAppData,
 } from "@ethio/ha-sdk";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as SecureStore from "expo-secure-store";
 
 import {
@@ -14,14 +13,15 @@ import {
   readDeviceIdentity,
   type DeviceIdentity,
 } from "@/lib/device-identity";
+import { kv } from "@/lib/kv-mmkv";
+import { REGISTRATION_KEY } from "@/lib/kv-keys";
 
 /**
  * Our `mobile_app` registration with Home Assistant. The webhook id is a bearer
  * credential in its own right (the webhook endpoint is unauthenticated), so it
- * lives in SecureStore next to the tokens rather than in AsyncStorage.
+ * lives in SecureStore next to the tokens rather than in kv.
  */
 
-const REGISTRATION_KEY = "ethio-home.registration:v1";
 const WEBHOOK_ID_KEY = "ethio-home.webhook-id.v1";
 const SECRET_KEY = "ethio-home.registration-secret.v1";
 
@@ -47,15 +47,12 @@ interface StoredMeta {
 
 export async function loadRegistration(): Promise<StoredRegistration | null> {
   try {
-    const [raw, webhookId, secret] = await Promise.all([
-      AsyncStorage.getItem(REGISTRATION_KEY),
+    const [webhookId, secret] = await Promise.all([
       SecureStore.getItemAsync(WEBHOOK_ID_KEY),
       SecureStore.getItemAsync(SECRET_KEY),
     ]);
-    if (!raw || !webhookId) return null;
-
-    const meta = parseMeta(JSON.parse(raw) as unknown);
-    if (!meta) return null;
+    const meta = parseMeta(kv.getJson(REGISTRATION_KEY));
+    if (!meta || !webhookId) return null;
 
     return { ...meta, webhookId, secret: secret ?? null };
   } catch {
@@ -73,7 +70,7 @@ export async function saveRegistration(
     pushToken: registration.pushToken,
     pushUrl: registration.pushUrl,
   };
-  await AsyncStorage.setItem(REGISTRATION_KEY, JSON.stringify(meta));
+  kv.setJson(REGISTRATION_KEY, meta);
   await SecureStore.setItemAsync(WEBHOOK_ID_KEY, registration.webhookId);
   if (registration.secret) {
     await SecureStore.setItemAsync(SECRET_KEY, registration.secret);
@@ -83,7 +80,7 @@ export async function saveRegistration(
 }
 
 export async function clearRegistration(): Promise<void> {
-  await AsyncStorage.removeItem(REGISTRATION_KEY);
+  kv.remove(REGISTRATION_KEY);
   await SecureStore.deleteItemAsync(WEBHOOK_ID_KEY);
   await SecureStore.deleteItemAsync(SECRET_KEY);
 }
@@ -153,7 +150,7 @@ export async function ensureRegistration(options: {
   accessToken: string;
   sendMessagePromise: <T>(message: Record<string, unknown>) => Promise<T>;
 }): Promise<RegistrationResult> {
-  const identity = await readDeviceIdentity();
+  const identity = readDeviceIdentity();
   const existing = await loadRegistration();
 
   if (existing && existing.deviceId === identity.deviceId) {
@@ -272,7 +269,7 @@ export async function syncPushToken(options: {
     return registration;
   }
 
-  const identity = await readDeviceIdentity();
+  const identity = readDeviceIdentity();
   await updateRegistration({
     baseUrl: options.baseUrl,
     webhookId: registration.webhookId,

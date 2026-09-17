@@ -5,11 +5,14 @@ import {
 } from "@ethio/ha-sdk";
 import { useEffect, useRef, useState } from "react";
 
-import { useHaStore } from "@/store/ha-store";
+import { isLiveSession, useHaStore } from "@/store/ha-store";
 
 export function useArrivalWelcome(): { welcome: boolean } {
-  const userId = useHaStore((state) => state.userId);
-  const person = useHaStore((state) => personForUser(state.entities, userId));
+  const person = useHaStore((state) =>
+    isLiveSession(state.mode, state.status)
+      ? personForUser(state.entities, state.userId)
+      : undefined,
+  );
   const previous = useRef<string | undefined>(undefined);
   const [now, setNow] = useState(() => Date.now());
 

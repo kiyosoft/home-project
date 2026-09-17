@@ -1,12 +1,25 @@
 import type { HassEntity } from "@ethio/ha-sdk";
 
-import { useHaStore } from "@/store/ha-store";
+import { isLiveSession, useHaStore } from "@/store/ha-store";
 
 /**
  * The store shallow-copies the entity map on every HA update but keeps entity
  * objects shared, so this re-renders only when the named entity actually moves.
+ *
+ * Live state is hidden while the socket is down so tiles cannot replay the last
+ * snapshot as if the house were still in that state.
  */
 export function useEntity(entityId: string | undefined): HassEntity | undefined {
+  return useHaStore((state) => {
+    if (!entityId || !isLiveSession(state.mode, state.status)) return undefined;
+    return state.entities[entityId];
+  });
+}
+
+/** Names and layout still read the snapshot while live state is gated. */
+export function useStoredEntity(
+  entityId: string | undefined,
+): HassEntity | undefined {
   return useHaStore((state) => (entityId ? state.entities[entityId] : undefined));
 }
 

@@ -31,9 +31,11 @@ export function SceneTile({ config, size }: WidgetBodyProps) {
       status={
         !entityId
           ? t("widget.scene.pick")
-          : pending
-            ? t("widget.scene.activating")
-            : t("widget.scene.activate")
+          : unavailable
+            ? t("widget.state.unavailable")
+            : pending
+              ? t("widget.scene.activating")
+              : t("widget.scene.activate")
       }
       icon="color-palette-outline"
       size={size}

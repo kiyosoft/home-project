@@ -5,7 +5,12 @@ import { useHaStore } from "@/store/ha-store";
 import { useT } from "@/store/locale-store";
 import { Chip } from "@/ui/haptic";
 
-export function ConnectionStatusChip() {
+export function ConnectionStatusChip({
+  errorsOnly = false,
+}: {
+  /** Home paints connecting as a wash, so the chip would only repeat it. */
+  errorsOnly?: boolean;
+}) {
   const t = useT();
   const status = useHaStore((state) => state.status);
   const mode = useHaStore((state) => state.mode);
@@ -15,6 +20,7 @@ export function ConnectionStatusChip() {
   if (mode !== "live") return null;
 
   if (status === "connecting" || status === "reconnecting") {
+    if (errorsOnly) return null;
     return (
       <Chip size="sm" color="warning" variant="soft" className="self-start">
         <Spinner size="sm" />

@@ -1,7 +1,7 @@
 import { Text } from "heroui-native";
 import { View } from "react-native";
 
-import { useHaStore } from "@/store/ha-store";
+import { isLiveSession, useHaStore } from "@/store/ha-store";
 import { useT } from "@/store/locale-store";
 import { isActiveState } from "@/store/use-entity";
 
@@ -21,6 +21,7 @@ export function SectionHeader({ title, entityIds }: SectionHeaderProps) {
   // A count is a number, so the store's Object.is check keeps this subscribed
   // to the section rather than to every entity update in the house.
   const active = useHaStore((state) => {
+    if (!isLiveSession(state.mode, state.status)) return 0;
     let count = 0;
     for (const entityId of entityIds) {
       if (isActiveState(state.entities[entityId])) count += 1;

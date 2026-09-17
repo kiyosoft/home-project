@@ -5,8 +5,9 @@ import { ScrollView } from "react-native";
 import Animated, { LinearTransition } from "react-native-reanimated";
 import { withUniwind } from "uniwind";
 
+import { useLiveSession } from "@/store/ha-store";
 import { useT } from "@/store/locale-store";
-import { entityDomain, entityName, useEntity } from "@/store/use-entity";
+import { entityDomain, entityName, useStoredEntity } from "@/store/use-entity";
 import { Chip } from "@/ui/haptic";
 import { SETTLE_MS } from "@/ui/motion";
 import { useCallService } from "@/widgets/use-service";
@@ -30,17 +31,19 @@ function ScenePill({
   onRemove: () => void;
 }) {
   const t = useT();
-  const entity = useEntity(entityId);
+  const stored = useStoredEntity(entityId);
+  const live = useLiveSession();
   const callService = useCallService();
   const [flashing, setFlashing] = useState(false);
   const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
 
   useEffect(() => () => clearTimeout(timer.current), []);
 
-  const name = entityName(entity, entityId);
-  const running = entity?.state === "on";
+  const name = entityName(stored, entityId);
+  const running = live && stored?.state === "on";
 
   const activate = () => {
+    if (!live) return;
     const call = serviceForSceneEntity(entityId);
     if (!call) return;
     callService(call.domain, call.service, { entity_id: entityId });
@@ -57,7 +60,8 @@ function ScenePill({
       accessibilityLabel={
         editing ? t("home.removeScene") : t("scene.activate", { name })
       }
-      onPress={editing ? onRemove : activate}
+      disabled={!editing && !live}
+      onPress={editing ? onRemove : live ? activate : undefined}
     >
       <Icon
         name={

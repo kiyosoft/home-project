@@ -1,13 +1,14 @@
 import { discoverBatteries, stringList } from "@ethio/ha-sdk";
 import { useMemo } from "react";
 
-import { useHaStore } from "@/store/ha-store";
+import { useHaStore, useLiveSession } from "@/store/ha-store";
 import { useT } from "@/store/locale-store";
 import { readString, type WidgetBodyProps } from "@/widgets/types";
 import { WidgetTile } from "@/widgets/WidgetTile";
 
 export function BatteriesTile({ config, size }: WidgetBodyProps) {
   const t = useT();
+  const live = useLiveSession();
   const customTitle = readString(config, "title").trim();
   const entityIds = config.entity_ids;
   const configured = useMemo(() => stringList(entityIds), [entityIds]);
@@ -15,14 +16,15 @@ export function BatteriesTile({ config, size }: WidgetBodyProps) {
   const report = useMemo(
     () =>
       discoverBatteries(
-        entities,
+        live ? entities : {},
         configured.length > 0 ? configured : undefined,
       ),
-    [entities, configured],
+    [configured, entities, live],
   );
-  const ok = report.total > 0 && report.low === 0;
-  const status =
-    report.total === 0
+  const ok = live && report.total > 0 && report.low === 0;
+  const status = !live
+    ? t("widget.state.unavailable")
+    : report.total === 0
       ? t("widget.batteries.none")
       : ok
         ? t("widget.batteries.allGood")
@@ -35,6 +37,7 @@ export function BatteriesTile({ config, size }: WidgetBodyProps) {
       icon={ok ? "battery-full" : "battery-dead-outline"}
       size={size}
       active={ok}
+      disabled={!live}
     />
   );
 }

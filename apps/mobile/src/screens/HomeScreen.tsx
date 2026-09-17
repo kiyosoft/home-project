@@ -31,6 +31,7 @@ import { useDashboardStore } from "@/store/dashboard-store";
 import { useHaStore } from "@/store/ha-store";
 import { useT } from "@/store/locale-store";
 import { AmbientBackground } from "@/ui/AmbientBackground";
+import { ConnectingWash } from "@/ui/ConnectingWash";
 import { ConnectionNotice } from "@/ui/ConnectionNotice";
 import { Button, Chip } from "@/ui/haptic";
 import { HomeHeader, type HomeSectionChip } from "@/ui/HomeHeader";
@@ -306,11 +307,7 @@ export function HomeScreen() {
     [width, columns, editing, removeWidget, resizeWidget, removeScene, startAdding],
   );
 
-  if (
-    mode !== "demo" &&
-    status !== "connected" &&
-    Object.keys(entities).length === 0
-  ) {
+  if (mode !== "demo" && status === "error" && Object.keys(entities).length === 0) {
     return (
       <Screen>
         <Text.Heading type="h1">{t("home.title")}</Text.Heading>
@@ -358,7 +355,14 @@ export function HomeScreen() {
   const showDock = dockItems.length > 1;
 
   return (
-    <Screen backdrop={<AmbientBackground />}>
+    <Screen
+      backdrop={
+        <>
+          <AmbientBackground />
+          <ConnectingWash />
+        </>
+      }
+    >
       <View className="flex-1" onLayout={onLayout}>
         {width > 0 ? (
           <LegendList

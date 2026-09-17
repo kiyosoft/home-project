@@ -30,7 +30,7 @@ export interface NotificationRecord {
 interface NotificationState {
   records: NotificationRecord[];
   hydrated: boolean;
-  hydrate: () => Promise<void>;
+  hydrate: () => void;
   /**
    * Files an incoming push. Returns the stored record, or null when the payload
    * was a dismissal rather than something to show.
@@ -59,37 +59,18 @@ export interface RecordOrigin {
   receivedAt?: number;
 }
 
-/**
- * Writes are queued rather than fired off in parallel. Two overlapping saves
- * finish in whatever order the disk decides, and the last one to land wins, so
- * an older snapshot could overwrite a newer one and silently drop whatever
- * arrived in between.
- */
-let writes: Promise<unknown> = Promise.resolve();
-
 function persist(records: NotificationRecord[]) {
-  writes = writes
-    .then(() => saveNotificationHistory(records))
-    .catch(() => {
-      // History is a convenience; losing a write must not surface as an error.
-    });
+  saveNotificationHistory(records);
 }
 
 export const useNotificationStore = create<NotificationState>((set, get) => ({
-  records: [],
-  hydrated: false,
+  records: parseRecords(loadNotificationHistory()),
+  hydrated: true,
 
-  async hydrate() {
-    const raw = await loadNotificationHistory();
-    // Hydration races the socket: a push can land before disk comes back, and
-    // replacing the list outright would drop it.
+  hydrate() {
     const live = get().records;
-    const records = merge(live, parseRecords(raw));
+    const records = merge(live, parseRecords(loadNotificationHistory()));
     set({ records, hydrated: true });
-
-    // Whatever beat the disk read exists only in memory, and this merge is the
-    // first moment both halves are in one list. Without writing it back, the
-    // next save to run would be working from a list that never had it.
     if (live.length > 0) persist(records);
   },
 
@@ -153,12 +134,7 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
 
   async clear() {
     set({ records: [] });
-    // Behind the same queue as the saves. A write still in flight would
-    // otherwise land after the file was removed and bring the history back.
-    writes = writes.then(clearNotificationHistory).catch(() => {
-      // Nothing to report: the list is already empty on screen.
-    });
-    await writes;
+    clearNotificationHistory();
   },
 }));
 

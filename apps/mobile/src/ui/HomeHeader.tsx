@@ -4,10 +4,9 @@ import { Text, useThemeColor } from "heroui-native";
 import { useEffect, useMemo, useState } from "react";
 import { ScrollView, View } from "react-native";
 
-import { formatHomeSummary, useHomeSummary } from "@/dashboard/home-summary";
 import { useArrivalWelcome } from "@/dashboard/use-arrival-welcome";
 import type { MessageKey } from "@/i18n";
-import { useHaStore } from "@/store/ha-store";
+import { isLiveSession, useHaStore, useLiveSession } from "@/store/ha-store";
 import { useT } from "@/store/locale-store";
 import { isActiveState } from "@/store/use-entity";
 import { ConnectionStatusChip } from "@/ui/ConnectionStatusChip";
@@ -51,8 +50,12 @@ function HeaderClock() {
 
 function LightsChip() {
   const t = useT();
+  const live = useLiveSession();
   const entities = useHaStore((state) => state.entities);
-  const count = useMemo(() => countLightsOn(entities), [entities]);
+  const count = useMemo(
+    () => (live ? countLightsOn(entities) : 0),
+    [entities, live],
+  );
   if (count <= 0) return null;
   return (
     <Chip
@@ -78,6 +81,7 @@ function SectionChip({
 }) {
   const t = useT();
   const active = useHaStore((state) => {
+    if (!isLiveSession(state.mode, state.status)) return 0;
     let count = 0;
     for (const entityId of section.entityIds) {
       if (isActiveState(state.entities[entityId])) count += 1;
@@ -99,9 +103,8 @@ function SectionChip({
 }
 
 /**
- * The Home screen's masthead. Apple Home and Google Home both open with what
- * the house is doing rather than with the grid; this is that, plus shortcuts
- * into the sections below.
+ * The Home screen's masthead: greeting, clock, and shortcuts into the
+ * sections below. Light counts live on the chip and section pills, not here.
  */
 export function HomeHeader({
   sections,
@@ -111,7 +114,6 @@ export function HomeHeader({
 }: HomeHeaderProps) {
   const t = useT();
   const mode = useHaStore((state) => state.mode);
-  const summary = useHomeSummary();
   const foreground = useThemeColor("foreground");
   const accentForeground = useThemeColor("accent-foreground");
 
@@ -122,6 +124,14 @@ export function HomeHeader({
 
   return (
     <View className="gap-3">
+      {mode === "demo" ? (
+        <Chip size="sm" color="success" variant="soft" className="self-start">
+          {t("home.demoBadge")}
+        </Chip>
+      ) : (
+        <ConnectionStatusChip errorsOnly />
+      )}
+
       <View className="flex-row items-start justify-between gap-3">
         <View className="flex-1 gap-0.5">
           {name ? (
@@ -159,18 +169,6 @@ export function HomeHeader({
           </View>
         </View>
       </View>
-
-      <Text className="text-muted text-[15px]">
-        {formatHomeSummary(summary, t)}
-      </Text>
-
-      {mode === "demo" ? (
-        <Chip size="sm" color="success" variant="soft" className="self-start">
-          {t("home.demoBadge")}
-        </Chip>
-      ) : (
-        <ConnectionStatusChip />
-      )}
 
       {sections.length > 1 ? (
         <ScrollView

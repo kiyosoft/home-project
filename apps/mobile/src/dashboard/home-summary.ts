@@ -12,7 +12,7 @@ import {
 import { useMemo } from "react";
 
 import type { MessageKey, TranslateParams } from "@/i18n";
-import { useHaStore } from "@/store/ha-store";
+import { useHaStore, useLiveSession } from "@/store/ha-store";
 import { entityDomain } from "@/store/use-entity";
 
 /** Every lit lamp in the house folded into one colour. */
@@ -184,9 +184,10 @@ export function formatHomeSummary(
  * whenever anything in the house moves and memoizes in between.
  */
 export function useHomeSummary(): HomeSummary {
+  const live = useLiveSession();
   const entities = useHaStore((state) => state.entities);
   return useMemo(
-    () => (entities ? summarizeHome(entities) : EMPTY),
-    [entities],
+    () => (live && entities ? summarizeHome(entities) : EMPTY),
+    [entities, live],
   );
 }

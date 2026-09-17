@@ -43,12 +43,11 @@ export default function RootLayout() {
   useWatchSession();
 
   useEffect(() => {
-    // Locale first so the Connect screen never flashes the wrong script.
-    // Theme in parallel so the first frame is already the saved palette.
-    void hydrateLocale().then(() => bootstrap());
-    void hydrateDashboard();
-    void hydrateTheme();
-    void hydrateNotifications();
+    hydrateLocale();
+    hydrateDashboard();
+    hydrateTheme();
+    hydrateNotifications();
+    void bootstrap();
   }, [
     bootstrap,
     hydrateLocale,

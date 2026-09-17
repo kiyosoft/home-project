@@ -19,34 +19,37 @@ interface DashboardState {
   /** Shared by the Home header and the grid so both agree on the chrome. */
   mode: EditorMode;
   setMode: (mode: EditorMode) => void;
-  hydrate: () => Promise<void>;
-  save: (document: MobileDashboard) => Promise<void>;
-  reset: () => Promise<void>;
+  hydrate: () => void;
+  save: (document: MobileDashboard) => void;
+  reset: () => void;
+}
+
+function readDocument(): MobileDashboard | null {
+  const raw = loadDashboardDocument();
+  const parsed = raw ? safeParseMobileDashboard(raw) : null;
+  return parsed?.success ? parsed.data : null;
 }
 
 export const useDashboardStore = create<DashboardState>((set) => ({
-  document: null,
-  hydrated: false,
+  document: readDocument(),
+  hydrated: true,
   mode: "live",
 
   setMode(mode) {
     set({ mode });
   },
 
-  async hydrate() {
-    const raw = await loadDashboardDocument();
-    // A document written by a newer build may no longer parse; fall back rather than crash.
-    const parsed = raw ? safeParseMobileDashboard(raw) : null;
-    set({ document: parsed?.success ? parsed.data : null, hydrated: true });
+  hydrate() {
+    set({ document: readDocument(), hydrated: true });
   },
 
-  async save(document) {
+  save(document) {
     set({ document });
-    await saveDashboardDocument(document);
+    saveDashboardDocument(document);
   },
 
-  async reset() {
+  reset() {
     set({ document: null, mode: "live" });
-    await clearDashboardDocument();
+    clearDashboardDocument();
   },
 }));

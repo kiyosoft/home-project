@@ -18,6 +18,11 @@ import {
   classifyConnectError,
   type ConnectFailure,
 } from "@/lib/connection-error";
+import {
+  clearHaSnapshot,
+  loadHaSnapshot,
+  saveHaSnapshot,
+} from "@/lib/ha-snapshot";
 import { clearLocationTargets } from "@/lib/location-report";
 import {
   signInWithPassword,
@@ -44,6 +49,7 @@ import {
   type ConnectionSettings,
 } from "@/lib/settings";
 import { trimTrailingSlash } from "@/lib/url";
+import { isLiveSession } from "@/store/session";
 
 export type AddressSlot = "internal" | "external";
 
@@ -126,6 +132,8 @@ export function hasSession(status: ConnectionStatus): boolean {
   return status === "connected" || status === "reconnecting";
 }
 
+export { isLiveSession } from "@/store/session";
+
 let client: EntityClient | null = null;
 let unsubscribe: (() => void) | null = null;
 let unsubscribeStatus: (() => void) | null = null;
@@ -164,6 +172,7 @@ function attachClient(
     // Shallow-copy the map so identity changes (HA often mutates in place).
     // Entity objects stay shared so per-id selectors can skip unrelated tiles.
     set({ entities: { ...entities }, status: "connected", failure: null });
+    queueSnapshot();
   });
   unsubscribeStatus = next.onStatusChange((status) => {
     if (client !== next) return;
@@ -265,10 +274,15 @@ async function loadUser(
     target.sendMessagePromise(message),
   );
   if (client !== target) return;
-  set({
-    userName: user?.name?.trim() ?? "",
-    userId: user?.id ?? "",
-  });
+  const next: Partial<HaState> = {};
+  const userName = user?.name?.trim() ?? "";
+  const userId = user?.id ?? "";
+  // A missed lookup must not wipe the name we already show from the snapshot.
+  if (userName) next.userName = userName;
+  if (userId) next.userId = userId;
+  if (Object.keys(next).length === 0) return;
+  set(next);
+  queueSnapshot();
 }
 
 /**
@@ -284,6 +298,7 @@ async function loadAreas(
     // A reconnect may have swapped the client while this was in flight.
     if (client !== target) return;
     set({ areas: index.areas, areaByEntity: index.areaByEntity });
+    queueSnapshot();
   } catch {
     if (client !== target) return;
     set({ areas: EMPTY_AREA_INDEX.areas, areaByEntity: EMPTY_AREA_INDEX.areaByEntity });
@@ -376,6 +391,36 @@ const LOGIN_FAILURES: Record<LoginFailure, ConnectFailure> = {
 /** Address and slot chosen before MFA, so the second factor lands on the same hub. */
 let pendingLogin: { address: string; slot: AddressSlot } | null = null;
 
+const SNAPSHOT_MS = 2000;
+let snapshotTimer: ReturnType<typeof setTimeout> | null = null;
+let readSnapshotState: () => {
+  entities: HaState["entities"];
+  areas: HaState["areas"];
+  areaByEntity: HaState["areaByEntity"];
+  userName: HaState["userName"];
+  userId: HaState["userId"];
+  mode: HaState["mode"];
+} | null = () => null;
+
+function queueSnapshot() {
+  if (snapshotTimer) clearTimeout(snapshotTimer);
+  snapshotTimer = setTimeout(() => {
+    snapshotTimer = null;
+    const state = readSnapshotState();
+    if (!state || state.mode !== "live") return;
+    if (Object.keys(state.entities).length === 0) return;
+    saveHaSnapshot({
+      entities: state.entities,
+      areas: state.areas,
+      areaByEntity: state.areaByEntity,
+      userName: state.userName,
+      userId: state.userId,
+    });
+  }, SNAPSHOT_MS);
+}
+
+const cachedSnapshot = loadHaSnapshot();
+
 async function adoptInstanceAddresses(
   target: EntityClient,
   profile: ConnectionProfile,
@@ -422,12 +467,18 @@ async function adoptAddresses(
   set({ profile });
 }
 
-export const useHaStore = create<HaState>((set, get) => ({
-  entities: {},
-  areas: [],
-  areaByEntity: {},
-  userName: "",
-  userId: "",
+export const useHaStore = create<HaState>((set, get) => {
+  readSnapshotState = () => {
+    const { entities, areas, areaByEntity, userName, userId, mode } = get();
+    return { entities, areas, areaByEntity, userName, userId, mode };
+  };
+
+  return {
+  entities: cachedSnapshot?.entities ?? {},
+  areas: cachedSnapshot?.areas ?? [],
+  areaByEntity: cachedSnapshot?.areaByEntity ?? {},
+  userName: cachedSnapshot?.userName ?? "",
+  userId: cachedSnapshot?.userId ?? "",
   status: "idle",
   failure: null,
   session: "unknown",
@@ -628,6 +679,7 @@ export const useHaStore = create<HaState>((set, get) => ({
       // there; we only forget our side of the registration.
       void clearRegistration();
       void clearLocationTargets();
+      clearHaSnapshot();
       saved = null;
     }
     set({
@@ -686,6 +738,17 @@ export const useHaStore = create<HaState>((set, get) => ({
   },
 
   async bootstrap() {
+    const snapshot = loadHaSnapshot();
+    if (snapshot) {
+      set({
+        entities: snapshot.entities,
+        areas: snapshot.areas,
+        areaByEntity: snapshot.areaByEntity,
+        userName: snapshot.userName || get().userName,
+        userId: snapshot.userId || get().userId,
+      });
+    }
+
     let settings: ConnectionSettings | null = null;
     try {
       settings = await loadConnectionSettings();
@@ -698,7 +761,9 @@ export const useHaStore = create<HaState>((set, get) => ({
       set({
         profile: settings.profile,
         authMode: settings.authMode,
+        mode: settings.mode,
         session: "active",
+        status: settings.mode === "live" ? "connecting" : "idle",
       });
     } finally {
       set({ hydrated: true });
@@ -718,7 +783,8 @@ export const useHaStore = create<HaState>((set, get) => ({
     set({ registration: await loadRegistration() });
     await get().connect();
   },
-}));
+  };
+});
 
 async function applyLoginStep(
   step: LoginStep,
@@ -782,9 +848,6 @@ async function beginLive(
     set({
       status: "error",
       failure: toFailure(error, settings.authMode),
-      entities: {},
-      areas: [],
-      areaByEntity: {},
       activeUrl: "",
     });
     return;
@@ -804,5 +867,10 @@ function withAddress(
   return slot === "internal"
     ? { ...profile, internalUrl: address }
     : { ...profile, externalUrl: address };
+}
+
+/** Demo, or a live hub whose websocket is actually up. */
+export function useLiveSession(): boolean {
+  return useHaStore((state) => isLiveSession(state.mode, state.status));
 }
 

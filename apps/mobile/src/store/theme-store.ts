@@ -11,22 +11,29 @@ interface ThemeState {
   preference: ThemePreference;
   hydrated: boolean;
   setPreference: (preference: ThemePreference) => void;
-  hydrate: () => Promise<void>;
+  hydrate: () => void;
 }
 
+function applyTheme(preference: ThemePreference) {
+  Uniwind.setTheme(preference);
+  return preference;
+}
+
+const initialPreference = loadTheme();
+applyTheme(initialPreference);
+
 export const useThemeStore = create<ThemeState>((set) => ({
-  preference: "system",
-  hydrated: false,
+  preference: initialPreference,
+  hydrated: true,
 
   setPreference(preference) {
-    Uniwind.setTheme(preference);
+    applyTheme(preference);
     set({ preference });
-    void saveTheme(preference);
+    saveTheme(preference);
   },
 
-  async hydrate() {
-    const preference = await loadTheme();
-    Uniwind.setTheme(preference);
+  hydrate() {
+    const preference = applyTheme(loadTheme());
     set({ preference, hydrated: true });
   },
 }));

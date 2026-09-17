@@ -7,7 +7,7 @@ import {
 } from "@/dashboard/default-dashboard";
 import { t, type MessageKey, type TranslateParams } from "@/i18n";
 import { useDashboardStore } from "@/store/dashboard-store";
-import { useHaStore } from "@/store/ha-store";
+import { isLiveSession, useHaStore } from "@/store/ha-store";
 import { useLocaleStore } from "@/store/locale-store";
 import {
   unreadCount,
@@ -42,7 +42,8 @@ export function useHomeScreenSync(): void {
   }, []);
 
   const haHydrated = useHaStore((state) => state.hydrated);
-  const session = useHaStore((state) => state.session);
+  const mode = useHaStore((state) => state.mode);
+  const status = useHaStore((state) => state.status);
   const entities = useHaStore((state) => state.entities);
   const saved = useDashboardStore((state) => state.document);
   const dashboardHydrated = useDashboardStore((state) => state.hydrated);
@@ -56,7 +57,7 @@ export function useHomeScreenSync(): void {
     const timer = setTimeout(() => {
       const translate = (key: MessageKey, params?: TranslateParams) =>
         t(locale, key, params);
-      const connected = session === "active";
+      const connected = isLiveSession(mode, status);
       const document = ensureScenesSection(saved ?? DEFAULT_DASHBOARD);
 
       const home = buildHomeSnapshot({
@@ -90,7 +91,8 @@ export function useHomeScreenSync(): void {
     haHydrated,
     dashboardHydrated,
     notificationsHydrated,
-    session,
+    mode,
+    status,
     entities,
     saved,
     records,

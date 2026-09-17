@@ -12,7 +12,7 @@ import { useState } from "react";
 import { View } from "react-native";
 import { withUniwind } from "uniwind";
 
-import { useHaStore } from "@/store/ha-store";
+import { useHaStore, useLiveSession } from "@/store/ha-store";
 import { useT } from "@/store/locale-store";
 import { GlassSurface } from "@/ui/GlassSurface";
 import { cn } from "@/ui/cn";
@@ -27,16 +27,18 @@ const Icon = withUniwind(Ionicons);
 export function AreaTile({ config, size }: WidgetBodyProps) {
   const t = useT();
   const callService = useCallService();
+  const live = useLiveSession();
   const areaId = readString(config, "area_id");
   const customTitle = readString(config, "title").trim();
   const { sheet } = useTile(config);
   const minHeight = useTileMinHeight(size);
   const areas = useHaStore((state) => state.areas);
   const areaByEntity = useHaStore((state) => state.areaByEntity);
-  const entities = useHaStore((state) => state.entities);
+  const stored = useHaStore((state) => state.entities);
   const [pending, setPending] = useState(false);
 
   const area = areas.find((entry) => entry.area_id === areaId);
+  const entities = live ? stored : {};
   const overview = deriveArea(
     entities,
     areaId ? entitiesInArea(areaByEntity, areaId) : [],
@@ -52,13 +54,15 @@ export function AreaTile({ config, size }: WidgetBodyProps) {
     climateIds,
   } = overview;
   const title = customTitle || area?.name || t("widget.area.title");
-  const summary = areaSummary(overview, {
-    ideal: t("widget.area.ideal"),
-    empty: t("widget.area.noDevices"),
-  });
+  const summary = live
+    ? areaSummary(overview, {
+        ideal: t("widget.area.ideal"),
+        empty: t("widget.area.noDevices"),
+      })
+    : t("widget.state.unavailable");
 
   const runOn = (ids: string[], domain: string, service: string) => {
-    if (pending || ids.length === 0) return;
+    if (!live || pending || ids.length === 0) return;
     setPending(true);
     for (const id of ids) {
       callService(domain, service, { entity_id: id });
@@ -67,6 +71,7 @@ export function AreaTile({ config, size }: WidgetBodyProps) {
   };
 
   const openClimate = () => {
+    if (!live) return;
     const first = climateIds[0];
     if (!first) return;
     const name =
@@ -79,7 +84,7 @@ export function AreaTile({ config, size }: WidgetBodyProps) {
   return (
     <GlassSurface
       level="tile"
-      className="flex-1 p-4"
+      className={cn("flex-1 p-4", !live && "opacity-50")}
       style={{ minHeight }}
     >
       <View className="flex-row items-start justify-between gap-3">
@@ -107,7 +112,7 @@ export function AreaTile({ config, size }: WidgetBodyProps) {
           value={areaStat(lights)}
           icon="bulb-outline"
           active={lights.active > 0}
-          disabled={pending || lightIds.length === 0}
+          disabled={!live || pending || lightIds.length === 0}
           onPress={() =>
             runOn(
               lightIds,
@@ -121,7 +126,7 @@ export function AreaTile({ config, size }: WidgetBodyProps) {
           value={current != null ? `${current}${unit}` : "—"}
           icon="thermometer-outline"
           active={Boolean(climate && climate.state !== "off")}
-          disabled={climateIds.length === 0}
+          disabled={!live || climateIds.length === 0}
           onPress={openClimate}
         />
         <AreaAction
@@ -132,7 +137,7 @@ export function AreaTile({ config, size }: WidgetBodyProps) {
           })}
           icon="browsers-outline"
           active={covers.active > 0}
-          disabled={pending || coverIds.length === 0}
+          disabled={!live || pending || coverIds.length === 0}
           onPress={() =>
             runOn(
               coverIds,

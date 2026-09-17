@@ -1,16 +1,16 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import Constants from "expo-constants";
 import * as Crypto from "expo-crypto";
 import * as Device from "expo-device";
 import { Platform } from "react-native";
+
+import { kv } from "@/lib/kv-mmkv";
+import { DEVICE_ID_KEY } from "@/lib/kv-keys";
 
 /**
  * Identity we hand to Home Assistant's `mobile_app` registration. The id has to
  * survive reinstalls of the JS bundle and every reconnect, otherwise HA gathers
  * a new orphaned device each time.
  */
-
-const DEVICE_ID_KEY = "ethio-home.device-id.v1";
 
 export const APP_ID = "app.ethiohome.companion";
 export const APP_NAME = "Ethio Home";
@@ -27,17 +27,17 @@ export interface DeviceIdentity {
 
 let cachedDeviceId: string | null = null;
 
-export async function getDeviceId(): Promise<string> {
+export function getDeviceId(): string {
   if (cachedDeviceId) return cachedDeviceId;
 
-  const stored = await AsyncStorage.getItem(DEVICE_ID_KEY);
+  const stored = kv.getString(DEVICE_ID_KEY);
   if (stored) {
     cachedDeviceId = stored;
     return stored;
   }
 
   const created = Crypto.randomUUID();
-  await AsyncStorage.setItem(DEVICE_ID_KEY, created);
+  kv.setString(DEVICE_ID_KEY, created);
   cachedDeviceId = created;
   return created;
 }
@@ -59,9 +59,9 @@ export function deviceName(): string {
   );
 }
 
-export async function readDeviceIdentity(): Promise<DeviceIdentity> {
+export function readDeviceIdentity(): DeviceIdentity {
   return {
-    deviceId: await getDeviceId(),
+    deviceId: getDeviceId(),
     deviceName: deviceName(),
     manufacturer: Device.manufacturer ?? Device.brand ?? "Unknown",
     model: Device.modelName ?? "Unknown",

@@ -1,24 +1,24 @@
 import type { HaTokens } from "@ethio/ha-sdk";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { getLocales } from "expo-localization";
 import * as SecureStore from "expo-secure-store";
 
 import { isLocale, type Locale } from "@/i18n";
+import { kv } from "@/lib/kv-mmkv";
+import {
+  CONNECTION_KEY,
+  DASHBOARD_KEY,
+  ETHIOPIAN_HOURS_KEY,
+  LOCALE_KEY,
+  NOTIFICATIONS_KEY,
+  THEME_KEY,
+} from "@/lib/kv-keys";
 
 /**
- * Key names match the web dashboard so a dashboard document copied between the
- * two stays recognisable. Tokens are the exception: SecureStore rejects ":" in
- * keys, and credentials have no business sitting in AsyncStorage anyway.
+ * Tokens stay in SecureStore: it rejects ":" in keys, and credentials have no
+ * business sitting next to the dashboard document.
  */
-const CONNECTION_V1_KEY = "ethio-home.connection:v1";
-const CONNECTION_KEY = "ethio-home.connection:v2";
-const LOCALE_KEY = "ethio-home.locale";
-const ETHIOPIAN_HOURS_KEY = "ethio-home.ethiopian-hours";
-const THEME_KEY = "ethio-home.theme";
 const TOKEN_KEY = "ethio-home.token.v1";
 const TOKENS_KEY = "ethio-home.tokens.v1";
-const DASHBOARD_KEY = "ethio-home.mobile-dashboard:v1";
-const NOTIFICATIONS_KEY = "ethio-home.notifications:v1";
 
 export type ConnectionMode = "live" | "demo";
 
@@ -62,17 +62,14 @@ interface StoredConnection {
   profile: ConnectionProfile;
 }
 
-export async function loadConnectionSettings(): Promise<ConnectionSettings | null> {
-  try {
-    const raw = await AsyncStorage.getItem(CONNECTION_KEY);
-    if (!raw) return migrateV1();
+export function loadStoredConnection(): StoredConnection | null {
+  return parseStored(kv.getJson(CONNECTION_KEY));
+}
 
-    const stored = parseStored(JSON.parse(raw) as unknown);
-    if (!stored) return null;
-    return withCredentials(stored);
-  } catch {
-    return null;
-  }
+export async function loadConnectionSettings(): Promise<ConnectionSettings | null> {
+  const stored = loadStoredConnection();
+  if (!stored) return null;
+  return withCredentials(stored);
 }
 
 export async function saveConnectionSettings(
@@ -83,7 +80,7 @@ export async function saveConnectionSettings(
     authMode: settings.authMode,
     profile: settings.profile,
   };
-  await AsyncStorage.setItem(CONNECTION_KEY, JSON.stringify(stored));
+  kv.setJson(CONNECTION_KEY, stored);
 
   if (settings.mode === "live" && settings.authMode === "token" && settings.token) {
     await SecureStore.setItemAsync(TOKEN_KEY, settings.token);
@@ -103,28 +100,9 @@ export async function saveTokens(tokens: HaTokens): Promise<void> {
 }
 
 export async function clearConnectionSettings(): Promise<void> {
-  await AsyncStorage.multiRemove([CONNECTION_KEY, CONNECTION_V1_KEY]);
+  kv.remove(CONNECTION_KEY);
   await SecureStore.deleteItemAsync(TOKEN_KEY);
   await SecureStore.deleteItemAsync(TOKENS_KEY);
-}
-
-async function migrateV1(): Promise<ConnectionSettings | null> {
-  const raw = await AsyncStorage.getItem(CONNECTION_V1_KEY);
-  if (!raw) return null;
-
-  const parsed = JSON.parse(raw) as Record<string, unknown>;
-  const stored: StoredConnection = {
-    mode: parsed.mode === "demo" ? "demo" : "live",
-    authMode: "token",
-    profile: {
-      ...defaultProfile,
-      externalUrl: typeof parsed.baseUrl === "string" ? parsed.baseUrl : "",
-    },
-  };
-
-  await AsyncStorage.setItem(CONNECTION_KEY, JSON.stringify(stored));
-  await AsyncStorage.removeItem(CONNECTION_V1_KEY);
-  return withCredentials(stored);
 }
 
 async function withCredentials(
@@ -211,61 +189,47 @@ function asString(value: unknown): string {
 }
 
 /** Raw JSON; the caller validates it against the mobile dashboard schema. */
-export async function loadDashboardDocument(): Promise<unknown | null> {
-  try {
-    const raw = await AsyncStorage.getItem(DASHBOARD_KEY);
-    return raw ? (JSON.parse(raw) as unknown) : null;
-  } catch {
-    return null;
-  }
+export function loadDashboardDocument(): unknown | null {
+  return kv.getJson(DASHBOARD_KEY);
 }
 
-export async function saveDashboardDocument(document: unknown): Promise<void> {
-  await AsyncStorage.setItem(DASHBOARD_KEY, JSON.stringify(document));
+export function saveDashboardDocument(document: unknown): void {
+  kv.setJson(DASHBOARD_KEY, document);
 }
 
-export async function clearDashboardDocument(): Promise<void> {
-  await AsyncStorage.removeItem(DASHBOARD_KEY);
+export function clearDashboardDocument(): void {
+  kv.remove(DASHBOARD_KEY);
 }
 
 /** Raw JSON; the notification store validates the shape. */
-export async function loadNotificationHistory(): Promise<unknown | null> {
-  try {
-    const raw = await AsyncStorage.getItem(NOTIFICATIONS_KEY);
-    return raw ? (JSON.parse(raw) as unknown) : null;
-  } catch {
-    return null;
-  }
+export function loadNotificationHistory(): unknown | null {
+  return kv.getJson(NOTIFICATIONS_KEY);
 }
 
-export async function saveNotificationHistory(history: unknown): Promise<void> {
-  await AsyncStorage.setItem(NOTIFICATIONS_KEY, JSON.stringify(history));
+export function saveNotificationHistory(history: unknown): void {
+  kv.setJson(NOTIFICATIONS_KEY, history);
 }
 
-export async function clearNotificationHistory(): Promise<void> {
-  await AsyncStorage.removeItem(NOTIFICATIONS_KEY);
+export function clearNotificationHistory(): void {
+  kv.remove(NOTIFICATIONS_KEY);
 }
 
-export async function loadLocale(): Promise<Locale> {
-  const saved = await AsyncStorage.getItem(LOCALE_KEY);
+export function loadLocale(): Locale {
+  const saved = kv.getString(LOCALE_KEY);
   if (isLocale(saved)) return saved;
   return getLocales()[0]?.languageCode === "am" ? "am" : "en";
 }
 
-export async function saveLocale(locale: Locale): Promise<void> {
-  await AsyncStorage.setItem(LOCALE_KEY, locale);
+export function saveLocale(locale: Locale): void {
+  kv.setString(LOCALE_KEY, locale);
 }
 
-export async function loadEthiopianHours(): Promise<boolean> {
-  try {
-    return (await AsyncStorage.getItem(ETHIOPIAN_HOURS_KEY)) === "1";
-  } catch {
-    return false;
-  }
+export function loadEthiopianHours(): boolean {
+  return kv.getFlag(ETHIOPIAN_HOURS_KEY) === true;
 }
 
-export async function saveEthiopianHours(enabled: boolean): Promise<void> {
-  await AsyncStorage.setItem(ETHIOPIAN_HOURS_KEY, enabled ? "1" : "0");
+export function saveEthiopianHours(enabled: boolean): void {
+  kv.setFlag(ETHIOPIAN_HOURS_KEY, enabled);
 }
 
 export type ThemePreference = "light" | "dark" | "system";
@@ -274,16 +238,12 @@ export function isThemePreference(value: unknown): value is ThemePreference {
   return value === "light" || value === "dark" || value === "system";
 }
 
-export async function loadTheme(): Promise<ThemePreference> {
-  try {
-    const saved = await AsyncStorage.getItem(THEME_KEY);
-    if (isThemePreference(saved)) return saved;
-  } catch {
-    // Same fallback as a missing key: follow the phone until the user picks.
-  }
+export function loadTheme(): ThemePreference {
+  const saved = kv.getString(THEME_KEY);
+  if (isThemePreference(saved)) return saved;
   return "system";
 }
 
-export async function saveTheme(theme: ThemePreference): Promise<void> {
-  await AsyncStorage.setItem(THEME_KEY, theme);
+export function saveTheme(theme: ThemePreference): void {
+  kv.setString(THEME_KEY, theme);
 }

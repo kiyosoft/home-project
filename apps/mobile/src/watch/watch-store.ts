@@ -22,7 +22,7 @@ interface WatchState {
   atHome: boolean;
   status: WatchNativeStatus;
   model: WatchModelDevice[];
-  hydrate: () => Promise<void>;
+  hydrate: () => void;
   setEntityIds: (ids: string[]) => void;
   toggleEntity: (entityId: string, on: boolean) => void;
   setArea: (areaId: string) => void;
@@ -32,30 +32,25 @@ interface WatchState {
 }
 
 export const useWatchStore = create<WatchState>((set, get) => ({
-  hydrated: false,
-  entityIds: null,
-  currentAreaId: "",
-  atHome: true,
+  hydrated: true,
+  entityIds: loadWatchEntityIds(),
+  currentAreaId: loadWatchAreaId(),
+  atHome: loadAtHome() ?? true,
   status: EMPTY_WATCH_STATUS,
   model: [],
 
-  async hydrate() {
-    const [entityIds, currentAreaId, atHome] = await Promise.all([
-      loadWatchEntityIds(),
-      loadWatchAreaId(),
-      loadAtHome(),
-    ]);
+  hydrate() {
     set({
-      entityIds,
-      currentAreaId,
-      atHome: atHome ?? true,
+      entityIds: loadWatchEntityIds(),
+      currentAreaId: loadWatchAreaId(),
+      atHome: loadAtHome() ?? true,
       hydrated: true,
     });
   },
 
   setEntityIds(entityIds) {
     set({ entityIds });
-    void saveWatchEntityIds(entityIds);
+    saveWatchEntityIds(entityIds);
   },
 
   toggleEntity(entityId, on) {
@@ -66,17 +61,17 @@ export const useWatchStore = create<WatchState>((set, get) => ({
         : [...current, entityId]
       : current.filter((id) => id !== entityId);
     set({ entityIds: next });
-    void saveWatchEntityIds(next);
+    saveWatchEntityIds(next);
   },
 
   setArea(currentAreaId) {
     set({ currentAreaId });
-    void saveWatchAreaId(currentAreaId);
+    saveWatchAreaId(currentAreaId);
   },
 
   setAtHome(atHome) {
     set({ atHome });
-    void saveAtHome(atHome);
+    saveAtHome(atHome);
   },
 
   setStatus(status) {

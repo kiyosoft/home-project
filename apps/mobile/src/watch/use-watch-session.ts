@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef } from "react";
 
 import { useDashboardStore } from "@/store/dashboard-store";
-import { useHaStore } from "@/store/ha-store";
+import { isLiveSession, useHaStore } from "@/store/ha-store";
 
 import { buildWatchCatalog, buildWatchSnapshot, defaultWatchEntityIds } from "./catalog";
 import { dispatchWatchCommand, dispatchWatchToggle, parseWatchCommand } from "./dispatch";
@@ -42,7 +42,7 @@ export function useWatchSession(): void {
   }, [document, entities, selectedIds]);
 
   const favoriteIds = document?.favorites ?? EMPTY_FAVORITES;
-  const connected = mode === "demo" || status === "connected";
+  const connected = isLiveSession(mode, status);
 
   const catalog = useMemo(
     () =>
@@ -138,11 +138,10 @@ export function useWatchSession(): void {
       setWatchAtHome(true);
       return;
     }
-    void loadAtHome().then((saved) => {
-      if (saved === null) return;
-      setAtHome(saved);
-      setWatchAtHome(saved);
-    });
+    const saved = loadAtHome();
+    if (saved === null) return;
+    setAtHome(saved);
+    setWatchAtHome(saved);
   }, [mode, setAtHome]);
 
   useEffect(() => {

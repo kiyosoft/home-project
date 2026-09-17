@@ -1,48 +1,32 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import { kv } from "@/lib/kv-mmkv";
+import {
+  WATCH_AREA_KEY,
+  WATCH_AT_HOME_KEY,
+  WATCH_ENTITIES_KEY,
+} from "@/lib/kv-keys";
 
-const ENTITIES_KEY = "ethio-home.watch-entities:v1";
-const AREA_KEY = "ethio-home.watch-area:v1";
-const AT_HOME_KEY = "ethio-home.watch-at-home:v1";
-
-export async function loadWatchEntityIds(): Promise<string[] | null> {
-  try {
-    const raw = await AsyncStorage.getItem(ENTITIES_KEY);
-    if (!raw) return null;
-    const parsed: unknown = JSON.parse(raw);
-    if (!Array.isArray(parsed)) return null;
-    return parsed.filter((entry): entry is string => typeof entry === "string");
-  } catch {
-    return null;
-  }
+export function loadWatchEntityIds(): string[] | null {
+  const parsed = kv.getJson(WATCH_ENTITIES_KEY);
+  if (!Array.isArray(parsed)) return null;
+  return parsed.filter((entry): entry is string => typeof entry === "string");
 }
 
-export async function saveWatchEntityIds(ids: string[]): Promise<void> {
-  await AsyncStorage.setItem(ENTITIES_KEY, JSON.stringify(ids));
+export function saveWatchEntityIds(ids: string[]): void {
+  kv.setJson(WATCH_ENTITIES_KEY, ids);
 }
 
-export async function loadWatchAreaId(): Promise<string> {
-  try {
-    return (await AsyncStorage.getItem(AREA_KEY)) ?? "";
-  } catch {
-    return "";
-  }
+export function loadWatchAreaId(): string {
+  return kv.getString(WATCH_AREA_KEY) ?? "";
 }
 
-export async function saveWatchAreaId(areaId: string): Promise<void> {
-  await AsyncStorage.setItem(AREA_KEY, areaId);
+export function saveWatchAreaId(areaId: string): void {
+  kv.setString(WATCH_AREA_KEY, areaId);
 }
 
-export async function loadAtHome(): Promise<boolean | null> {
-  try {
-    const raw = await AsyncStorage.getItem(AT_HOME_KEY);
-    if (raw === "0") return false;
-    if (raw === "1") return true;
-    return null;
-  } catch {
-    return null;
-  }
+export function loadAtHome(): boolean | null {
+  return kv.getFlag(WATCH_AT_HOME_KEY);
 }
 
-export async function saveAtHome(atHome: boolean): Promise<void> {
-  await AsyncStorage.setItem(AT_HOME_KEY, atHome ? "1" : "0");
+export function saveAtHome(atHome: boolean): void {
+  kv.setFlag(WATCH_AT_HOME_KEY, atHome);
 }
