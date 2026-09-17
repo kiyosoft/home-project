@@ -77,6 +77,7 @@ export const am: Record<MessageKey, string> = {
   "setup.errorDemo": "የሙከራ ሁነታን መጀመር አልተቻለም።",
 
   "tabs.home": "መነሻ",
+  "tabs.rooms": "ክፍሎች",
   "tabs.activity": "እንቅስቃሴ",
   "tabs.settings": "ቅንብሮች",
 
@@ -291,6 +292,12 @@ export const am: Record<MessageKey, string> = {
     "የማይክሮፎን ፈቃድ ጠፍቷል። በቅንብሮች ውስጥ ለኢትዮ ሆም ያብሩት።",
   "assist.errorMicUnavailable": "በዚህ መሣሪያ ላይ ማይክሮፎን የለም።",
   "assist.errorGeneric": "አሲስት ያንን ጥያቄ ማጠናቀቅ አልቻለም።",
+
+  "rooms.title": "ክፍሎች",
+  "rooms.emptyTitle": "እስካሁን ክፍሎች የሉም",
+  "rooms.emptyBody": "በሃብዎ ላይ ክፍሎች ሲመዘገቡ እዚህ ይታያሉ።",
+  "rooms.missingTitle": "ክፍሉ አልተገኘም",
+  "rooms.missingBody": "ይህ ክፍል በሃብዎ ላይ የለም።",
 
   "activity.title": "እንቅስቃሴ",
   "activity.empty": "እስካሁን ምንም የለም።",

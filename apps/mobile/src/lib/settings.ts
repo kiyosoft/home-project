@@ -10,6 +10,7 @@ import {
   ETHIOPIAN_HOURS_KEY,
   LOCALE_KEY,
   NOTIFICATIONS_KEY,
+  ROOMS_DASHBOARD_KEY,
   THEME_KEY,
 } from "@/lib/kv-keys";
 
@@ -199,6 +200,19 @@ export function saveDashboardDocument(document: unknown): void {
 
 export function clearDashboardDocument(): void {
   kv.remove(DASHBOARD_KEY);
+}
+
+/** Raw JSON; the caller validates it against the mobile dashboard schema. */
+export function loadRoomsDocument(): unknown | null {
+  return kv.getJson(ROOMS_DASHBOARD_KEY);
+}
+
+export function saveRoomsDocument(document: unknown): void {
+  kv.setJson(ROOMS_DASHBOARD_KEY, document);
+}
+
+export function clearRoomsDocument(): void {
+  kv.remove(ROOMS_DASHBOARD_KEY);
 }
 
 /** Raw JSON; the notification store validates the shape. */

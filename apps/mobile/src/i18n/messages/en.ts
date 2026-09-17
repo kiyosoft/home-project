@@ -77,6 +77,7 @@ export const en = {
   "setup.errorDemo": "Failed to start demo mode.",
 
   "tabs.home": "Home",
+  "tabs.rooms": "Rooms",
   "tabs.activity": "Activity",
   "tabs.settings": "Settings",
 
@@ -291,6 +292,12 @@ export const en = {
     "Microphone access is off. Turn it on for Ethio Home in Settings.",
   "assist.errorMicUnavailable": "No microphone is available on this device.",
   "assist.errorGeneric": "Assist could not complete that request.",
+
+  "rooms.title": "Rooms",
+  "rooms.emptyTitle": "No rooms yet",
+  "rooms.emptyBody": "Rooms show up here once your hub has areas.",
+  "rooms.missingTitle": "Room not found",
+  "rooms.missingBody": "This room is no longer on your hub.",
 
   "activity.title": "Activity",
   "activity.empty": "Nothing yet.",

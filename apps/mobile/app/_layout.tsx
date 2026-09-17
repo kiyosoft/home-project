@@ -15,6 +15,7 @@ import { useDashboardStore } from "@/store/dashboard-store";
 import { useHaStore } from "@/store/ha-store";
 import { useLocaleStore } from "@/store/locale-store";
 import { useNotificationStore } from "@/store/notification-store";
+import { useRoomsStore } from "@/store/rooms-store";
 import { useThemeStore } from "@/store/theme-store";
 import { useConnectionWatch } from "@/store/use-connection-watch";
 import { useLocationSession } from "@/store/use-location-session";
@@ -31,6 +32,7 @@ export default function RootLayout() {
   const bootstrap = useHaStore((state) => state.bootstrap);
   const hydrateLocale = useLocaleStore((state) => state.hydrate);
   const hydrateDashboard = useDashboardStore((state) => state.hydrate);
+  const hydrateRooms = useRoomsStore((state) => state.hydrate);
   const themeHydrated = useThemeStore((state) => state.hydrated);
   const hydrateTheme = useThemeStore((state) => state.hydrate);
   const hydrateNotifications = useNotificationStore((state) => state.hydrate);
@@ -45,6 +47,7 @@ export default function RootLayout() {
   useEffect(() => {
     hydrateLocale();
     hydrateDashboard();
+    hydrateRooms();
     hydrateTheme();
     hydrateNotifications();
     void bootstrap();
@@ -52,6 +55,7 @@ export default function RootLayout() {
     bootstrap,
     hydrateLocale,
     hydrateDashboard,
+    hydrateRooms,
     hydrateTheme,
     hydrateNotifications,
   ]);

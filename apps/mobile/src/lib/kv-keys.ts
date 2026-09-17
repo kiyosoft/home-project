@@ -7,6 +7,7 @@ export const LOCALE_KEY = "ethio-home.locale";
 export const ETHIOPIAN_HOURS_KEY = "ethio-home.ethiopian-hours";
 export const THEME_KEY = "ethio-home.theme";
 export const DASHBOARD_KEY = "ethio-home.mobile-dashboard:v1";
+export const ROOMS_DASHBOARD_KEY = "ethio-home.rooms-dashboard:v1";
 export const NOTIFICATIONS_KEY = "ethio-home.notifications:v1";
 export const REGISTRATION_KEY = "ethio-home.registration:v1";
 export const DEVICE_ID_KEY = "ethio-home.device-id.v1";

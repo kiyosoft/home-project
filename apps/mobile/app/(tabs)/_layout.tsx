@@ -41,6 +41,19 @@ export default function TabLayout() {
           }}
         />
       </NativeTabs.Trigger>
+      <NativeTabs.Trigger name="rooms">
+        <Label>{t("tabs.rooms")}</Label>
+        <Icon
+          sf={{
+            default: "door.left.hand.closed",
+            selected: "door.left.hand.open",
+          }}
+          src={{
+            default: <VectorIcon family={Ionicons} name="grid-outline" />,
+            selected: <VectorIcon family={Ionicons} name="grid" />,
+          }}
+        />
+      </NativeTabs.Trigger>
       <NativeTabs.Trigger name="activity">
         <Label>{t("tabs.activity")}</Label>
         <Icon
