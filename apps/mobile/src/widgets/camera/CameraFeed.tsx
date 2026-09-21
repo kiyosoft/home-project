@@ -2,8 +2,8 @@ import { CameraHls } from "./CameraHls";
 import { CameraLive } from "./CameraLive";
 
 /**
- * Live video is HA's MJPEG proxy — same as the dashboard `<img>`. HLS is only
- * for sound; MJPEG has no audio track.
+ * STREAM cameras (RTSP remuxed by HA) play HLS. MJPEG is the native feed
+ * otherwise, and the fallback if HLS is not on screen.
  */
 export function CameraFeed({
   mjpegUri,
@@ -26,13 +26,13 @@ export function CameraFeed({
   onHlsFailed?: () => void;
   onMjpegReady?: () => void;
 }) {
-  if (sound && hlsUri) {
+  if (hlsUri) {
     return (
       <CameraHls
         uri={hlsUri}
         label={label}
         fill={fill}
-        muted={false}
+        muted={!sound}
         nativeControls={nativeControls}
         onFailed={onHlsFailed ?? (() => {})}
       />

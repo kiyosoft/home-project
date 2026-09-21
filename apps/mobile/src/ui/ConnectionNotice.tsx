@@ -22,7 +22,13 @@ export function ConnectionNotice() {
     return (
       <View className="flex-1 items-center justify-center gap-3">
         <Spinner />
-        <Text className="text-muted">{t("status.connecting")}</Text>
+        <Text className="text-muted">
+          {t(
+            status === "reconnecting"
+              ? "status.reconnecting"
+              : "status.connecting",
+          )}
+        </Text>
       </View>
     );
   }

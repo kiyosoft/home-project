@@ -91,7 +91,7 @@ export function useCamera(
   };
 }
 
-/** MJPEG preview plus on-demand HLS when the user wants sound. */
+/** Live HLS for STREAM cameras (RTSP); MJPEG otherwise. Sound is HLS unmuted. */
 export function useLiveCamera(
   entityId: string,
   options?: { pollStills?: boolean },
@@ -137,6 +137,21 @@ export function useLiveCamera(
     setSound(false);
   }, []);
 
+  const beginLive = useCallback(() => {
+    setMjpegFailed(false);
+    setHlsFailed(false);
+    setMjpegReady(false);
+    if (camera.canAudio) void ensureHls();
+  }, [camera.canAudio, ensureHls]);
+
+  const endLive = useCallback(() => {
+    setMjpegReady(false);
+    setSound(false);
+    setHlsUri(null);
+    setHlsFailed(false);
+    setMjpegFailed(false);
+  }, []);
+
   return {
     ...camera,
     sound,
@@ -149,6 +164,8 @@ export function useLiveCamera(
     setMjpegReady,
     setHlsFailed,
     ensureHls,
+    beginLive,
+    endLive,
     toggleSound,
     mute,
   };

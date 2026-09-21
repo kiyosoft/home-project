@@ -1,11 +1,11 @@
-import type { HassEntities } from "@ethio/ha-sdk";
+import { listTodoItems, type HassEntities } from "@ethio/ha-sdk";
 import {
   isSceneEntityId,
   type MobileDashboard,
 } from "@ethio/mobile-schema";
 
 import {
-  formatHomeSummary,
+  formatHomeSummarySuffix,
   summarizeHome,
 } from "@/dashboard/home-summary";
 import type { MessageKey, TranslateParams } from "@/i18n";
@@ -13,8 +13,11 @@ import type { NotificationRecord } from "@/store/notification-store";
 import { unreadCount } from "@/store/notification-store";
 import { entityDomain, entityName, isUnavailable } from "@/store/use-entity";
 
+import { collectUpcomingTodos, glanceCopyPack, paintGlance } from "./glance";
 import {
+  DEFAULT_HERO_METRIC,
   EMPTY_HOME_PROPS,
+  EMPTY_ON_BY_DOMAIN,
   MAX_FAVORITES,
   MAX_SCENES,
   accessorySymbol,
@@ -23,8 +26,10 @@ import {
   type ActivityGlanceProps,
   type FavoriteChip,
   type HomeGlanceProps,
+  type OnByDomain,
   type SceneChip,
   type SceneKind,
+  type TodoChip,
 } from "./types";
 
 type Translate = (key: MessageKey, params?: TranslateParams) => string;
@@ -123,6 +128,21 @@ function collectFavorites(
   return favorites;
 }
 
+function collectOnByDomain(
+  entities: HassEntities,
+  lightsOn: number,
+): OnByDomain {
+  const counts: OnByDomain = { ...EMPTY_ON_BY_DOMAIN, light: lightsOn };
+  for (const entityId of Object.keys(entities)) {
+    const domain = entityDomain(entityId);
+    if (domain === "light" || !isToggleDomain(domain)) continue;
+    const entity = entities[entityId];
+    if (isUnavailable(entity) || entity.state !== "on") continue;
+    counts[domain] += 1;
+  }
+  return counts;
+}
+
 export function buildHomeSnapshot(options: {
   connected: boolean;
   entities: HassEntities;
@@ -136,36 +156,35 @@ export function buildHomeSnapshot(options: {
   }
 
   const summary = summarizeHome(entities);
-  const lightsCaption =
-    summary.lightsOn === 0
-      ? t("widget.home.heroOff")
-      : summary.lightsOn === 1
-        ? t("widget.home.heroLight")
-        : t("widget.home.heroLights");
-
-  return {
+  const temperatureLabel =
+    summary.temperature !== null ? `${summary.temperature}°` : "";
+  return paintGlance({
     connected: true,
-    summaryLine: formatHomeSummary(summary, t),
-    heroValue:
-      summary.temperature !== null
-        ? `${summary.temperature}°`
-        : String(summary.lightsOn),
-    heroCaption:
-      summary.temperature !== null
-        ? summary.lightsOn === 0
-          ? t("home.summaryLightsOff")
-          : summary.lightsOn === 1
-            ? t("home.summaryLightOne")
-            : t("home.summaryLights", { count: summary.lightsOn })
-        : lightsCaption,
+    summaryLine: "",
+    heroValue: "",
+    heroCaption: "",
     unread,
     unreadLine: unread > 0 ? t("activity.unread", { count: unread }) : "",
     scenes: collectScenes(document, entities),
     favorites: collectFavorites(document, entities),
+    todos: [],
     activatedSceneId: "",
     activatedLabel: t("scene.activated"),
     openMessage: t("widget.home.open"),
-  };
+    onByDomain: collectOnByDomain(entities, summary.lightsOn),
+    heroMetric: DEFAULT_HERO_METRIC,
+    copy: glanceCopyPack({
+      temperatureLabel,
+      suffix: formatHomeSummarySuffix(summary, t),
+      heroOff: t("widget.home.heroOff"),
+      heroOne: t("widget.home.heroLight"),
+      heroMany: t("widget.home.heroLights"),
+      summaryOff: t("home.summaryLightsOff"),
+      summaryOne: t("home.summaryLightOne"),
+      summaryMany: t("home.summaryLights"),
+    }),
+    pendingTarget: "",
+  });
 }
 
 export function buildActivitySnapshot(options: {
@@ -192,4 +211,28 @@ export function buildActivitySnapshot(options: {
 
 export function snapshotKey(value: object): string {
   return JSON.stringify(value);
+}
+
+export async function loadUpcomingTodos(
+  entities: HassEntities,
+  sendMessagePromise: <T>(message: Record<string, unknown>) => Promise<T>,
+): Promise<TodoChip[]> {
+  const ids = Object.keys(entities)
+    .filter(
+      (entityId) =>
+        entityDomain(entityId) === "todo" && !isUnavailable(entities[entityId]),
+    )
+    .sort();
+  const lists = await Promise.all(
+    ids.map(async (entityId) => {
+      const listName = entityName(entities[entityId], entityId);
+      try {
+        const items = await listTodoItems(sendMessagePromise, entityId);
+        return { entityId, listName, items };
+      } catch {
+        return { entityId, listName, items: [] };
+      }
+    }),
+  );
+  return collectUpcomingTodos(lists);
 }

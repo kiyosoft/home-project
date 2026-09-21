@@ -129,7 +129,7 @@ export function HomeHeader({
           {t("home.demoBadge")}
         </Chip>
       ) : (
-        <ConnectionStatusChip errorsOnly />
+        <ConnectionStatusChip />
       )}
 
       <View className="flex-row items-start justify-between gap-3">

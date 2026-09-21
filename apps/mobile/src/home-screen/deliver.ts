@@ -1,7 +1,10 @@
+import type { ActionDelivery } from "@/lib/webhook";
+
 export type WidgetServiceCall = {
   domain: string;
   service: string;
   entityId: string;
+  serviceData?: Record<string, unknown>;
 };
 
 /**
@@ -20,10 +23,31 @@ export async function sendWidgetServiceCall(
   },
 ): Promise<void> {
   try {
-    await deps.callService(call.domain, call.service, {
-      entity_id: call.entityId,
-    });
+    await deps.callService(
+      call.domain,
+      call.service,
+      call.serviceData ?? { entity_id: call.entityId },
+    );
   } catch {
     await deps.callViaWebhook(call);
   }
+}
+
+/**
+ * Widget taps often land after the socket is dead. A missing registration is
+ * recoverable; an unreachable hub is not treated as success.
+ */
+export async function deliverWidgetWebhook(
+  call: WidgetServiceCall,
+  deps: {
+    send: (call: WidgetServiceCall) => Promise<ActionDelivery>;
+    recoverRegistration: () => Promise<unknown>;
+  },
+): Promise<void> {
+  let result = await deps.send(call);
+  if (result === "no-registration") {
+    await deps.recoverRegistration();
+    result = await deps.send(call);
+  }
+  if (result !== "sent") throw new Error(result);
 }

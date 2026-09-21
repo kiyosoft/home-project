@@ -30,8 +30,8 @@ import { useHaStore } from "@/store/ha-store";
 import { useT } from "@/store/locale-store";
 import { useRoomsStore } from "@/store/rooms-store";
 import { AmbientBackground } from "@/ui/AmbientBackground";
-import { ConnectingWash } from "@/ui/ConnectingWash";
 import { ConnectionNotice } from "@/ui/ConnectionNotice";
+import { ConnectionStatusChip } from "@/ui/ConnectionStatusChip";
 import { Button, Chip } from "@/ui/haptic";
 import { Screen } from "@/ui/Screen";
 import { EntityPickerSheet } from "@/widgets/EntityPickerSheet";
@@ -189,7 +189,13 @@ export function RoomScreen({ areaId }: { areaId: string }) {
     );
   }
 
-  if (mode !== "demo" && status === "error" && Object.keys(entities).length === 0) {
+  if (
+    mode !== "demo" &&
+    Object.keys(entities).length === 0 &&
+    (status === "connecting" ||
+      status === "reconnecting" ||
+      status === "error")
+  ) {
     return (
       <Screen>
         <RoomChrome
@@ -206,13 +212,16 @@ export function RoomScreen({ areaId }: { areaId: string }) {
   }
 
   const header = (
-    <RoomChrome
-      title={area.name}
-      editing={editing}
-      onToggleEditing={() => setEditorMode(editing ? "live" : "edit")}
-      foreground={foreground}
-      accentForeground={accentForeground}
-    />
+    <View>
+      <RoomChrome
+        title={area.name}
+        editing={editing}
+        onToggleEditing={() => setEditorMode(editing ? "live" : "edit")}
+        foreground={foreground}
+        accentForeground={accentForeground}
+      />
+      <ConnectionStatusChip />
+    </View>
   );
 
   const empty = (
@@ -233,14 +242,7 @@ export function RoomScreen({ areaId }: { areaId: string }) {
   );
 
   return (
-    <Screen
-      backdrop={
-        <>
-          <AmbientBackground />
-          <ConnectingWash />
-        </>
-      }
-    >
+    <Screen backdrop={<AmbientBackground />}>
       <View className="flex-1" onLayout={onLayout}>
         {width > 0 ? (
           <LegendList

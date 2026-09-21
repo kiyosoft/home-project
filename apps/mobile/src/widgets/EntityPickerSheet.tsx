@@ -49,6 +49,7 @@ const DOMAIN_ICONS: Record<string, keyof typeof Ionicons.glyphMap> = {
   binary_sensor: "radio-outline",
   scene: "color-wand-outline",
   script: "play-outline",
+  todo: "checkbox-outline",
 };
 
 const WIDGET_ICONS: Record<string, keyof typeof Ionicons.glyphMap> = {

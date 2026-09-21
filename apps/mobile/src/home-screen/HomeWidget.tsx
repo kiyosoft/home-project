@@ -30,6 +30,7 @@ import {
   type AccessoryChip,
   type HomeGlanceProps,
   type SceneChip,
+  type TodoChip,
 } from "./types";
 
 /**
@@ -51,10 +52,40 @@ const HomeGlanceView = (
   const family = environment.widgetFamily ?? "systemMedium";
   const allScenes = props.scenes ?? [];
   const allFavorites = props.favorites ?? [];
+  const allTodos = props.todos ?? [];
   const connected = props.connected === true;
   const openMessage = props.openMessage || "Open Ethio Home";
-  const heroValue = props.heroValue || "";
-  const heroCaption = props.heroCaption || "";
+  const onByDomain = props.onByDomain || {};
+  const metric = props.heroMetric || "light";
+  const count =
+    typeof onByDomain[metric] === "number" ? onByDomain[metric] : 0;
+  const pack = props.copy || {};
+  const temperature = pack.temperature || "";
+  function countCaption(off: string, one: string, many: string): string {
+    if (count <= 0) return off || "";
+    if (count === 1) return one || "";
+    return (many || "").split("{count}").join(String(count));
+  }
+  const hasCopy = !!(pack.heroOff || pack.summaryOff);
+  const heroValue = hasCopy
+    ? temperature || String(count)
+    : props.heroValue || "";
+  const heroCaption = hasCopy
+    ? temperature
+      ? countCaption(pack.summaryOff, pack.summaryOne, pack.summaryMany)
+      : countCaption(pack.heroOff, pack.heroOne, pack.heroMany)
+    : props.heroCaption || "";
+  const summaryLights = countCaption(
+    pack.summaryOff,
+    pack.summaryOne,
+    pack.summaryMany,
+  );
+  const summarySuffix = pack.suffix || "";
+  const summaryLine = hasCopy
+    ? summaryLights && summarySuffix
+      ? `${summaryLights} · ${summarySuffix}`
+      : summaryLights || summarySuffix
+    : props.summaryLine || "";
   const small = family === "systemSmall";
   const large = family === "systemLarge";
   const tileSize = small ? 52 : large ? 48 : 44;
@@ -100,10 +131,68 @@ const HomeGlanceView = (
     return dark ? "#C5D0D6" : "#5C564E";
   }
 
+  function pressTodo(item: TodoChip): HomeGlanceProps {
+    return {
+      ...props,
+      pendingTarget: `todo:${item.entityId}:${item.uid}`,
+      todos: (props.todos ?? []).filter(
+        (entry) =>
+          !(entry.entityId === item.entityId && entry.uid === item.uid),
+      ),
+    };
+  }
+
+  function todoRow(item: TodoChip) {
+    const meta = item.due && item.listName
+      ? `${item.due} · ${item.listName}`
+      : item.due || item.listName || "";
+    return (
+      <Button
+        key={`${item.entityId}:${item.uid}`}
+        target={`todo:${item.entityId}:${item.uid}`}
+        onPress={() => pressTodo(item)}
+        modifiers={[buttonStyle("plain"), frame({ maxWidth: Infinity })]}
+      >
+        <HStack spacing={10} modifiers={[frame({ maxWidth: Infinity })]}>
+          <Image systemName="circle" color={muted} size={16} />
+          <VStack
+            alignment="leading"
+            spacing={2}
+            modifiers={[layoutPriority(1)]}
+          >
+            <Text
+              modifiers={[
+                font({ size: 15, weight: "medium" }),
+                foregroundStyle(fg),
+                lineLimit(1),
+              ]}
+            >
+              {item.summary}
+            </Text>
+            {meta ? (
+              <Text
+                modifiers={[
+                  font({ size: 11 }),
+                  foregroundStyle(muted),
+                  lineLimit(1),
+                ]}
+              >
+                {meta}
+              </Text>
+            ) : null}
+          </VStack>
+          <Spacer />
+        </HStack>
+      </Button>
+    );
+  }
+
   function pressItem(item: AccessoryChip): HomeGlanceProps {
+    const pendingTarget = `${item.action}:${item.entityId}`;
     if (item.action === "scene") {
       return {
         ...props,
+        pendingTarget,
         activatedSceneId: item.entityId,
         scenes: (props.scenes ?? []).map((entry) =>
           entry.entityId === item.entityId
@@ -112,8 +201,26 @@ const HomeGlanceView = (
         ),
       };
     }
+    const counts = {
+      light: onByDomain.light || 0,
+      switch: onByDomain.switch || 0,
+      input_boolean: onByDomain.input_boolean || 0,
+      fan: onByDomain.fan || 0,
+    };
+    const domain = item.domain;
+    if (
+      domain === "light" ||
+      domain === "switch" ||
+      domain === "input_boolean" ||
+      domain === "fan"
+    ) {
+      const current = counts[domain] || 0;
+      counts[domain] = item.isOn ? Math.max(0, current - 1) : current + 1;
+    }
     return {
       ...props,
+      pendingTarget,
+      onByDomain: counts,
       favorites: (props.favorites ?? []).map((entry) =>
         entry.entityId === item.entityId
           ? { ...entry, isOn: !entry.isOn }
@@ -244,6 +351,18 @@ const HomeGlanceView = (
     );
   }
 
+  function openHero(size: number) {
+    return (
+      <VStack
+        alignment="leading"
+        spacing={2}
+        modifiers={[widgetURL("ethiohome://home")]}
+      >
+        {hero(size)}
+      </VStack>
+    );
+  }
+
   if (!connected) {
     return (
       <VStack
@@ -273,6 +392,18 @@ const HomeGlanceView = (
   }
 
   if (small) {
+    if (grid.length === 0 && allTodos.length > 0) {
+      return (
+        <VStack
+          alignment="leading"
+          spacing={6}
+          modifiers={[padding({ all: 14 }), canvas]}
+        >
+          {openHero(28)}
+          {allTodos.slice(0, 3).map((item) => todoRow(item))}
+        </VStack>
+      );
+    }
     if (grid.length === 0) {
       return (
         <VStack
@@ -295,14 +426,15 @@ const HomeGlanceView = (
   }
 
   if (large) {
+    const showTodos = allTodos.length > 0;
     return (
       <VStack
         alignment="leading"
-        spacing={12}
+        spacing={showTodos ? 8 : 12}
         modifiers={[padding({ all: 14 }), canvas]}
       >
         <HStack alignment="bottom">
-          {hero(38)}
+          {openHero(showTodos ? 22 : 38)}
           <Spacer />
           {props.unreadLine ? (
             <Text modifiers={[font({ size: 12, weight: "medium" }), foregroundStyle(accent)]}>
@@ -310,7 +442,12 @@ const HomeGlanceView = (
             </Text>
           ) : null}
         </HStack>
-        {capsules.length > 0 ? (
+        {showTodos ? (
+          <VStack alignment="leading" spacing={8} modifiers={[frame({ maxWidth: Infinity })]}>
+            {allTodos.slice(0, 4).map((item) => todoRow(item))}
+          </VStack>
+        ) : null}
+        {!showTodos && capsules.length > 0 ? (
           <VStack spacing={8}>
             <HStack spacing={8}>
               {capsules.slice(0, 2).map((scene) => sceneCapsule(scene))}
@@ -322,10 +459,15 @@ const HomeGlanceView = (
             ) : null}
           </VStack>
         ) : null}
-        {accessories.length > 0 ? tileGrid(accessories, tileSize) : null}
-        {accessories.length === 0 && capsules.length === 0 && props.summaryLine ? (
+        {!showTodos && accessories.length > 0
+          ? tileGrid(accessories, tileSize)
+          : null}
+        {!showTodos &&
+        accessories.length === 0 &&
+        capsules.length === 0 &&
+        summaryLine ? (
           <Text modifiers={[font({ size: 13 }), foregroundStyle(muted), lineLimit(2)]}>
-            {props.summaryLine}
+            {summaryLine}
           </Text>
         ) : null}
         <Spacer />
@@ -343,11 +485,12 @@ const HomeGlanceView = (
           layoutPriority(1),
         ]}
       >
-        {hero(34)}
+        {openHero(34)}
+        {allTodos.slice(0, 2).map((item) => todoRow(item))}
         <Spacer />
-        {props.summaryLine && props.summaryLine !== heroCaption ? (
+        {allTodos.length === 0 && summaryLine && summaryLine !== heroCaption ? (
           <Text modifiers={[font({ size: 11 }), foregroundStyle(muted), lineLimit(2)]}>
-            {props.summaryLine}
+            {summaryLine}
           </Text>
         ) : null}
       </VStack>
@@ -367,9 +510,23 @@ HomeGlance.updateSnapshot({
   unreadLine: "",
   scenes: [],
   favorites: [],
+  todos: [],
   activatedSceneId: "",
   activatedLabel: "Activated",
   openMessage: "Open Ethio Home",
+  onByDomain: { light: 0, switch: 0, input_boolean: 0, fan: 0 },
+  heroMetric: "light",
+  copy: {
+    temperature: "",
+    heroOff: "",
+    heroOne: "",
+    heroMany: "",
+    summaryOff: "",
+    summaryOne: "",
+    summaryMany: "",
+    suffix: "",
+  },
+  pendingTarget: "",
 });
 
 export default HomeGlance;

@@ -1,10 +1,17 @@
 import { describe, expect, it, vi } from "vitest";
 
-import { sendWidgetServiceCall } from "./deliver";
 import {
+  deliverWidgetWebhook,
+  sendWidgetServiceCall,
+} from "./deliver";
+import {
+  alreadyDispatched,
+  EMPTY_HOME_PROPS,
   parseWidgetAction,
   serviceCallForTarget,
+  takePendingTarget,
   targetFromWidgetEvent,
+  todoTarget,
   toggleTarget,
 } from "./types";
 
@@ -40,6 +47,25 @@ describe("home screen widget taps", () => {
       domain: "light",
       service: "toggle",
       entityId: "light.kitchen",
+    });
+  });
+
+  it("completes a to-do item with its uid", () => {
+    const target = todoTarget("todo.shopping_list", "uid-1");
+    expect(parseWidgetAction(target)).toEqual({
+      kind: "todo",
+      entityId: "todo.shopping_list",
+      uid: "uid-1",
+    });
+    expect(serviceCallForTarget(target, {})).toEqual({
+      domain: "todo",
+      service: "update_item",
+      entityId: "todo.shopping_list",
+      serviceData: {
+        entity_id: "todo.shopping_list",
+        item: "uid-1",
+        status: "completed",
+      },
     });
   });
 
@@ -92,5 +118,75 @@ describe("sendWidgetServiceCall", () => {
     const callViaWebhook = vi.fn(async () => {});
     await sendWidgetServiceCall(call, { callService, callViaWebhook });
     expect(callViaWebhook).toHaveBeenCalledWith(call);
+  });
+});
+
+describe("takePendingTarget", () => {
+  it("turns a timeline pendingTarget into the same service call as a listener event", () => {
+    const props = {
+      ...EMPTY_HOME_PROPS,
+      pendingTarget: "toggle:light.kitchen",
+    };
+    const taken = takePendingTarget(props);
+    expect(taken).not.toBeNull();
+    expect(
+      serviceCallForTarget(taken?.target, {
+        "light.kitchen": { state: "off" },
+      }),
+    ).toEqual(
+      serviceCallForTarget(
+        targetFromWidgetEvent({ target: "toggle:light.kitchen" }),
+        { "light.kitchen": { state: "off" } },
+      ),
+    );
+    expect(taken?.rest.pendingTarget).toBe("");
+  });
+
+  it("does not dispatch again after the pending target is cleared", () => {
+    const first = takePendingTarget({
+      ...EMPTY_HOME_PROPS,
+      pendingTarget: "toggle:light.kitchen",
+    });
+    expect(first?.target).toBe("toggle:light.kitchen");
+    expect(takePendingTarget(first?.rest)).toBeNull();
+    expect(takePendingTarget({ ...EMPTY_HOME_PROPS, pendingTarget: "" })).toBeNull();
+    expect(takePendingTarget(EMPTY_HOME_PROPS)).toBeNull();
+  });
+
+  it("skips a duplicate of the same target until the dedup window closes", () => {
+    const target = toggleTarget("light.kitchen");
+    const last = { target, at: 1_000 };
+    expect(alreadyDispatched(last, target, 1_500)).toBe(true);
+    expect(alreadyDispatched(last, target, 4_000)).toBe(false);
+    expect(alreadyDispatched(last, "scene.movie", 1_500)).toBe(false);
+    expect(alreadyDispatched(null, target, 1_500)).toBe(false);
+  });
+});
+
+describe("deliverWidgetWebhook", () => {
+  const call = {
+    domain: "light",
+    service: "toggle",
+    entityId: "light.kitchen",
+  };
+
+  it("re-registers once when Home Assistant has forgotten this device", async () => {
+    const send = vi
+      .fn<(next: typeof call) => Promise<"sent" | "no-registration" | "unreachable">>()
+      .mockResolvedValueOnce("no-registration")
+      .mockResolvedValueOnce("sent");
+    const recoverRegistration = vi.fn(async () => ({ webhookId: "new" }));
+    await deliverWidgetWebhook(call, { send, recoverRegistration });
+    expect(recoverRegistration).toHaveBeenCalledOnce();
+    expect(send).toHaveBeenCalledTimes(2);
+  });
+
+  it("does not treat an unreachable hub as success", async () => {
+    const send = vi.fn(async () => "unreachable" as const);
+    const recoverRegistration = vi.fn(async () => null);
+    await expect(
+      deliverWidgetWebhook(call, { send, recoverRegistration }),
+    ).rejects.toThrow("unreachable");
+    expect(recoverRegistration).not.toHaveBeenCalled();
   });
 });

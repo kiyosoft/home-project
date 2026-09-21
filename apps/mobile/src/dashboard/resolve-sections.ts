@@ -43,6 +43,7 @@ const DOMAIN_LABELS: Record<string, MessageKey> = {
   media_player: "widget.domain.media",
   sensor: "widget.domain.sensor",
   binary_sensor: "widget.domain.sensor",
+  todo: "widget.domain.todo",
 };
 
 function domainLabel(

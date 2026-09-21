@@ -8,7 +8,7 @@ import { useHaStore } from "@/store/ha-store";
  * webhook goes to whichever address is winning right now: the live socket's
  * address first, then the usual internal/external ordering.
  */
-async function webhookTargets(): Promise<string[]> {
+export async function webhookTargets(): Promise<string[]> {
   const { activeUrl, profile } = useHaStore.getState();
   const candidates = await orderedCandidates(profile);
   const urls = [activeUrl, ...candidates.map((entry) => entry.url)];

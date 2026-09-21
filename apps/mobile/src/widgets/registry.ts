@@ -21,6 +21,7 @@ import { MediaTile } from "@/widgets/tiles/MediaTile";
 import { SceneTile } from "@/widgets/tiles/SceneTile";
 import { SinksarTile } from "@/widgets/tiles/SinksarTile";
 import { TeamTrackerTile } from "@/widgets/tiles/TeamTrackerTile";
+import { TodoTile } from "@/widgets/tiles/TodoTile";
 import { ToggleTile } from "@/widgets/tiles/ToggleTile";
 import { WeatherTile } from "@/widgets/tiles/WeatherTile";
 import type { MobileWidgetDef } from "@/widgets/types";
@@ -114,6 +115,12 @@ export const MOBILE_WIDGETS: MobileWidgetDef[] = [
     component: MediaTile,
     defaultSize: "md",
     domains: ["media_player"],
+  },
+  {
+    id: "@ethio/core/todo",
+    component: TodoTile,
+    defaultSize: "md",
+    domains: ["todo"],
   },
   {
     id: "@ethio/sinksar/today",

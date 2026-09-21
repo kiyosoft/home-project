@@ -11,6 +11,7 @@ import { GlassSurface } from "@/ui/GlassSurface";
 import { PressableFeedback } from "@/ui/haptic";
 import { CameraFeed } from "@/widgets/camera/CameraFeed";
 import { CameraStill } from "@/widgets/camera/CameraStill";
+import { pickCameraLiveMode } from "@/widgets/camera/live-mode";
 import { useLiveCamera } from "@/widgets/camera/use-camera";
 import { CameraDetailBody } from "@/widgets/detail/CameraDetailBody";
 import type { WidgetBodyProps } from "@/widgets/types";
@@ -40,9 +41,17 @@ export function CameraTile({ config, size }: WidgetBodyProps) {
   const compact = size === "sm";
   const state = camera.view?.state.toLowerCase() ?? "";
   const statusKey = STATUS_KEYS[state];
-  const live = streaming && camera.canLive && Boolean(camera.streamUrl);
-  const waitingForUrl =
-    streaming && !camera.streamUrl && !camera.mjpegFailed;
+  const liveMode = pickCameraLiveMode({
+    streaming: streaming && camera.canLive && !unavailable,
+    supportsStream: camera.canAudio,
+    sound: camera.sound,
+    hlsUri: camera.hlsUri,
+    hlsFailed: camera.hlsFailed,
+    mjpegUri: camera.streamUrl,
+    mjpegFailed: camera.mjpegFailed,
+  });
+  const live = liveMode === "hls" || liveMode === "mjpeg";
+  const waitingForUrl = liveMode === "wait";
   const status = unavailable
     ? t("widget.state.unavailable")
     : streaming
@@ -62,10 +71,10 @@ export function CameraTile({ config, size }: WidgetBodyProps) {
   const toggleLive = () => {
     if (streaming) {
       setStreaming(false);
-      camera.setMjpegReady(false);
+      camera.endLive();
       return;
     }
-    camera.setMjpegFailed(false);
+    camera.beginLive();
     setStreaming(true);
   };
 
@@ -93,8 +102,8 @@ export function CameraTile({ config, size }: WidgetBodyProps) {
         />
         {live ? (
           <CameraFeed
-            mjpegUri={camera.mjpegFailed ? null : camera.streamUrl}
-            hlsUri={null}
+            mjpegUri={liveMode === "mjpeg" ? camera.streamUrl : null}
+            hlsUri={liveMode === "hls" ? camera.hlsUri : null}
             sound={false}
             label={title}
             fill
@@ -102,6 +111,7 @@ export function CameraTile({ config, size }: WidgetBodyProps) {
               camera.setMjpegFailed(true);
               setStreaming(false);
             }}
+            onHlsFailed={() => camera.setHlsFailed(true)}
             onMjpegReady={() => camera.setMjpegReady(true)}
           />
         ) : null}

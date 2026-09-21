@@ -6,6 +6,7 @@ import { useT } from "@/store/locale-store";
 import { Button, Switch } from "@/ui/haptic";
 import { CameraFeed } from "@/widgets/camera/CameraFeed";
 import { CameraStill } from "@/widgets/camera/CameraStill";
+import { pickCameraLiveMode } from "@/widgets/camera/live-mode";
 import { useLiveCamera } from "@/widgets/camera/use-camera";
 import { EntityDetailBody } from "@/widgets/EntityDetailBody";
 import { useOptimistic } from "@/widgets/use-optimistic";
@@ -20,14 +21,17 @@ export function CameraDetailBody({ entityId }: { entityId: string }) {
     return <Text className="text-muted">{t("widget.entityMissing")}</Text>;
   }
 
-  const showLive =
-    streaming &&
-    camera.canLive &&
-    (Boolean(camera.streamUrl) || (camera.sound && Boolean(camera.hlsUri)));
-  const waitingForUrl =
-    streaming &&
-    ((camera.sound && camera.hlsLoading && !camera.hlsUri) ||
-      (!camera.sound && !camera.streamUrl && !camera.mjpegFailed));
+  const liveMode = pickCameraLiveMode({
+    streaming: streaming && camera.canLive,
+    supportsStream: camera.canAudio,
+    sound: camera.sound,
+    hlsUri: camera.hlsUri,
+    hlsFailed: camera.hlsFailed,
+    mjpegUri: camera.streamUrl,
+    mjpegFailed: camera.mjpegFailed,
+  });
+  const showLive = liveMode === "hls" || liveMode === "mjpeg";
+  const waitingForUrl = liveMode === "wait";
 
   return (
     <View className="gap-6">
@@ -40,8 +44,8 @@ export function CameraDetailBody({ entityId }: { entityId: string }) {
           />
           {showLive ? (
             <CameraFeed
-              mjpegUri={camera.mjpegFailed ? null : camera.streamUrl}
-              hlsUri={camera.hlsUri}
+              mjpegUri={liveMode === "mjpeg" ? camera.streamUrl : null}
+              hlsUri={liveMode === "hls" ? camera.hlsUri : null}
               sound={camera.sound}
               label={camera.view.entityId}
               fill
@@ -62,13 +66,8 @@ export function CameraDetailBody({ entityId }: { entityId: string }) {
         </View>
       </Surface>
 
-      {camera.mjpegFailed && streaming ? (
+      {streaming && liveMode === "none" ? (
         <Text className="text-danger text-sm">{t("widget.camera.liveFailed")}</Text>
-      ) : null}
-      {camera.hlsFailed ? (
-        <Text className="text-danger text-sm">
-          {t("widget.camera.soundFailed")}
-        </Text>
       ) : null}
 
       <View className="flex-row flex-wrap gap-2">
@@ -87,11 +86,10 @@ export function CameraDetailBody({ entityId }: { entityId: string }) {
             onPress={() => {
               if (streaming) {
                 setStreaming(false);
-                camera.setMjpegReady(false);
-                if (camera.sound) camera.mute();
+                camera.endLive();
                 return;
               }
-              camera.setMjpegFailed(false);
+              camera.beginLive();
               setStreaming(true);
             }}
           >

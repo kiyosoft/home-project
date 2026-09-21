@@ -7,13 +7,13 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 import { router, type Href } from "expo-router";
 import { Card, Separator, Text } from "heroui-native";
 import { Fragment, useMemo } from "react";
-import { ScrollView } from "react-native";
+import { ScrollView, View } from "react-native";
 import { withUniwind } from "uniwind";
 
 import { useHaStore, useLiveSession } from "@/store/ha-store";
 import { useT } from "@/store/locale-store";
-import { ConnectingWash } from "@/ui/ConnectingWash";
 import { ConnectionNotice } from "@/ui/ConnectionNotice";
+import { ConnectionStatusChip } from "@/ui/ConnectionStatusChip";
 import { ListGroup } from "@/ui/haptic";
 import { Screen } from "@/ui/Screen";
 
@@ -33,7 +33,13 @@ export function RoomsScreen() {
     [areas],
   );
 
-  if (mode !== "demo" && status === "error" && Object.keys(entities).length === 0) {
+  if (
+    mode !== "demo" &&
+    Object.keys(entities).length === 0 &&
+    (status === "connecting" ||
+      status === "reconnecting" ||
+      status === "error")
+  ) {
     return (
       <Screen>
         <Text.Heading type="h1">{t("rooms.title")}</Text.Heading>
@@ -43,13 +49,16 @@ export function RoomsScreen() {
   }
 
   return (
-    <Screen backdrop={<ConnectingWash />}>
+    <Screen>
       <ScrollView
         className="flex-1"
         showsVerticalScrollIndicator={false}
         contentContainerClassName="gap-6 pb-28"
       >
-        <Text.Heading type="h1">{t("rooms.title")}</Text.Heading>
+        <View className="gap-3">
+          <Text.Heading type="h1">{t("rooms.title")}</Text.Heading>
+          <ConnectionStatusChip />
+        </View>
 
         {rooms.length === 0 ? (
           <Card>

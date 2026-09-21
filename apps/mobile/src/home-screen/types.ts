@@ -6,6 +6,7 @@ export const ACTIVITY_WIDGET_URL = "ethiohome://activity";
 
 export const MAX_SCENES = 6;
 export const MAX_FAVORITES = 4;
+export const MAX_TODOS = 4;
 
 const TOGGLE_DOMAINS = ["light", "switch", "input_boolean", "fan"] as const;
 
@@ -44,7 +45,50 @@ export interface FavoriteChip {
   sfSymbol: GlanceSymbol;
 }
 
+export interface TodoChip {
+  entityId: string;
+  uid: string;
+  summary: string;
+  listName: string;
+  due?: string;
+}
+
 export type AccessoryChip = SceneChip | FavoriteChip;
+
+export type OnByDomain = Record<ToggleDomain, number>;
+
+export const EMPTY_ON_BY_DOMAIN: OnByDomain = {
+  light: 0,
+  switch: 0,
+  input_boolean: 0,
+  fan: 0,
+};
+
+/** Which house-wide on-count the widget headline follows. */
+export const DEFAULT_HERO_METRIC: ToggleDomain = "light";
+
+/** Translated templates the widget uses to rebuild copy after a tap. */
+export interface GlanceCopy {
+  temperature: string;
+  heroOff: string;
+  heroOne: string;
+  heroMany: string;
+  summaryOff: string;
+  summaryOne: string;
+  summaryMany: string;
+  suffix: string;
+}
+
+export const EMPTY_GLANCE_COPY: GlanceCopy = {
+  temperature: "",
+  heroOff: "",
+  heroOne: "",
+  heroMany: "",
+  summaryOff: "",
+  summaryOne: "",
+  summaryMany: "",
+  suffix: "",
+};
 
 export interface HomeGlanceProps {
   connected: boolean;
@@ -55,9 +99,19 @@ export interface HomeGlanceProps {
   unreadLine: string;
   scenes: SceneChip[];
   favorites: FavoriteChip[];
+  todos: TodoChip[];
   activatedSceneId: string;
   activatedLabel: string;
   openMessage: string;
+  onByDomain: OnByDomain;
+  heroMetric: ToggleDomain;
+  copy: GlanceCopy;
+  /**
+   * Tap token so the companion can keep the optimistic glance until Home
+   * Assistant state catches up. Must not be dispatched — the extension already
+   * POSTed the webhook.
+   */
+  pendingTarget: string;
 }
 
 export interface ActivityGlanceProps {
@@ -71,7 +125,8 @@ export interface ActivityGlanceProps {
 
 export type WidgetAction =
   | { kind: "scene"; entityId: string }
-  | { kind: "toggle"; entityId: string };
+  | { kind: "toggle"; entityId: string }
+  | { kind: "todo"; entityId: string; uid: string };
 
 export const EMPTY_HOME_PROPS: HomeGlanceProps = {
   connected: false,
@@ -82,9 +137,14 @@ export const EMPTY_HOME_PROPS: HomeGlanceProps = {
   unreadLine: "",
   scenes: [],
   favorites: [],
+  todos: [],
   activatedSceneId: "",
   activatedLabel: "",
   openMessage: "",
+  onByDomain: EMPTY_ON_BY_DOMAIN,
+  heroMetric: DEFAULT_HERO_METRIC,
+  copy: EMPTY_GLANCE_COPY,
+  pendingTarget: "",
 };
 
 export const EMPTY_ACTIVITY_PROPS: ActivityGlanceProps = {
@@ -111,6 +171,10 @@ export function toggleTarget(entityId: string): string {
   return `toggle:${entityId}`;
 }
 
+export function todoTarget(entityId: string, uid: string): string {
+  return `todo:${entityId}:${uid}`;
+}
+
 export function parseWidgetAction(target: unknown): WidgetAction | null {
   if (typeof target !== "string" || !target) return null;
   if (target.startsWith("scene:")) {
@@ -120,6 +184,14 @@ export function parseWidgetAction(target: unknown): WidgetAction | null {
   if (target.startsWith("toggle:")) {
     const entityId = target.slice("toggle:".length);
     return entityId ? { kind: "toggle", entityId } : null;
+  }
+  if (target.startsWith("todo:")) {
+    const rest = target.slice("todo:".length);
+    const sep = rest.indexOf(":");
+    if (sep <= 0) return null;
+    const entityId = rest.slice(0, sep);
+    const uid = rest.slice(sep + 1);
+    return entityId && uid ? { kind: "todo", entityId, uid } : null;
   }
   return null;
 }
@@ -135,7 +207,12 @@ export function parseWidgetAction(target: unknown): WidgetAction | null {
 export function serviceCallForTarget(
   target: unknown,
   _states: Record<string, { state?: string } | undefined>,
-): { domain: string; service: string; entityId: string } | null {
+): {
+  domain: string;
+  service: string;
+  entityId: string;
+  serviceData?: Record<string, unknown>;
+} | null {
   const action = parseWidgetAction(target);
   if (!action) return null;
 
@@ -143,6 +220,20 @@ export function serviceCallForTarget(
   if (action.kind === "scene") {
     if (domain !== "scene" && domain !== "script") return null;
     return { domain, service: "turn_on", entityId: action.entityId };
+  }
+
+  if (action.kind === "todo") {
+    if (domain !== "todo") return null;
+    return {
+      domain: "todo",
+      service: "update_item",
+      entityId: action.entityId,
+      serviceData: {
+        entity_id: action.entityId,
+        item: action.uid,
+        status: "completed",
+      },
+    };
   }
 
   if (!isToggleDomain(domain)) return null;
@@ -172,6 +263,33 @@ export function targetFromWidgetEvent(event: unknown): string {
     if (typeof inner === "string") return inner;
   }
   return "";
+}
+
+/**
+ * Pull a widget tap out of timeline props and clear it so the next snapshot
+ * push cannot fire the same service twice.
+ */
+export function takePendingTarget<T extends { pendingTarget?: unknown }>(
+  props: T | null | undefined,
+): { target: string; rest: T & { pendingTarget: string } } | null {
+  if (!props) return null;
+  const target =
+    typeof props.pendingTarget === "string" ? props.pendingTarget : "";
+  if (!target) return null;
+  return { target, rest: { ...props, pendingTarget: "" } };
+}
+
+export const PENDING_DEDUP_MS = 2000;
+
+export type DispatchedTarget = { target: string; at: number };
+
+export function alreadyDispatched(
+  last: DispatchedTarget | null,
+  target: string,
+  now: number,
+): boolean {
+  if (!last || last.target !== target) return false;
+  return now - last.at < PENDING_DEDUP_MS;
 }
 
 export function favoriteSymbol(

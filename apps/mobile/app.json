@@ -133,7 +133,8 @@
             }
           ]
         }
-      ]
+      ],
+      "./plugins/with-widget-hub"
     ],
     "experiments": {
       "typedRoutes": true

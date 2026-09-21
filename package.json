@@ -17,6 +17,9 @@
   "pnpm": {
     "onlyBuiltDependencies": [
       "esbuild"
-    ]
+    ],
+    "patchedDependencies": {
+      "expo-widgets@57.0.15": "patches/expo-widgets@57.0.15.patch"
+    }
   }
 }
