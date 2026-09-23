@@ -221,11 +221,19 @@ const HomeGlanceView = (
       ...props,
       pendingTarget,
       onByDomain: counts,
-      favorites: (props.favorites ?? []).map((entry) =>
-        entry.entityId === item.entityId
-          ? { ...entry, isOn: !entry.isOn }
-          : entry,
-      ),
+      favorites: (props.favorites ?? []).map((entry) => {
+        if (entry.entityId !== item.entityId) return entry;
+        const isOn = !entry.isOn;
+        if (entry.domain === "lock") {
+          return {
+            ...entry,
+            isOn,
+            action: isOn ? "unlock" : "lock",
+            sfSymbol: isOn ? "lock.fill" : "lock.open.fill",
+          };
+        }
+        return { ...entry, isOn };
+      }),
     };
   }
 

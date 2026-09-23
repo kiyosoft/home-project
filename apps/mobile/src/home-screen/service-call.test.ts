@@ -7,6 +7,8 @@ import {
 import {
   alreadyDispatched,
   EMPTY_HOME_PROPS,
+  lockActionForState,
+  lockTarget,
   parseWidgetAction,
   serviceCallForTarget,
   takePendingTarget,
@@ -48,6 +50,37 @@ describe("home screen widget taps", () => {
       service: "toggle",
       entityId: "light.kitchen",
     });
+  });
+
+  it("calls lock, unlock, or open without guessing from cached state", () => {
+    expect(parseWidgetAction(lockTarget("lock.front", "unlock"))).toEqual({
+      kind: "unlock",
+      entityId: "lock.front",
+    });
+    expect(serviceCallForTarget("unlock:lock.front", {})).toEqual({
+      domain: "lock",
+      service: "unlock",
+      entityId: "lock.front",
+    });
+    expect(serviceCallForTarget("lock:lock.front", {})).toEqual({
+      domain: "lock",
+      service: "lock",
+      entityId: "lock.front",
+    });
+    expect(serviceCallForTarget("open:lock.front", {})).toEqual({
+      domain: "lock",
+      service: "open",
+      entityId: "lock.front",
+    });
+    expect(serviceCallForTarget("lock:light.kitchen", {})).toBeNull();
+  });
+
+  it("picks unlock only while the bolt is locked or locking", () => {
+    expect(lockActionForState("locked")).toBe("unlock");
+    expect(lockActionForState("locking")).toBe("unlock");
+    expect(lockActionForState("unlocked")).toBe("lock");
+    expect(lockActionForState("open")).toBe("lock");
+    expect(lockActionForState("jammed")).toBe("lock");
   });
 
   it("completes a to-do item with its uid", () => {

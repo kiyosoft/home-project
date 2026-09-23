@@ -78,7 +78,7 @@ enum WidgetHub {
       guard domain == "scene" || domain == "script" else { return nil }
       return (domain, "turn_on", ["entity_id": entityId])
     }
-    if target.hasPrefix("toggle:") {
+    if (target.hasPrefix("toggle:")) {
       let entityId = String(target.dropFirst("toggle:".count))
       let domain = domainOf(entityId)
       switch domain {
@@ -87,6 +87,21 @@ enum WidgetHub {
       default:
         return nil
       }
+    }
+    if target.hasPrefix("unlock:") {
+      let entityId = String(target.dropFirst("unlock:".count))
+      guard domainOf(entityId) == "lock" else { return nil }
+      return ("lock", "unlock", ["entity_id": entityId])
+    }
+    if target.hasPrefix("open:") {
+      let entityId = String(target.dropFirst("open:".count))
+      guard domainOf(entityId) == "lock" else { return nil }
+      return ("lock", "open", ["entity_id": entityId])
+    }
+    if target.hasPrefix("lock:") {
+      let entityId = String(target.dropFirst("lock:".count))
+      guard domainOf(entityId) == "lock" else { return nil }
+      return ("lock", "lock", ["entity_id": entityId])
     }
     return nil
   }

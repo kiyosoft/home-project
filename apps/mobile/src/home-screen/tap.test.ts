@@ -38,6 +38,16 @@ const porch: FavoriteChip = {
   sfSymbol: "switch.2",
 };
 
+const front: FavoriteChip = {
+  action: "unlock",
+  entityId: "lock.front",
+  name: "Front",
+  shortName: "Front",
+  domain: "lock",
+  isOn: true,
+  sfSymbol: "lock.fill",
+};
+
 function house(overrides: Partial<HomeGlanceProps> = {}): HomeGlanceProps {
   const copy = glanceCopyPack({
     temperatureLabel: "",
@@ -102,6 +112,26 @@ describe("applyHomeWidgetTap", () => {
     expect(switched.onByDomain.switch).toBe(1);
     expect(switched.onByDomain.light).toBe(0);
     expect(glanceHero(switched)).toEqual({ value: "0", caption: "All off" });
+  });
+
+  it("flips a lock chip without bumping light counts", () => {
+    const next = applyHomeWidgetTap(
+      house({ favorites: [front, sofa] }),
+      "unlock:lock.front",
+    );
+    expect(next.favorites[0]).toMatchObject({
+      entityId: "lock.front",
+      isOn: false,
+      action: "lock",
+      sfSymbol: "lock.open.fill",
+    });
+    expect(next.onByDomain).toEqual({
+      light: 0,
+      switch: 0,
+      input_boolean: 0,
+      fan: 0,
+    });
+    expect(next.pendingTarget).toBe("unlock:lock.front");
   });
 
   it("removes the completed to-do from the glance", () => {

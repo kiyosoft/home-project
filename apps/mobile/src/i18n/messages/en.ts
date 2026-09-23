@@ -175,8 +175,13 @@ export const en = {
   "widget.state.recording": "Recording",
 
   "widget.action.power": "Toggle power",
-  "widget.action.lock": "Lock or unlock",
+  "widget.action.lock": "Lock",
+  "widget.action.unlock": "Unlock",
+  "widget.action.open": "Open",
   "widget.action.cover": "Open or close",
+
+  "widget.lock.code": "Code",
+  "widget.lock.codePlaceholder": "Enter code",
 
   "widget.brightnessValue": "{percent}% brightness",
   "widget.kelvinValue": "{kelvin}K",

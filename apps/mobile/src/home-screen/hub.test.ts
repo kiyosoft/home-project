@@ -50,5 +50,29 @@ describe("widget hub config", () => {
         },
       },
     });
+    expect(webhookBodyForTarget("unlock:lock.front")).toEqual({
+      type: "call_service",
+      data: {
+        domain: "lock",
+        service: "unlock",
+        service_data: { entity_id: "lock.front" },
+      },
+    });
+    expect(webhookBodyForTarget("open:lock.front")).toEqual({
+      type: "call_service",
+      data: {
+        domain: "lock",
+        service: "open",
+        service_data: { entity_id: "lock.front" },
+      },
+    });
+    expect(webhookBodyForTarget("lock:lock.front")).toEqual({
+      type: "call_service",
+      data: {
+        domain: "lock",
+        service: "lock",
+        service_data: { entity_id: "lock.front" },
+      },
+    });
   });
 });

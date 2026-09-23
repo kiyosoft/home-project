@@ -21,7 +21,10 @@ import {
   MAX_FAVORITES,
   MAX_SCENES,
   accessorySymbol,
+  isLockLocked,
   isToggleDomain,
+  lockActionForState,
+  lockSymbol,
   sceneSymbol,
   type ActivityGlanceProps,
   type FavoriteChip,
@@ -100,6 +103,41 @@ function pushToggleChip(
   return true;
 }
 
+function pushLockChip(
+  chips: FavoriteChip[],
+  entityId: string,
+  entities: HassEntities,
+): boolean {
+  if (chips.length >= MAX_FAVORITES) return false;
+  if (chips.some((chip) => chip.entityId === entityId)) return false;
+  if (entityDomain(entityId) !== "lock") return false;
+  const entity = entities[entityId];
+  if (isUnavailable(entity)) return false;
+  const locked = isLockLocked(entity.state);
+  const name = entityName(entity, entityId);
+  chips.push({
+    action: lockActionForState(entity.state),
+    entityId,
+    name,
+    shortName: clipName(name),
+    domain: "lock",
+    isOn: locked,
+    sfSymbol: lockSymbol(locked),
+  });
+  return true;
+}
+
+function pushFavoriteChip(
+  chips: FavoriteChip[],
+  entityId: string,
+  entities: HassEntities,
+): boolean {
+  return (
+    pushToggleChip(chips, entityId, entities) ||
+    pushLockChip(chips, entityId, entities)
+  );
+}
+
 function collectFavorites(
   document: MobileDashboard,
   entities: HassEntities,
@@ -107,7 +145,7 @@ function collectFavorites(
   const favorites: FavoriteChip[] = [];
 
   for (const entityId of document.favorites ?? []) {
-    pushToggleChip(favorites, entityId, entities);
+    pushFavoriteChip(favorites, entityId, entities);
     if (favorites.length >= MAX_FAVORITES) return favorites;
   }
 
@@ -120,7 +158,7 @@ function collectFavorites(
     for (const widget of section.source.widgets) {
       const entityId = widget.config.entity_id;
       if (typeof entityId !== "string") continue;
-      pushToggleChip(favorites, entityId, entities);
+      pushFavoriteChip(favorites, entityId, entities);
       if (favorites.length >= MAX_FAVORITES) return favorites;
     }
   }

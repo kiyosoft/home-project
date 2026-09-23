@@ -23,7 +23,11 @@ export type GlanceSymbol =
   | "fan.fill"
   | "flag"
   | "flag.fill"
-  | "switch.2";
+  | "switch.2"
+  | "lock.fill"
+  | "lock.open.fill";
+
+export type LockService = "lock" | "unlock" | "open";
 
 export interface SceneChip {
   action: "scene";
@@ -35,15 +39,16 @@ export interface SceneChip {
   sfSymbol: GlanceSymbol;
 }
 
-export interface FavoriteChip {
-  action: "toggle";
+export type FavoriteChip = {
   entityId: string;
   name: string;
   shortName: string;
-  domain: ToggleDomain;
   isOn: boolean;
   sfSymbol: GlanceSymbol;
-}
+} & (
+  | { action: "toggle"; domain: ToggleDomain }
+  | { action: LockService; domain: "lock" }
+);
 
 export interface TodoChip {
   entityId: string;
@@ -126,7 +131,8 @@ export interface ActivityGlanceProps {
 export type WidgetAction =
   | { kind: "scene"; entityId: string }
   | { kind: "toggle"; entityId: string }
-  | { kind: "todo"; entityId: string; uid: string };
+  | { kind: "todo"; entityId: string; uid: string }
+  | { kind: LockService; entityId: string };
 
 export const EMPTY_HOME_PROPS: HomeGlanceProps = {
   connected: false,
@@ -175,6 +181,25 @@ export function todoTarget(entityId: string, uid: string): string {
   return `todo:${entityId}:${uid}`;
 }
 
+export function lockTarget(entityId: string, service: LockService): string {
+  return `${service}:${entityId}`;
+}
+
+/** Next bolt service from the last known pose. Open is never inferred. */
+export function lockActionForState(state: string): "lock" | "unlock" {
+  const value = state.toLowerCase();
+  return value === "locked" || value === "locking" ? "unlock" : "lock";
+}
+
+export function isLockLocked(state: string): boolean {
+  const value = state.toLowerCase();
+  return value === "locked" || value === "locking";
+}
+
+export function lockSymbol(locked: boolean): GlanceSymbol {
+  return locked ? "lock.fill" : "lock.open.fill";
+}
+
 export function parseWidgetAction(target: unknown): WidgetAction | null {
   if (typeof target !== "string" || !target) return null;
   if (target.startsWith("scene:")) {
@@ -192,6 +217,18 @@ export function parseWidgetAction(target: unknown): WidgetAction | null {
     const entityId = rest.slice(0, sep);
     const uid = rest.slice(sep + 1);
     return entityId && uid ? { kind: "todo", entityId, uid } : null;
+  }
+  if (target.startsWith("unlock:")) {
+    const entityId = target.slice("unlock:".length);
+    return entityId ? { kind: "unlock", entityId } : null;
+  }
+  if (target.startsWith("open:")) {
+    const entityId = target.slice("open:".length);
+    return entityId ? { kind: "open", entityId } : null;
+  }
+  if (target.startsWith("lock:")) {
+    const entityId = target.slice("lock:".length);
+    return entityId ? { kind: "lock", entityId } : null;
   }
   return null;
 }
@@ -233,6 +270,19 @@ export function serviceCallForTarget(
         item: action.uid,
         status: "completed",
       },
+    };
+  }
+
+  if (
+    action.kind === "lock" ||
+    action.kind === "unlock" ||
+    action.kind === "open"
+  ) {
+    if (domain !== "lock") return null;
+    return {
+      domain: "lock",
+      service: action.kind,
+      entityId: action.entityId,
     };
   }
 
@@ -347,7 +397,16 @@ export function toggleFavorite(
     ...props,
     favorites: props.favorites.map((item) => {
       if (item.entityId !== entityId) return item;
-      return { ...item, isOn: !item.isOn };
+      const isOn = !item.isOn;
+      if (item.domain === "lock") {
+        return {
+          ...item,
+          isOn,
+          action: isOn ? "unlock" : "lock",
+          sfSymbol: lockSymbol(isOn),
+        };
+      }
+      return { ...item, isOn };
     }),
   };
 }

@@ -175,8 +175,13 @@ export const am: Record<MessageKey, string> = {
   "widget.state.recording": "በመቅዳት ላይ",
 
   "widget.action.power": "ኃይል ቀያይር",
-  "widget.action.lock": "ቁልፍ ቆልፍ ወይም ክፈት",
+  "widget.action.lock": "ቆልፍ",
+  "widget.action.unlock": "ቁልፍ ክፈት",
+  "widget.action.open": "በር ክፈት",
   "widget.action.cover": "ክፈት ወይም ዝጋ",
+
+  "widget.lock.code": "ምስጢር ቁጥር",
+  "widget.lock.codePlaceholder": "ምስጢር ቁጥር ያስገቡ",
 
   "widget.brightnessValue": "{percent}% ብርሃን",
   "widget.kelvinValue": "{kelvin}K",
