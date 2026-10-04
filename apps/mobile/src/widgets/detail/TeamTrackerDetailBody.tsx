@@ -38,6 +38,9 @@ export function TeamTrackerDetailBody({ entityId }: { entityId: string }) {
     view.opponent.score != null &&
     view.opponent.score > view.team.score;
 
+  const recordLabel = (name?: string) =>
+    name ? `${name} · ${t("widget.team.record")}` : t("widget.team.record");
+
   const status =
     view.state === "PRE"
       ? (view.kickoff ?? view.date ?? t("widget.team.upcoming"))
@@ -98,9 +101,20 @@ export function TeamTrackerDetailBody({ entityId }: { entityId: string }) {
         <Separator />
         <Surface variant="secondary" className="rounded-inner overflow-hidden">
           <Fact label={t("widget.team.clock")} value={status} />
-          <Fact label={t("widget.team.venue")} value={view.venue} />
-          <Fact label={t("widget.team.kickoff")} value={view.kickoff} />
+          <Fact label={t("widget.team.event")} value={view.eventName} />
+          <Fact label={t("widget.team.season")} value={view.season} />
           <Fact label={t("widget.team.league")} value={view.league} />
+          <Fact label={t("widget.team.venue")} value={view.venue} />
+          <Fact label={t("widget.team.location")} value={view.location} />
+          <Fact label={t("widget.team.kickoff")} value={view.kickoff} />
+          <Fact
+            label={recordLabel(view.team.name ?? view.team.abbr)}
+            value={view.team.record}
+          />
+          <Fact
+            label={recordLabel(view.opponent.name ?? view.opponent.abbr)}
+            value={view.opponent.record}
+          />
         </Surface>
       </View>
     </View>

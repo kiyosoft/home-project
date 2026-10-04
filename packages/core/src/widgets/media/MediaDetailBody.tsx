@@ -18,12 +18,15 @@ import {
 } from "@ethio/plugin-sdk";
 
 import { clamp, Slider, useServiceValue } from "../../ui";
+import { RemotePad } from "../RemoteWidget";
 import { MediaDetailBrowsePanel } from "./MediaDetailBrowsePanel";
 import {
   formatTime,
   getFriendlyName,
   getPowerAction,
   isMediaActive,
+  mediaSources,
+  mediaTitle,
   isMusicAssistantPlayer,
   MEDIA_PLAYER_FEATURE,
   numAttr,
@@ -49,8 +52,7 @@ export function MediaDetailBody({
   const attrs = entity?.attributes ?? {};
   const state = entity?.state ?? "unavailable";
   const supportedFeatures = numAttr(attrs, "supported_features") ?? 0;
-  const isPlaying = state === "playing";
-  const title = strAttr(attrs, "media_title");
+  const title = mediaTitle(attrs);
   const artist = strAttr(attrs, "media_artist");
   const album = strAttr(attrs, "media_album_name");
   const active =
@@ -84,6 +86,8 @@ export function MediaDetailBody({
     supportedFeatures,
     MEDIA_PLAYER_FEATURE.VOLUME_MUTE,
   );
+  const sources = mediaSources(attrs);
+  const currentSource = strAttr(attrs, "source");
   const isMass = isMusicAssistantPlayer(entityId, attrs);
   const { browseLoading, browseError, playlists, library, radio, radioLabel } =
     useMediaBrowse(entityId, canBrowsePlayer, showBrowse, isMass);
@@ -210,15 +214,20 @@ export function MediaDetailBody({
         <button
           type="button"
           disabled={pending}
-          onClick={() => void run("media_play_pause")}
+          onClick={() => void run("media_play")}
           className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-sm hover:opacity-90 disabled:opacity-50"
-          aria-label={isPlaying ? "Pause" : "Play"}
+          aria-label="Play"
         >
-          {isPlaying ? (
-            <Pause className="h-5 w-5" />
-          ) : (
-            <Play className="h-5 w-5 pl-0.5" />
-          )}
+          <Play className="h-5 w-5 pl-0.5" />
+        </button>
+        <button
+          type="button"
+          disabled={pending}
+          onClick={() => void run("media_pause")}
+          className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-sm hover:opacity-90 disabled:opacity-50"
+          aria-label="Pause"
+        >
+          <Pause className="h-5 w-5" />
         </button>
         <button
           type="button"
@@ -290,6 +299,32 @@ export function MediaDetailBody({
           </span>
         </div>
       ) : null}
+
+      {sources.length > 0 ? (
+        <div className="space-y-2">
+          <p className="text-sm text-muted-foreground">Input</p>
+          <div className="flex flex-wrap gap-2">
+          {sources.map((item) => (
+            <button
+              key={item}
+              type="button"
+              disabled={pending}
+              aria-pressed={item === currentSource}
+              onClick={() => void run("select_source", { source: item })}
+              className={`rounded-full border px-3 py-1.5 text-sm disabled:opacity-50 ${
+                item === currentSource
+                  ? "border-primary bg-primary text-primary-foreground"
+                  : "border-border hover:bg-muted"
+              }`}
+            >
+              {item}
+            </button>
+          ))}
+          </div>
+        </div>
+      ) : null}
+
+      <RemotePad entityId={entityId} />
 
       <MediaDetailBrowsePanel
         isMass={isMass}

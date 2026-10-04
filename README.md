@@ -47,7 +47,7 @@ Click **Start demo** on the setup screen to explore a sample dashboard with simu
 | --- | --- |
 | `@ethio/plugin-sdk` | `definePlugin` / `defineWidget` / `defineCommand`, HA hooks |
 | `@ethio/core` | Entity State, Toggle, Climate, Cover, Person, Weather |
-| `@ethio/teamtracker` | Team Card scoreboard for ha-teamtracker sensors |
+| `@ethio/teamtracker` | Team Card scoreboard for SofaScore `sensor.{team}` sensors |
 | `@ethio/ha-sdk` | Home Assistant WebSocket client + demo provider |
 
 ### Built-in (compile-time)
@@ -64,9 +64,7 @@ Catalog: `apps/dashboard/public/registry/catalog.json`. Remote plugins share the
 
 ### Team Tracker (live)
 
-Install [ha-teamtracker](https://github.com/vasqued2/ha-teamtracker) in Home Assistant, create a team sensor, then add **Team Card** and bind that entity. Demo mode uses `sensor.demo_arsenal` out of the box.
-
-Card UX inspired by [ha-teamtracker-card](https://github.com/vasqued2/ha-teamtracker-card).
+Add the SofaScore integration in Home Assistant. It publishes one sensor per club as `sensor.{team}` (for example `sensor.arsenal`). Add **Team Card** and bind that entity. Demo mode uses `sensor.demo_arsenal` out of the box.
 
 ## Home Assistant add-on
 

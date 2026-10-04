@@ -8,13 +8,17 @@ export interface MediaControls {
   isOff: boolean;
   volumePercent: number;
   isMuted: boolean;
-  playPause: () => void;
+  /** Sent as-is. TVs often never report playing vs paused, so the buttons do not swap. */
+  play: () => void;
+  pause: () => void;
   skip: (direction: "previous" | "next") => void;
   setPower: (on: boolean) => void;
   /** Mid-drag value, so the slider follows the finger without a call per frame. */
   previewVolume: (percent: number) => void;
   setVolume: (percent: number) => void;
   setMuted: (muted: boolean) => void;
+  source: string | undefined;
+  selectSource: (source: string) => void;
 }
 
 /**
@@ -32,6 +36,7 @@ export function useMediaControls(
     view?.volumePercent ?? 0,
   );
   const [isMuted, setOptimisticMuted] = useOptimistic(view?.isMuted ?? false);
+  const [source, setOptimisticSource] = useOptimistic(view?.source);
 
   const normalized = state.toLowerCase();
   const isPlaying = normalized === "playing";
@@ -47,17 +52,21 @@ export function useMediaControls(
     isOff,
     volumePercent,
     isMuted,
+    source,
 
-    playPause() {
+    play() {
       if (blocked) return;
-      // A sleeping speaker has nothing to resume, so the same press wakes it.
       if (isOff && view?.powerAction === "turn_on") {
         setOptimisticState("on");
         send("turn_on");
         return;
       }
-      setOptimisticState(isPlaying ? "paused" : "playing");
-      send("media_play_pause");
+      send("media_play");
+    },
+
+    pause() {
+      if (blocked) return;
+      send("media_pause");
     },
 
     skip(direction) {
@@ -83,6 +92,12 @@ export function useMediaControls(
       if (blocked) return;
       setOptimisticMuted(muted);
       send("volume_mute", { is_volume_muted: muted });
+    },
+
+    selectSource(next) {
+      if (blocked) return;
+      setOptimisticSource(next);
+      send("select_source", { source: next });
     },
   };
 }

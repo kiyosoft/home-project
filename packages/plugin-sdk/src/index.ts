@@ -79,6 +79,7 @@ export type {
   LockView,
   SinksarEntry,
   SinksarView,
+  TeamHomeAway,
   TeamSide,
   TeamTrackerState,
   TeamTrackerView,

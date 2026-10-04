@@ -41,6 +41,7 @@ const DOMAIN_LABELS: Record<string, MessageKey> = {
   switch: "widget.domain.switch",
   input_boolean: "widget.domain.switch",
   media_player: "widget.domain.media",
+  remote: "widget.domain.remote",
   sensor: "widget.domain.sensor",
   binary_sensor: "widget.domain.sensor",
   todo: "widget.domain.todo",

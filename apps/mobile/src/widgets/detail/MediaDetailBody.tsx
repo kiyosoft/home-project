@@ -5,12 +5,13 @@ import { View } from "react-native";
 import { withUniwind } from "uniwind";
 
 import { useT } from "@/store/locale-store";
-import { Button, Slider, Switch } from "@/ui/haptic";
+import { Button, Chip, Slider, Switch } from "@/ui/haptic";
 import { useEntity } from "@/store/use-entity";
 import { EntityDetailBody } from "@/widgets/EntityDetailBody";
 import { useArtworkUrl } from "@/widgets/media/artwork";
 import { MediaArtwork } from "@/widgets/media/MediaArtwork";
 import { useMediaControls } from "@/widgets/media/use-media-controls";
+import { RemoteControls } from "@/widgets/tiles/RemoteTile";
 import { singleSliderValue } from "@/widgets/types";
 
 const Icon = withUniwind(Ionicons);
@@ -84,9 +85,15 @@ export function MediaDetailBody({ entityId }: { entityId: string }) {
           isDisabled={!view.supportsPrevious}
         />
         <Transport
-          icon={controls.isPlaying ? "pause" : "play"}
-          label={t("widget.media.playPause")}
-          onPress={controls.playPause}
+          icon="play"
+          label={t("widget.media.play")}
+          onPress={controls.play}
+          isPrimary
+        />
+        <Transport
+          icon="pause"
+          label={t("widget.media.pause")}
+          onPress={controls.pause}
           isPrimary
         />
         <Transport
@@ -144,6 +151,26 @@ export function MediaDetailBody({ entityId }: { entityId: string }) {
           />
         </Surface>
       ) : null}
+
+      {view.sources.length > 0 ? (
+        <View className="gap-2">
+          <Label>{t("widget.media.input")}</Label>
+          <View className="flex-row flex-wrap gap-2">
+            {view.sources.map((item) => (
+              <Chip
+                key={item}
+                size="sm"
+                variant={item === controls.source ? "primary" : "secondary"}
+                onPress={() => controls.selectSource(item)}
+              >
+                {item}
+              </Chip>
+            ))}
+          </View>
+        </View>
+      ) : null}
+
+      <RemoteControls entityId={entityId} />
 
       <EntityDetailBody entityId={entityId} />
     </View>

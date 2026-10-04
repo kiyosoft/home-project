@@ -90,10 +90,36 @@ export interface MediaView {
   isMuted: boolean;
   /** Null when the player exposes neither turn_on nor turn_off for its state. */
   powerAction: "turn_on" | "turn_off" | null;
+  /** Current input, when the player reports one. */
+  source: string | undefined;
+  /** HDMI, apps, and other inputs. Empty when the player has no source list. */
+  sources: string[];
   supportsPrevious: boolean;
   supportsNext: boolean;
   supportsVolumeSet: boolean;
   supportsVolumeMute: boolean;
+}
+
+/**
+ * Track title when the player has one. A TV app such as YouTube often
+ * reports only the app name or the current source.
+ */
+export function mediaSources(attrs: Record<string, unknown>): string[] {
+  const value = attrs.source_list;
+  if (!Array.isArray(value)) return [];
+  return value.filter(
+    (item): item is string => typeof item === "string" && item.trim().length > 0,
+  );
+}
+
+export function mediaTitle(
+  attrs: Record<string, unknown>,
+): string | undefined {
+  return (
+    strAttr(attrs, "media_title") ??
+    strAttr(attrs, "app_name") ??
+    strAttr(attrs, "source")
+  );
 }
 
 export function deriveMedia(entity: HassEntity | undefined): MediaView | null {
@@ -101,7 +127,7 @@ export function deriveMedia(entity: HassEntity | undefined): MediaView | null {
   const attrs = entity.attributes;
   const features = numAttr(attrs, "supported_features") ?? 0;
   const state = entity.state.toLowerCase();
-  const title = strAttr(attrs, "media_title");
+  const title = mediaTitle(attrs);
   const artist =
     strAttr(attrs, "media_artist") ??
     strAttr(attrs, "media_series_title") ??
@@ -120,6 +146,8 @@ export function deriveMedia(entity: HassEntity | undefined): MediaView | null {
     volumePercent: Math.round((numAttr(attrs, "volume_level") ?? 0) * 100),
     isMuted: Boolean(attrs.is_volume_muted),
     powerAction: mediaPowerAction(entity.state, features),
+    source: strAttr(attrs, "source"),
+    sources: mediaSources(attrs),
     supportsPrevious: mediaSupportsFeature(
       features,
       MEDIA_PLAYER_FEATURE.PREVIOUS_TRACK,

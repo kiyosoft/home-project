@@ -194,18 +194,23 @@ export {
   isTeamTrackerEntity,
 } from "./teamtracker";
 export type {
+  TeamHomeAway,
   TeamSide,
   TeamTrackerState,
   TeamTrackerView,
 } from "./teamtracker";
 export {
   deriveMedia,
+  mediaSources,
+  mediaTitle,
   MEDIA_PLAYER_FEATURE,
   mediaIsActive,
   mediaPowerAction,
   mediaSupportsFeature,
 } from "./media";
 export type { MediaView } from "./media";
+export { deriveRemote, fetchEntityPlatform, remotePress, remoteSeesTv, showsTvRemote } from "./remote";
+export type { RemoteCommand, RemoteView } from "./remote";
 export { entityImageUrl, withAuthToken } from "./media-auth";
 export {
   buildAppData,
@@ -257,6 +262,10 @@ export {
   shouldShowArrivalWelcome,
 } from "./person";
 export type { HassCurrentUser } from "./person";
+export { attentionItems, configEntityIds } from "./attention";
+export type { AttentionItem, AttentionKind } from "./attention";
+export { activeAlerts } from "./alert";
+export type { ActiveAlert } from "./alert";
 export {
   dismissPersistentNotification,
   subscribePersistentNotifications,

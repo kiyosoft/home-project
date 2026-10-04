@@ -66,6 +66,21 @@ export const en = {
   "header.lightsOnOne": "1 on",
   "header.lightsChipAria": "Lights currently on",
 
+  "alert.acknowledge": "Acknowledge",
+  "attention.section": "Needs attention",
+  "attention.countOne": "1 alert",
+  "attention.count": "{count} alerts",
+  "attention.open": "Open attention: {count}",
+  "attention.unavailable": "Unavailable",
+  "attention.safety": "Needs attention",
+  "attention.problem": "Problem",
+  "attention.opening": "Open",
+  "attention.unlocked": "Unlocked",
+  "attention.jammed": "Jammed",
+  "attention.alarm": "Triggered",
+  "attention.battery": "Battery is low",
+  "attention.level": "{level}%",
+
   "runtime.editHelp":
     "Edit mode — drag, resize, add, and configure widgets. Changes autosave.",
   "runtime.demoHelp":

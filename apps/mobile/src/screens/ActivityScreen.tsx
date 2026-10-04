@@ -25,6 +25,7 @@ import {
 } from "@/store/notification-store";
 import { usePersistentNotifications } from "@/store/use-persistent-notifications";
 import { retryPushSync } from "@/store/use-push-token";
+import { AlertBanner } from "@/ui/AlertBanner";
 import { Button, Chip, LinkButton } from "@/ui/haptic";
 import { Screen } from "@/ui/Screen";
 
@@ -180,6 +181,7 @@ export function ActivityScreen() {
           </Chip>
         ) : null}
       </View>
+      <AlertBanner />
 
       {registered && permission.state === "undetermined" ? (
         <Card>

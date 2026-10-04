@@ -26,7 +26,8 @@ export function MediaActiveCard({
   powerAction,
   onOpenDetail,
   onPrev,
-  onPlayPause,
+  onPlay,
+  onPause,
   onNext,
   onPower,
 }: {
@@ -44,7 +45,8 @@ export function MediaActiveCard({
   powerAction: "turn_on" | "turn_off" | null;
   onOpenDetail: () => void;
   onPrev: (event: MouseEvent) => void;
-  onPlayPause: (event: MouseEvent) => void;
+  onPlay: (event: MouseEvent) => void;
+  onPause: (event: MouseEvent) => void;
   onNext: (event: MouseEvent) => void;
   onPower: (event: MouseEvent) => void;
 }) {
@@ -166,19 +168,28 @@ export function MediaActiveCard({
           <button
             type="button"
             disabled={pending}
-            onClick={onPlayPause}
+            onClick={onPlay}
             className={`inline-flex h-11 w-11 items-center justify-center rounded-full shadow-sm transition-transform hover:scale-105 disabled:opacity-50 ${
               coverMode
                 ? "border border-white/30 bg-white/20 text-white backdrop-blur-md"
                 : "bg-white text-black"
             }`}
-            aria-label={isPlaying ? "Pause" : "Play"}
+            aria-label="Play"
           >
-            {isPlaying ? (
-              <Pause className="h-5 w-5" />
-            ) : (
-              <Play className="h-5 w-5 pl-0.5" />
-            )}
+            <Play className="h-5 w-5 pl-0.5" />
+          </button>
+          <button
+            type="button"
+            disabled={pending}
+            onClick={onPause}
+            className={`inline-flex h-11 w-11 items-center justify-center rounded-full shadow-sm transition-transform hover:scale-105 disabled:opacity-50 ${
+              coverMode
+                ? "border border-white/30 bg-white/20 text-white backdrop-blur-md"
+                : "bg-white text-black"
+            }`}
+            aria-label="Pause"
+          >
+            <Pause className="h-5 w-5" />
           </button>
           {canNext ? (
             <button

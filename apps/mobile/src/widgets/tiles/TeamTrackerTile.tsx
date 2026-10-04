@@ -213,12 +213,12 @@ export function TeamTrackerTile({ config, size }: WidgetBodyProps) {
                   >
                     {view.lastPlay}
                   </Text>
-                ) : view.venue && view.state === "PRE" ? (
+                ) : view.state === "PRE" && (view.venue || view.location) ? (
                   <Text
                     numberOfLines={1}
                     className="text-muted mt-0.5 text-center text-xs"
                   >
-                    {view.venue}
+                    {[view.venue, view.location].filter(Boolean).join(" · ")}
                   </Text>
                 ) : null}
               </View>

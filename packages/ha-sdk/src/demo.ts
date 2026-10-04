@@ -175,7 +175,7 @@ const DEMO_ENTITIES: HassEntities = {
   },
   "lock.front_door": {
     entity_id: "lock.front_door",
-    state: "locked",
+    state: "unavailable",
     attributes: {
       friendly_name: "Front Door Lock",
       supported_features: 1,
@@ -284,7 +284,7 @@ const DEMO_ENTITIES: HassEntities = {
   },
   "sensor.lock_battery": {
     entity_id: "sensor.lock_battery",
-    state: "88",
+    state: "15",
     attributes: {
       friendly_name: "Front Door Lock Battery",
       unit_of_measurement: "%",
@@ -364,28 +364,33 @@ const DEMO_ENTITIES: HassEntities = {
     state: "IN",
     attributes: {
       friendly_name: "Arsenal",
-      sport: "soccer",
-      league: "English Premier League",
-      league_logo: "https://a.espncdn.com/i/teamlogos/leagues/500/eng.1.png",
+      sport: "Football",
+      league: "Premier League",
+      season: "Premier League 26/27",
+      event_name: "Arsenal vs Leeds United",
       team_abbr: "ARS",
       team_name: "Arsenal",
-      team_logo: "https://a.espncdn.com/i/teamlogos/soccer/500/359.png",
+      team_homeaway: "home",
+      team_record: "4-0-1",
+      team_logo: "https://api.sofascore.app/api/v1/team/42/image",
       team_score: 2,
       team_rank: 2,
-      team_colors: ["#EF0107", "#FFFFFF"],
-      opponent_abbr: "CHE",
-      opponent_name: "Chelsea",
-      opponent_logo: "https://a.espncdn.com/i/teamlogos/soccer/500/363.png",
+      team_colors: ["#cc0000", "#ffffff"],
+      opponent_abbr: "LEE",
+      opponent_name: "Leeds",
+      opponent_homeaway: "away",
+      opponent_record: "2-3-0",
+      opponent_logo: "https://api.sofascore.app/api/v1/team/34/image",
       opponent_score: 1,
       opponent_rank: 5,
-      opponent_colors: ["#034694", "#FFFFFF"],
+      opponent_colors: ["#ffffff", "#1d4189"],
       clock: "67'",
       venue: "Emirates Stadium",
-      date: "2026-08-06T15:00:00+00:00",
+      location: "London, England",
+      date: "2026-10-10T11:30:00+00:00",
       kickoff_in: "in progress",
-      possession: "359",
       last_play:
-        "Saka beats Cucurella on the right and cuts the ball back into the six-yard box.",
+        "Saka beats the full-back on the right and cuts the ball back into the six-yard box.",
       api_message: "",
     },
   },
@@ -600,6 +605,13 @@ const DEMO_ENTITIES: HassEntities = {
     state: "off",
     attributes: {
       friendly_name: "Guest welcome",
+    },
+  },
+  "alert.garage_door": {
+    entity_id: "alert.garage_door",
+    state: "on",
+    attributes: {
+      friendly_name: "Garage is open",
     },
   },
 };
@@ -865,19 +877,19 @@ const DEMO_SCENE_EFFECTS: Record<
 const SCRIPT_RUN_MS = 800;
 
 const DEMO_ARSENAL_PLAYS = [
-  "Saka beats Cucurella on the right and cuts the ball back into the six-yard box.",
-  "Ødegaard threads a pass between the centre-backs — Colwill just gets a toe to it.",
+  "Saka beats the full-back on the right and cuts the ball back into the six-yard box.",
+  "Ødegaard threads a pass between the centre-backs — Struijk just gets a toe to it.",
   "Rice wins it in midfield and immediately looks for the runner in behind.",
   "Trossard volleys from the six-yard box. Just over the bar.",
   "Gabriel steps across to cut out a through ball. Arsenal clear their lines.",
   "White overlaps and whips a low cross toward the penalty spot.",
 ];
 
-const DEMO_CHELSEA_PLAYS = [
-  "Palmer curls one toward the far post. Raya palms it behind for a corner.",
-  "Jackson holds the ball up and lays it off to Enzo at the edge of the box.",
-  "Neto whips a cross in from the left. Saliba heads it away.",
-  "Caicedo nicks it off Ødegaard and Chelsea break the other way.",
+const DEMO_LEEDS_PLAYS = [
+  "Piroe curls one toward the far post. Raya palms it behind for a corner.",
+  "Aaronson holds the ball up and lays it off to Ampadu at the edge of the box.",
+  "Gnonto whips a cross in from the left. Saliba heads it away.",
+  "Ampadu nicks it off Ødegaard and Leeds break the other way.",
 ];
 
 const DEMO_ARSENAL_GOALS = [
@@ -886,9 +898,9 @@ const DEMO_ARSENAL_GOALS = [
   "GOAL Arsenal! Trossard taps in at the back post.",
 ];
 
-const DEMO_CHELSEA_GOALS = [
-  "GOAL Chelsea! Palmer curls it into the top corner.",
-  "GOAL Chelsea! Jackson stoops to head home from close range.",
+const DEMO_LEEDS_GOALS = [
+  "GOAL Leeds! Piroe curls it into the top corner.",
+  "GOAL Leeds! Aaronson stoops to head home from close range.",
 ];
 
 function pickPlay(plays: string[], exclude?: string): string {
@@ -1111,7 +1123,7 @@ export function connectDemo(): EntityClient {
     let nextTeam = teamScore;
     let nextOpponent = opponentScore;
     let lastPlay = pickPlay(
-      arsenalOnBall ? DEMO_ARSENAL_PLAYS : DEMO_CHELSEA_PLAYS,
+      arsenalOnBall ? DEMO_ARSENAL_PLAYS : DEMO_LEEDS_PLAYS,
       prevPlay,
     );
 
@@ -1122,7 +1134,7 @@ export function connectDemo(): EntityClient {
         lastPlay = pickPlay(DEMO_ARSENAL_GOALS, prevPlay);
       } else {
         nextOpponent = opponentScore >= 4 ? 0 : opponentScore + 1;
-        lastPlay = pickPlay(DEMO_CHELSEA_GOALS, prevPlay);
+        lastPlay = pickPlay(DEMO_LEEDS_GOALS, prevPlay);
       }
     }
 
@@ -1159,6 +1171,17 @@ export function connectDemo(): EntityClient {
 
       const current = entities[entityId];
       if (!current) return;
+
+      if (
+        domain === "alert" &&
+        (service === "turn_off" || service === "turn_on")
+      ) {
+        setEntity(entityId, {
+          ...current,
+          state: service === "turn_on" ? "on" : "off",
+        });
+        return;
+      }
 
       if (domain === "todo") {
         if (entityId === DEMO_TODO_ENTITY_ID) {

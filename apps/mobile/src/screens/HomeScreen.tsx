@@ -30,6 +30,7 @@ import { resolveSections, widgetForId } from "@/dashboard/resolve-sections";
 import { useDashboardStore } from "@/store/dashboard-store";
 import { useHaStore } from "@/store/ha-store";
 import { useT } from "@/store/locale-store";
+import { AlertBanner } from "@/ui/AlertBanner";
 import { AmbientBackground } from "@/ui/AmbientBackground";
 import { ConnectionNotice } from "@/ui/ConnectionNotice";
 import { Button, Chip } from "@/ui/haptic";
@@ -322,12 +323,15 @@ export function HomeScreen() {
   }
 
   const header = (
-    <HomeHeader
-      sections={chips}
-      onJumpToSection={jumpToSection}
-      editing={editing}
-      onToggleEditing={() => setEditorMode(editing ? "live" : "edit")}
-    />
+    <View>
+      <HomeHeader
+        sections={chips}
+        onJumpToSection={jumpToSection}
+        editing={editing}
+        onToggleEditing={() => setEditorMode(editing ? "live" : "edit")}
+      />
+      <AlertBanner />
+    </View>
   );
 
   const empty = (

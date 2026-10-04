@@ -1,11 +1,14 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { z } from "zod";
 
 import {
   defineWidget,
+  deriveTeamTracker,
   useCallService,
   useEntity,
   useEntityDetail,
+  type TeamSide as TeamSideData,
+  type TeamTrackerView,
   type WidgetComponentProps,
 } from "@ethio/plugin-sdk";
 
@@ -27,39 +30,6 @@ export const teamCardConfigSchema = z.object({
   celebration_sound: z.boolean().default(false),
 });
 
-type Attrs = Record<string, unknown>;
-
-function str(attrs: Attrs, key: string): string | undefined {
-  const value = attrs[key];
-  return typeof value === "string" && value.trim() ? value : undefined;
-}
-
-function num(attrs: Attrs, key: string): number | undefined {
-  const value = attrs[key];
-  if (typeof value === "number" && Number.isFinite(value)) return value;
-  if (typeof value === "string" && value.trim() && !Number.isNaN(Number(value))) {
-    return Number(value);
-  }
-  return undefined;
-}
-
-/** Parse ha-teamtracker colors (comma string or string[]). */
-function parseColors(attrs: Attrs, key: string): string[] {
-  const value = attrs[key];
-  if (Array.isArray(value)) {
-    return value
-      .filter((item): item is string => typeof item === "string" && Boolean(item.trim()))
-      .map((item) => item.trim());
-  }
-  if (typeof value === "string" && value.trim()) {
-    return value
-      .split(",")
-      .map((part) => part.trim())
-      .filter(Boolean);
-  }
-  return [];
-}
-
 function withAlpha(color: string, alpha: number): string {
   const hex = color.startsWith("#") ? color.slice(1) : color;
   if (/^[0-9a-fA-F]{6}$/.test(hex)) {
@@ -77,86 +47,6 @@ function withAlpha(color: string, alpha: number): string {
   return color;
 }
 
-const PAUSE_CLOCK: Record<string, string> = {
-  HT: "Half time",
-  FT: "Full time",
-  OT: "Extra time",
-  ET: "Extra time",
-  AET: "Extra time",
-  PEN: "Penalties",
-};
-
-function isPauseClock(clock?: string): boolean {
-  if (!clock) return false;
-  const key = clock.trim().toUpperCase();
-  return key in PAUSE_CLOCK || key.includes("HALF");
-}
-
-/** Latest `21'` / `45'+2` stamp from soccer last_play event text. */
-function latestPlayClock(lastPlay?: string): string | undefined {
-  if (!lastPlay) return undefined;
-  const matches = [...lastPlay.matchAll(/(\d{1,3}(?:\+\d+)?)\s*'/g)];
-  const stamp = matches.at(-1)?.[1];
-  return stamp ? `${stamp}'` : undefined;
-}
-
-/** True when last_play is past the break that `clock` is still labelling. */
-function playResumedAfterPause(clock: string, playClock: string): boolean {
-  const key = clock.trim().toUpperCase();
-  const minute = Number.parseInt(playClock, 10);
-  if (!Number.isFinite(minute)) return false;
-  if (key === "HT" || clock.toLowerCase().includes("half")) return minute > 45;
-  return false;
-}
-
-function quarterLabel(quarter?: string | number): string | undefined {
-  if (quarter == null || quarter === "") return undefined;
-  const numeric =
-    typeof quarter === "number" ? quarter : Number.parseInt(String(quarter), 10);
-  if (Number.isFinite(numeric) && String(numeric) === String(quarter).trim()) {
-    if (numeric === 1) return "1st";
-    if (numeric === 2) return "2nd";
-    if (numeric === 3) return "ET";
-    if (numeric === 4) return "ET2";
-    if (numeric >= 5) return "Pens";
-  }
-  const raw = String(quarter).trim();
-  return raw || undefined;
-}
-
-/**
- * ESPN shortDetail is "HT" at the break, and can linger after kickoff.
- * Trust that pause unless last_play is clearly into the next half.
- */
-function inGameStatus(
-  clock?: string,
-  quarter?: string | number,
-  lastPlay?: string,
-): string {
-  const playClock = latestPlayClock(lastPlay);
-  const period = quarterLabel(quarter);
-
-  if (clock && !isPauseClock(clock)) {
-    if (period && !clock.toLowerCase().includes(period.toLowerCase())) {
-      return `${period} · ${clock}`;
-    }
-    return clock;
-  }
-
-  if (clock && playClock && playResumedAfterPause(clock, playClock)) {
-    return playClock;
-  }
-
-  if (clock) {
-    const readable = PAUSE_CLOCK[clock.trim().toUpperCase()];
-    if (readable) return readable;
-    if (clock.toLowerCase().includes("half")) return "Half time";
-    return clock;
-  }
-
-  return playClock ?? period ?? "Live";
-}
-
 function teamGradient(leftColor?: string, rightColor?: string): string | undefined {
   if (leftColor && rightColor) {
     return `linear-gradient(105deg, ${withAlpha(leftColor, 0.22)} 0%, ${withAlpha(leftColor, 0.06)} 38%, transparent 50%, ${withAlpha(rightColor, 0.06)} 62%, ${withAlpha(rightColor, 0.22)} 100%)`;
@@ -170,33 +60,38 @@ function teamGradient(leftColor?: string, rightColor?: string): string | undefin
   return undefined;
 }
 
+function placeLine(view: TeamTrackerView): string | undefined {
+  if (view.venue && view.location) return `${view.venue} · ${view.location}`;
+  return view.venue ?? view.location;
+}
+
+function homeAwayLabel(side: TeamSideData): string | undefined {
+  if (side.homeAway === "home") return "Home";
+  if (side.homeAway === "away") return "Away";
+  return undefined;
+}
+
 function TeamSide({
-  abbr,
-  name,
-  logo,
-  score,
-  rank,
+  side,
+  showScore,
   showRank,
-  color,
   outline,
   emphasize,
 }: {
-  abbr?: string;
-  name?: string;
-  logo?: string;
-  score?: number;
-  rank?: number;
+  side: TeamSideData;
+  showScore: boolean;
   showRank: boolean;
-  color?: string;
   outline: boolean;
   emphasize?: boolean;
 }) {
+  const color = side.colors[0];
+  const where = homeAwayLabel(side);
+  const [logoFailed, setLogoFailed] = useState(false);
+  useEffect(() => {
+    setLogoFailed(false);
+  }, [side.logo]);
   return (
-    <div
-      className={`relative z-[1] flex min-w-0 flex-1 flex-col items-center gap-2 ${
-        emphasize ? "opacity-100" : ""
-      }`}
-    >
+    <div className="relative z-[1] flex min-w-0 flex-1 flex-col items-center gap-2">
       <div
         className="flex h-14 w-14 items-center justify-center overflow-hidden rounded-full bg-background/70 backdrop-blur-[2px]"
         style={
@@ -205,30 +100,47 @@ function TeamSide({
             : undefined
         }
       >
-        {logo ? (
-          <img src={logo} alt={abbr ?? name ?? "team"} className="h-12 w-12 object-contain" />
+        {side.logo && !logoFailed ? (
+          <img
+            src={side.logo}
+            alt={side.abbr ?? side.name ?? "team"}
+            referrerPolicy="no-referrer"
+            className="h-12 w-12 object-contain"
+            onError={() => setLogoFailed(true)}
+          />
         ) : (
-          <span className="font-display text-lg font-semibold">{abbr ?? "?"}</span>
+          <span className="font-display text-lg font-semibold">
+            {side.abbr ?? "?"}
+          </span>
         )}
       </div>
       <div className="text-center">
-        {showRank && rank != null ? (
-          <p className="text-[10px] text-muted-foreground">#{rank}</p>
+        {showRank && side.rank != null ? (
+          <p className="text-[10px] text-muted-foreground">#{side.rank}</p>
         ) : null}
         <p className="truncate text-sm font-semibold tracking-wide">
-          {abbr ?? name ?? "—"}
+          {side.abbr ?? side.name ?? "—"}
         </p>
-        {name && abbr ? (
-          <p className="truncate text-[11px] text-muted-foreground">{name}</p>
+        {side.name && side.abbr ? (
+          <p className="truncate text-[11px] text-muted-foreground">{side.name}</p>
+        ) : null}
+        {where ? (
+          <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+            {where}
+          </p>
         ) : null}
       </div>
-      {score != null ? (
+      {showScore && side.score != null ? (
         <p
           className={`font-display text-3xl font-semibold tabular-nums ${
             emphasize ? "text-primary" : ""
           }`}
         >
-          {score}
+          {side.score}
+        </p>
+      ) : !showScore && side.record ? (
+        <p className="text-xs font-medium tabular-nums text-muted-foreground">
+          {side.record}
         </p>
       ) : null}
     </div>
@@ -276,7 +188,7 @@ function TeamCard({ config, interactive }: WidgetComponentProps) {
           {customTitle || cardTitle || "Team Card"}
         </p>
         <p className="mt-1 text-sm text-muted-foreground">
-          Bind a ha-teamtracker sensor in settings.
+          Bind a team sensor (sensor.arsenal).
         </p>
       </div>
     );
@@ -293,39 +205,19 @@ function TeamCard({ config, interactive }: WidgetComponentProps) {
     );
   }
 
-  const attrs = entity.attributes;
-  const state = entity.state;
-  const league = str(attrs, "league");
-  const sport = str(attrs, "sport");
-  const leagueLogo = str(attrs, "league_logo");
-  const clock = str(attrs, "clock");
-  const quarter = str(attrs, "quarter") ?? num(attrs, "quarter");
-  const date = str(attrs, "date");
-  const kickoff = str(attrs, "kickoff_in");
-  const venue = str(attrs, "venue");
-  const lastPlay = str(attrs, "last_play");
-  const apiMessage = str(attrs, "api_message");
+  const view = deriveTeamTracker(entity);
+  if (!view) {
+    return (
+      <div className="flex h-full min-h-40 flex-col justify-center rounded-2xl border border-dashed border-border bg-card p-5">
+        <p className="font-display text-base font-semibold">
+          {customTitle || cardTitle || entityId}
+        </p>
+        <p className="mt-1 text-sm text-muted-foreground">Entity unavailable</p>
+      </div>
+    );
+  }
 
-  const teamColors = parseColors(attrs, "team_colors");
-  const opponentColors = parseColors(attrs, "opponent_colors");
-
-  const team = {
-    abbr: str(attrs, "team_abbr"),
-    name: str(attrs, "team_name"),
-    logo: str(attrs, "team_logo"),
-    score: num(attrs, "team_score"),
-    rank: num(attrs, "team_rank"),
-    color: teamColors[0],
-  };
-  const opponent = {
-    abbr: str(attrs, "opponent_abbr"),
-    name: str(attrs, "opponent_name"),
-    logo: str(attrs, "opponent_logo"),
-    score: num(attrs, "opponent_score"),
-    rank: num(attrs, "opponent_rank"),
-    color: opponentColors[0],
-  };
-
+  const { state, team, opponent } = view;
   const left = homeSide === "left" ? team : opponent;
   const right = homeSide === "left" ? opponent : team;
   const teamWinning =
@@ -337,26 +229,31 @@ function TeamCard({ config, interactive }: WidgetComponentProps) {
     opponent.score != null &&
     opponent.score > team.score;
 
-  let statusLine = state;
+  let statusLine: string = view.rawState;
   if (state === "PRE") {
-    statusLine = kickoff ?? date ?? "Upcoming";
+    statusLine = view.kickoff ?? view.date ?? "Upcoming";
   } else if (state === "IN") {
-    statusLine = inGameStatus(clock, quarter, lastPlay);
+    statusLine = view.inGameClock;
   } else if (state === "POST") {
     statusLine = "Final";
   } else if (state === "BYE") {
     statusLine = "Bye week";
   } else if (state === "NOT_FOUND") {
-    statusLine = apiMessage ?? "No game found";
+    statusLine = view.apiMessage ?? "No game found";
   }
 
   const title =
     customTitle ||
     cardTitle ||
-    (showLeague && league ? league : sport ? sport.toUpperCase() : "Team Tracker");
+    (showLeague && view.league
+      ? view.league
+      : view.sport
+        ? view.sport.toUpperCase()
+        : "Team Tracker");
   const showScore = state === "IN" || state === "POST";
-  const gradient = teamGradient(left.color, right.color);
-  const showCenterLeagueLogo = showLeagueLogo && Boolean(leagueLogo);
+  const gradient = teamGradient(left.colors[0], right.colors[0]);
+  const showCenterLeagueLogo = showLeagueLogo && Boolean(view.leagueLogo);
+  const place = placeLine(view);
 
   return (
     <>
@@ -367,8 +264,8 @@ function TeamCard({ config, interactive }: WidgetComponentProps) {
         teamScore={team.score}
         opponentScore={opponent.score}
         gameState={state}
-        teamColors={teamColors}
-        opponentColors={opponentColors}
+        teamColors={team.colors}
+        opponentColors={opponent.colors}
         teamName={team.name}
         teamAbbr={team.abbr}
         opponentName={opponent.name}
@@ -411,14 +308,15 @@ function TeamCard({ config, interactive }: WidgetComponentProps) {
             {state === "IN" ? (
               <span className="h-1.5 w-1.5 rounded-full bg-destructive motion-safe:animate-pulse" />
             ) : null}
-            {state}
+            {view.rawState}
           </span>
         </div>
 
         {state === "BYE" ? (
           <div className="relative z-[1] flex flex-1 flex-col items-center justify-center gap-3">
             <TeamSide
-              {...team}
+              side={team}
+              showScore={false}
               showRank={showRank}
               outline={outline}
             />
@@ -428,7 +326,7 @@ function TeamCard({ config, interactive }: WidgetComponentProps) {
           <div className="relative z-[1] flex flex-1 flex-col items-center justify-center gap-2 text-center">
             <p className="font-display text-lg font-semibold">No game</p>
             <p className="text-sm text-muted-foreground">
-              {apiMessage ?? "Sensor has no upcoming game data."}
+              {view.apiMessage ?? "Sensor has no upcoming game data."}
             </p>
           </div>
         ) : (
@@ -436,15 +334,16 @@ function TeamCard({ config, interactive }: WidgetComponentProps) {
             <div className="relative flex flex-1 items-center gap-2">
               {showCenterLeagueLogo ? (
                 <img
-                  src={leagueLogo}
+                  src={view.leagueLogo}
                   alt=""
                   aria-hidden
+                  referrerPolicy="no-referrer"
                   className="pointer-events-none absolute left-1/2 top-1/2 h-[72%] max-h-28 w-auto max-w-[45%] -translate-x-1/2 -translate-y-1/2 object-contain opacity-[0.12] select-none dark:opacity-[0.16]"
                 />
               ) : null}
               <TeamSide
-                {...left}
-                score={showScore ? left.score : undefined}
+                side={left}
+                showScore={showScore}
                 showRank={showRank}
                 outline={outline}
                 emphasize={
@@ -459,8 +358,8 @@ function TeamCard({ config, interactive }: WidgetComponentProps) {
                 </p>
               </div>
               <TeamSide
-                {...right}
-                score={showScore ? right.score : undefined}
+                side={right}
+                showScore={showScore}
                 showRank={showRank}
                 outline={outline}
                 emphasize={
@@ -472,11 +371,16 @@ function TeamCard({ config, interactive }: WidgetComponentProps) {
             </div>
             <div className="relative z-[1] mt-3 min-w-0 border-t border-border/70 pt-2 text-center">
               <p className="text-sm font-medium tabular-nums">{statusLine}</p>
-              {showLastPlay && lastPlay && state === "IN" ? (
-                <LastPlayMarquee text={lastPlay} />
-              ) : venue && state === "PRE" ? (
+              {state === "PRE" && view.eventName ? (
                 <p className="mt-0.5 truncate text-xs text-muted-foreground">
-                  {venue}
+                  {view.eventName}
+                </p>
+              ) : null}
+              {showLastPlay && view.lastPlay && state === "IN" ? (
+                <LastPlayMarquee text={view.lastPlay} />
+              ) : place && state === "PRE" ? (
+                <p className="mt-0.5 truncate text-xs text-muted-foreground">
+                  {place}
                 </p>
               ) : null}
             </div>
@@ -490,7 +394,7 @@ function TeamCard({ config, interactive }: WidgetComponentProps) {
 export const teamCardWidget = defineWidget({
   id: "@ethio/teamtracker/team-card",
   name: "Team Card",
-  description: "Live scoreboard for ha-teamtracker sensors",
+  description: "Scoreboard for a SofaScore team sensor (sensor.arsenal)",
   component: TeamCard,
   configSchema: teamCardConfigSchema,
   defaultConfig: {

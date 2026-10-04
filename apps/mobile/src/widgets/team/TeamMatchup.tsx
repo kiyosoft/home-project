@@ -84,6 +84,14 @@ function TeamColumn({
   crestSize: number;
   winning?: boolean;
 }) {
+  const t = useT();
+  const where =
+    side.homeAway === "home"
+      ? t("widget.team.home")
+      : side.homeAway === "away"
+        ? t("widget.team.away")
+        : undefined;
+
   return (
     <View className="z-[1] min-w-0 flex-1 items-center gap-1.5">
       <TeamCrest side={side} size={crestSize} />
@@ -102,6 +110,11 @@ function TeamColumn({
             {side.name}
           </Text>
         ) : null}
+        {where ? (
+          <Text className="text-muted text-[10px] font-semibold uppercase tracking-wide">
+            {where}
+          </Text>
+        ) : null}
       </View>
       {showScore && side.score != null ? (
         <Text
@@ -110,6 +123,10 @@ function TeamColumn({
           }`}
         >
           {side.score}
+        </Text>
+      ) : !showScore && side.record ? (
+        <Text className="text-muted text-xs font-medium tabular-nums">
+          {side.record}
         </Text>
       ) : null}
     </View>

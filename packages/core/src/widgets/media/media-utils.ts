@@ -3,6 +3,8 @@ export {
   mediaIsActive as isMediaActive,
   mediaPowerAction as getPowerAction,
   mediaSupportsFeature as supportsFeature,
+  mediaSources,
+  mediaTitle,
 } from "@ethio/ha-sdk";
 
 export interface MediaChoice {

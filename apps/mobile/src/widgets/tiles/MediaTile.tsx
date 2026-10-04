@@ -46,20 +46,18 @@ export function MediaTile({ config, size }: WidgetBodyProps) {
     <WidgetTile
       title={title}
       status={status}
-      icon={
-        unavailable || controls.isOff
-          ? "power"
-          : controls.isPlaying
-            ? "pause"
-            : "play"
-      }
+      icon={unavailable || controls.isOff ? "power" : "musical-notes"}
       size={size}
       active={controls.isPlaying && !unavailable}
       disabled={unavailable}
       onPress={openDetail}
       onLongPress={openDetail}
-      onIconPress={controls.playPause}
-      iconLabel={t("widget.media.playPause")}
+      onIconPress={
+        controls.isOff && view?.powerAction === "turn_on"
+          ? () => controls.setPower(true)
+          : undefined
+      }
+      iconLabel={t("widget.media.power")}
       accessory={
         playing ? (
           <MediaArtwork uri={artwork} size={40} label={view?.title} />
@@ -75,51 +73,59 @@ export function MediaTile({ config, size }: WidgetBodyProps) {
             {view?.title ?? t("widget.media.nothingPlaying")}
           </Text>
 
-          {/* Skipping and volume need a row of their own; a half tile sends
-              them to the detail sheet the way climate sends its stepper. */}
-          {size === "md" ? (
-            <View className="flex-row items-center gap-3">
-              {view?.supportsPrevious ? (
-                <TileButton
-                  icon="play-skip-back"
-                  label={t("widget.media.previous")}
-                  onPress={() => controls.skip("previous")}
-                  disabled={unavailable}
-                />
-              ) : null}
-              {view?.supportsNext ? (
-                <TileButton
-                  icon="play-skip-forward"
-                  label={t("widget.media.next")}
-                  onPress={() => controls.skip("next")}
-                  disabled={unavailable}
-                />
-              ) : null}
-              {showVolume ? (
-                <View className="flex-1">
-                  <Slider
-                    value={controls.volumePercent}
-                    onChange={(value) =>
-                      controls.previewVolume(singleSliderValue(value))
-                    }
-                    onChangeEnd={(value) =>
-                      controls.setVolume(singleSliderValue(value))
-                    }
-                    minValue={0}
-                    maxValue={100}
-                    step={1}
-                    isDisabled={unavailable}
-                    accessibilityLabel={t("widget.media.volume")}
-                  >
-                    <Slider.Track>
-                      <Slider.Fill />
-                      <Slider.Thumb />
-                    </Slider.Track>
-                  </Slider>
-                </View>
-              ) : null}
-            </View>
-          ) : null}
+          <View className="flex-row items-center gap-3">
+            <TileButton
+              icon="play"
+              label={t("widget.media.play")}
+              onPress={controls.play}
+              disabled={unavailable}
+            />
+            <TileButton
+              icon="pause"
+              label={t("widget.media.pause")}
+              onPress={controls.pause}
+              disabled={unavailable}
+            />
+            {size === "md" && view?.supportsPrevious ? (
+              <TileButton
+                icon="play-skip-back"
+                label={t("widget.media.previous")}
+                onPress={() => controls.skip("previous")}
+                disabled={unavailable}
+              />
+            ) : null}
+            {size === "md" && view?.supportsNext ? (
+              <TileButton
+                icon="play-skip-forward"
+                label={t("widget.media.next")}
+                onPress={() => controls.skip("next")}
+                disabled={unavailable}
+              />
+            ) : null}
+            {showVolume ? (
+              <View className="flex-1">
+                <Slider
+                  value={controls.volumePercent}
+                  onChange={(value) =>
+                    controls.previewVolume(singleSliderValue(value))
+                  }
+                  onChangeEnd={(value) =>
+                    controls.setVolume(singleSliderValue(value))
+                  }
+                  minValue={0}
+                  maxValue={100}
+                  step={1}
+                  isDisabled={unavailable}
+                  accessibilityLabel={t("widget.media.volume")}
+                >
+                  <Slider.Track>
+                    <Slider.Fill />
+                    <Slider.Thumb />
+                  </Slider.Track>
+                </Slider>
+              </View>
+            ) : null}
+          </View>
         </View>
       ) : null}
     </WidgetTile>

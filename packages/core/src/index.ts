@@ -15,6 +15,7 @@ import { lightWidget } from "./widgets/LightWidget";
 import { lockWidget } from "./widgets/LockWidget";
 import { mediaWidget } from "./widgets/MediaWidget";
 import { personWidget } from "./widgets/PersonWidget";
+import { remoteWidget } from "./widgets/RemoteWidget";
 import { sceneWidget } from "./widgets/SceneWidget";
 import { textCardWidget } from "./widgets/TextCardWidget";
 import { todoWidget } from "./widgets/TodoWidget";
@@ -41,6 +42,7 @@ export { lightConfigSchema } from "./widgets/LightWidget";
 export { lockConfigSchema } from "./widgets/LockWidget";
 export { mediaConfigSchema } from "./widgets/MediaWidget";
 export { personConfigSchema } from "./widgets/PersonWidget";
+export { remoteConfigSchema } from "./widgets/RemoteWidget";
 export { sceneConfigSchema } from "./widgets/SceneWidget";
 export { textCardConfigSchema } from "./widgets/TextCardWidget";
 export { TextCardBody } from "./widgets/text-card/TextCardBody";
@@ -75,6 +77,7 @@ export const corePlugin = definePlugin({
     climateWidget,
     coverWidget,
     mediaWidget,
+    remoteWidget,
     cameraWidget,
     lockWidget,
     alarmWidget,

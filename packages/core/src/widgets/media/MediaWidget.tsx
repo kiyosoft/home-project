@@ -18,6 +18,7 @@ import {
   getFriendlyName,
   getPowerAction,
   isMediaActive,
+  mediaTitle,
   MEDIA_PLAYER_FEATURE,
   numAttr,
   strAttr,
@@ -74,7 +75,7 @@ export function MediaWidget({
 
   const isPlaying = state === "playing";
   const name = customTitle || getFriendlyName(entity);
-  const title = strAttr(attrs, "media_title");
+  const title = mediaTitle(attrs);
   const artist =
     strAttr(attrs, "media_artist") ||
     strAttr(attrs, "media_series_title") ||
@@ -156,9 +157,13 @@ export function MediaWidget({
         stopPropagation(event);
         void run("media_previous_track");
       }}
-      onPlayPause={(event) => {
+      onPlay={(event) => {
         stopPropagation(event);
-        void run("media_play_pause");
+        void run("media_play");
+      }}
+      onPause={(event) => {
+        stopPropagation(event);
+        void run("media_pause");
       }}
       onNext={(event) => {
         stopPropagation(event);

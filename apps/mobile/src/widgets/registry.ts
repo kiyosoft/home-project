@@ -18,6 +18,7 @@ import { FanTile } from "@/widgets/tiles/FanTile";
 import { LightTile } from "@/widgets/tiles/LightTile";
 import { LockTile } from "@/widgets/tiles/LockTile";
 import { MediaTile } from "@/widgets/tiles/MediaTile";
+import { RemoteTile } from "@/widgets/tiles/RemoteTile";
 import { SceneTile } from "@/widgets/tiles/SceneTile";
 import { SinksarTile } from "@/widgets/tiles/SinksarTile";
 import { TeamTrackerTile } from "@/widgets/tiles/TeamTrackerTile";
@@ -115,6 +116,12 @@ export const MOBILE_WIDGETS: MobileWidgetDef[] = [
     component: MediaTile,
     defaultSize: "md",
     domains: ["media_player"],
+  },
+  {
+    id: "@ethio/core/remote",
+    component: RemoteTile,
+    defaultSize: "md",
+    domains: ["remote"],
   },
   {
     id: "@ethio/core/todo",

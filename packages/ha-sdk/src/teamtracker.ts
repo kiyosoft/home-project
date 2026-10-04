@@ -1,11 +1,16 @@
 import type { HassEntity } from "./types";
 
+export type TeamHomeAway = "home" | "away";
+
 export interface TeamSide {
   abbr?: string;
   name?: string;
   logo?: string;
   score?: number;
   rank?: number;
+  /** W-D-L (or equivalent) from SofaScore, e.g. "4-0-1". */
+  record?: string;
+  homeAway?: TeamHomeAway;
   colors: string[];
 }
 
@@ -23,12 +28,15 @@ export interface TeamTrackerView {
   rawState: string;
   league?: string;
   sport?: string;
+  season?: string;
+  eventName?: string;
   leagueLogo?: string;
   clock?: string;
   quarter?: string | number;
   date?: string;
   kickoff?: string;
   venue?: string;
+  location?: string;
   lastPlay?: string;
   apiMessage?: string;
   team: TeamSide;
@@ -51,7 +59,7 @@ function num(attrs: Record<string, unknown>, key: string): number | undefined {
   return undefined;
 }
 
-/** ha-teamtracker sends a comma string or a string[]. Keep only #hex colours. */
+/** SofaScore sends a string[]; older sensors may send a comma string. Keep #hex. */
 function parseColors(attrs: Record<string, unknown>, key: string): string[] {
   const value = attrs[key];
   const parts: string[] = [];
@@ -164,6 +172,19 @@ export function inGameClock(
   return playClock ?? period ?? "Live";
 }
 
+function parseHomeAway(
+  attrs: Record<string, unknown>,
+  key: string,
+): TeamHomeAway | undefined {
+  const value = str(attrs, key)?.toLowerCase();
+  if (value === "home" || value === "away") return value;
+  return undefined;
+}
+
+function filled(value: unknown): boolean {
+  return typeof value === "string" && value.trim() !== "";
+}
+
 function parseSide(
   attrs: Record<string, unknown>,
   prefix: "team" | "opponent",
@@ -174,13 +195,16 @@ function parseSide(
     logo: str(attrs, `${prefix}_logo`),
     score: num(attrs, `${prefix}_score`),
     rank: num(attrs, `${prefix}_rank`),
+    record: str(attrs, `${prefix}_record`),
+    homeAway: parseHomeAway(attrs, `${prefix}_homeaway`),
     colors: parseColors(attrs, `${prefix}_colors`),
   };
 }
 
 /**
- * True for ha-teamtracker sensors, not ordinary sensors. Matches the integration
- * by id slug or by the sport + team_abbr signature it always publishes.
+ * True for SofaScore team sensors (`sensor.{team}`), not ordinary sensors.
+ * Match the published signature. A `teamtracker` slug is only a fallback for
+ * leftover ha-teamtracker entities.
  */
 export function isTeamTrackerEntity(entity: HassEntity): boolean {
   const id = entity.entity_id;
@@ -188,11 +212,12 @@ export function isTeamTrackerEntity(entity: HassEntity): boolean {
   const slug = id.slice("sensor.".length).toLowerCase();
   if (slug.includes("teamtracker") || slug.includes("team_tracker")) return true;
   const attrs = entity.attributes;
+  if (!filled(attrs.sport) || !filled(attrs.team_abbr)) return false;
   return (
-    typeof attrs.sport === "string" &&
-    typeof attrs.team_abbr === "string" &&
-    attrs.sport.trim() !== "" &&
-    attrs.team_abbr.trim() !== ""
+    filled(attrs.event_name) ||
+    filled(attrs.team_homeaway) ||
+    filled(attrs.opponent_abbr) ||
+    filled(attrs.team_logo)
   );
 }
 
@@ -210,12 +235,15 @@ export function deriveTeamTracker(
     rawState: entity.state,
     league: str(attrs, "league"),
     sport: str(attrs, "sport"),
+    season: str(attrs, "season"),
+    eventName: str(attrs, "event_name"),
     leagueLogo: str(attrs, "league_logo"),
     clock,
     quarter,
     date: str(attrs, "date"),
     kickoff: str(attrs, "kickoff_in"),
     venue: str(attrs, "venue"),
+    location: str(attrs, "location"),
     lastPlay,
     apiMessage: str(attrs, "api_message"),
     team: parseSide(attrs, "team"),
